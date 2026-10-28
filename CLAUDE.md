@@ -55,6 +55,9 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 - Errors are never bare throws: every API/tool result is `{ ok: true, ... }` or `{ ok: false, error_code, message, how_to_fix }`.
 - review_order freezes the summary the customer sees (`orders.review_snapshot_json`); payment copies it into `policies.snapshot_json`.
   PDF, email and get_policy use that snapshot, never the current config, so later config changes never alter a sold policy.
+- Policy PDF (`src/pdf.js`): A4 certificate drawn ONLY from the policy snapshot. One page for up to 3 travellers (tested in `test/pdf.test.js`);
+  more flow to extra pages, each with the red demo strip and the disclaimer footer. Dates always Spanish (10/12/2026, "10–24 dic 2026"). Nothing below 9 pt.
+  Texts in `brand.texts.certificate`. To preview a PDF as PNG: there is no PDF tool on the server; render it with pdf.js in headless Chrome.
 - Policy number: `WILD-<year>-XXXXXX` (older test policies keep `BRAND-…`). PDF via unguessable link `/poliza/<random token>.pdf`.
 - get_policy requires policy_number AND the policyholder email (decision: policy numbers are short and guessable; the email stops strangers reading personal data).
 - Email via Brevo HTTP API; missing key → email_status "not_configured", never crash. Email is sent after payment and never blocks it.

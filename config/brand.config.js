@@ -21,6 +21,8 @@ export default {
     turquoiseText: '#0B6770', // small turquoise text on light backgrounds
     yellow: '#FFC21A', // primary buttons (bold night text, no border, no shadow) and the logo sun
     red: '#D7263D', // ONLY the demo banner (white text) and error borders
+    border: '#C9DCE6', // thin lines and box borders (PDF, email)
+    paleYellow: '#FFF6D6', // highlighted cells (total price, excess), with night text
   },
   // Logo symbol (a mountain with the sun behind it), drawn by src/logo.js and src/pdf.js.
   // Mountain is turquoise on light backgrounds and white on turquoise or dark ones.
@@ -33,7 +35,6 @@ export default {
   fonts: { headings: 'Space Grotesk', text: 'Inter' },
 
   demoBanner: 'Demo — no es un seguro real',
-  pdfDisclaimer: 'DEMO — NO ES UN SEGURO REAL',
 
   texts: {
     pageTitle: 'Seguros Wildpass · Seguro de viaje (demo)',
@@ -115,6 +116,39 @@ export default {
     termsTitle: 'Condiciones del seguro (demo)',
     termsIntro: 'Esto es una demostración. No es un seguro real y no ofrece ninguna cobertura.',
     certificateTitle: 'Certificado de seguro de viaje',
+    // PDF certificate (src/pdf.js)
+    certificate: {
+      topStrip: 'DEMO — NO ES UN SEGURO REAL · ESTE DOCUMENTO NO TIENE VALIDEZ',
+      policyNumberLabel: 'PÓLIZA Nº',
+      issuedOn: 'Emitida el',
+      planPill: 'Plan',
+      destination: 'Destino',
+      dates: 'Fechas',
+      origin: 'Origen',
+      total: 'Prima total',
+      simulatedPayment: 'Pago simulado',
+      days: 'días',
+      travelerOne: 'viajero',
+      travelerMany: 'viajeros',
+      peopleTitle: 'Tomador y asegurados',
+      name: 'Nombre',
+      role: 'Rol',
+      birthDate: 'Fecha de nacimiento',
+      rolePolicyholder: 'Tomador',
+      roleInsured: 'Asegurado/a',
+      roleBoth: 'Tomador y asegurado/a',
+      coverageTitle: 'Coberturas por viajero',
+      coverage: 'Cobertura',
+      limit: 'Límite',
+      excess: 'Franquicia por siniestro médico',
+      exclusionsTitle: 'Principales exclusiones',
+      emergencyTitle: '¿Una emergencia?',
+      emergencyText: 'Llama antes de acudir al médico y no adelantes dinero. Asistencia 24\u00a0h en español.',
+      emergencyPhone: '[Teléfono de asistencia · demo]',
+      emergencyKeepNumber: 'Ten a mano tu nº de póliza.',
+      footer: 'Seguros Wildpass es un producto ficticio creado para una demostración. Este certificado no tiene validez legal ni ofrece cobertura real.',
+      termsLabel: 'Condiciones:',
+    },
     emailSubject: 'Tu póliza Wildpass de demostración',
     emailGreeting: 'Hola',
   },

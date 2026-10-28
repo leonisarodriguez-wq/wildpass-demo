@@ -425,7 +425,7 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, no
     // The policy keeps exactly what the customer reviewed and accepted, never later config changes.
     const summary = JSON.parse(order.review_snapshot_json);
 
-    const pdfBuffer = await buildPdf({ policy_number, issued_at: issuedAt.toISOString(), summary, brand, pricing });
+    const pdfBuffer = await buildPdf({ policy_number, issued_at: issuedAt.toISOString(), summary, brand, terms_url: `${ctx.baseUrl ?? ''}/condiciones` });
     const pdfPath = join(pdfDir, `${pdf_token}.pdf`);
     await writeFile(pdfPath, pdfBuffer);
 
