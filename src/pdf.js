@@ -113,7 +113,7 @@ export function buildPolicyPdf({ policy_number, issued_at, summary, brand, terms
       [t.destination, trip.destination_name, trip.zone_name],
       [t.dates, rangeEs(trip.departure_date, trip.return_date), `${trip.days} ${t.days}`],
       [t.origin, trip.origin_name, `${n} ${n === 1 ? t.travelerOne : t.travelerMany}`],
-      [t.total, formatEur(total_eur), t.simulatedPayment],
+      [t.total, formatEur(total_eur), summary.payment?.ref ? t.stripePayment : t.simulatedPayment],
     ];
     const gap = 10;
     const boxW = (W - gap * 3) / 4;
@@ -131,6 +131,11 @@ export function buildPolicyPdf({ policy_number, issued_at, summary, brand, terms
       put(sub, x + 10, y + 38, { size: 9, color: c.secondary, width: boxW - 20 });
     });
     y += boxH + 14;
+    // Stripe test payment: its reference, under the boxes (too long for the total box).
+    if (summary.payment?.ref) {
+      put(summary.payment.text, M, y - 8, { size: 9, color: c.secondary, width: W, align: 'right' });
+      y += 10;
+    }
 
     // ---------- tables ----------
     const sectionTitle = label => {

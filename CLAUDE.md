@@ -10,7 +10,7 @@ The owner is not a programmer: explain things simply, report test results honest
 - Landing + checkout (one page, `/`): `public/index.html` is a TEMPLATE rendered by the server (`src/landing.js`): `{{path}}` = escaped text,
   `{{{name}}}` = built HTML block; an unknown key throws (so a typo fails at once). Pages arrive complete: no text pops in, no layout shift.
   The template is read at start-up: restart the server after editing it. Never write triple braces inside an HTML comment there.
-  `public/app.js` runs the quote form and the 4-step checkout (Paso X de 4: compare plans → who travels → review + simulated pay → done),
+  `public/app.js` runs the quote form and the 4-step checkout (Paso X de 4: compare plans → who travels → review + pay (Stripe test mode, or simulated when Stripe is off) → done),
   with browser history per step, a trip summary card (steps 1–3, "Editar" goes back to the form) and a fixed total bar
   ("Elige un plan" + price range until a plan is chosen). Quote form: one row per traveller, "Viajero N" + age dropdown
   (0–85, "Menos de 1 año", default 30; first row rendered by the server, others copied by app.js), max 8; sends the same `traveler_ages`.
@@ -30,7 +30,7 @@ The owner is not a programmer: explain things simply, report test results honest
 - Brand name, logo text, claim, colours, fonts, email sender name and ALL website texts: `config/brand.config.js`.
 - ALL prices, coverage, limits, exclusions, zones, age factors: `config/pricing.config.js`. Change prices there only.
 - Website texts in Spanish. Server error messages in Spanish too (shown to users). Tool descriptions in English (read by AI agents).
-- `.env` holds secrets (BREVO_API_KEY, SENDER_EMAIL). Never put secrets in code or Git. `.env.example` has placeholders only.
+- `.env` holds secrets (BREVO_API_KEY, SENDER_EMAIL, STRIPE_PUBLISHABLE_KEY, STRIPE_SECRET_KEY). Never put secrets in code or Git; never print a key (check presence/prefix/length only). `.env.example` has placeholders only.
   The email sender NAME comes from the brand config ("Seguros Wildpass (demo)"), not from `.env`.
 
 ## Brand
@@ -67,7 +67,7 @@ The owner is not a programmer: explain things simply, report test results honest
 - Trip days are counted inclusively (departure and return days both count).
 - Validation: origin must be Spain (ES) for now; destination ≠ origin; departure strictly after today (Europe/Madrid); return after departure; max 90 days; 1–8 travellers; ages 0–85; valid email.
 - Traveller birth dates must give exactly the quoted ages at the departure date, in the same order.
-- Never ask for ID numbers or card numbers. Payment is simulated.
+- Never ask for ID numbers. Card numbers only ever go into Stripe's own Payment Element frame (straight to Stripe, test mode); our server never receives card data.
 
 ## Order flow and safety rules
 quote → select_plan (order) → set_traveler_details → review_order (issues one-time review_token) → confirm_payment → policy.
@@ -75,6 +75,23 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 - Changing traveller details or calling review_order again invalidates the previous review_token.
 - Agents must show the summary to the user and get explicit confirmation BEFORE confirm_payment (stated in the tool description).
 - Errors are never bare throws: every API/tool result is `{ ok: true, ... }` or `{ ok: false, error_code, message, how_to_fix }`.
+- Payment (`src/stripe.js`, Stripe TEST MODE ONLY, REST API via fetch, no npm package): at start-up only pk_test_/sk_test_ keys turn Stripe on;
+  a live key, a missing key or anything else → Stripe OFF, simulated payment, one warning in the log (never the key).
+  ALL the checks above run (`checkPayable` in business.js) BEFORE any Stripe call. One PaymentIntent per order (EUR, exact saved total in cents,
+  metadata order_id + plan, Idempotency-Key `wildpass-order-<id>`), stored in `orders.payment_intent_id` and reused, so an order is never charged twice.
+  Cards only: `allowed_payment_method_types[0]=card` (this account's API version 2026-09-30.endive REFUSES `payment_method_types`;
+  the Payment Element uses the matching `allowedPaymentMethodTypes`, plus `wallets: { applePay, googlePay, link: 'never' }`).
+  - AI agent: confirm_payment → server confirms the PaymentIntent with Stripe's test method `pm_card_visa` (agent never handles card data).
+  - Website: step 3 shows the Stripe Payment Element (deferred mode, brand colours). "Pagar {total}" stays disabled until the terms box is ticked.
+    Click → `elements.submit()` → `/api/start_card_payment` (checks, returns client_secret) → `stripe.confirmPayment` (browser → Stripe)
+    → `/api/finish_card_payment` (server retrieves the PaymentIntent from Stripe and checks succeeded + amount + currency + order id). These two routes are not WebMCP tools.
+  - The policy is issued ONLY after Stripe reports `succeeded`. Stripe unreachable → PAYMENT_PROVIDER_UNAVAILABLE (503), no policy, no fallback mid-payment.
+    Declines → PAYMENT_DECLINED (402); friendly Spanish texts per decline code in `brand.texts.errors.card`.
+  - `policies.payment_ref` = pi_…; the snapshot gets `payment: { provider, ref, text }`; get_policy, PDF and email show "Pago de prueba Stripe · ref. pi_…".
+  - CSP adds only what Stripe needs, and only when Stripe is on: script-src js.stripe.com (+ *.js.stripe.com), frame-src js.stripe.com / hooks.stripe.com, connect-src api.stripe.com.
+    Never use `setAttribute('style', …)` / style="" in generated HTML (CSP blocks it): `el()` sets `style` through CSSOM.
+  - Tests: `test/stripe.test.js` mocks Stripe (`stripeFetch`). Test cards: 4242 4242 4242 4242 (ok), 4000 0000 0000 9995 (insufficient funds).
+  - Stripe test payments: dashboard.stripe.com/test/payments (metadata order_id links a payment to our order).
 - review_order freezes the summary the customer sees (`orders.review_snapshot_json`); payment copies it into `policies.snapshot_json`.
   PDF, email and get_policy use that snapshot, never the current config, so later config changes never alter a sold policy.
 - Policy PDF (`src/pdf.js`): A4 certificate drawn ONLY from the policy snapshot. One page for up to 3 travellers (tested in `test/pdf.test.js`);
@@ -123,6 +140,9 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
   min-width: 0`, stacked below 360 px. Tested in Chrome's phone emulation only, not on a real iPhone.
 - Native date pickers (Ida/Vuelta) show the BROWSER's date format (dd/mm/aaaa in a Spanish browser, mm/dd/yyyy in an English one);
   everything we print ourselves is always dd/mm/aaaa.
-- No rate limiting. No real payment or real insurer. Prices are provisional.
+- No rate limiting. No real payment (Stripe test mode only) or real insurer. Prices are provisional.
+- No Stripe webhook: if the browser closes after Stripe succeeded but before finish_card_payment, no policy is issued yet; paying that
+  order again (review → Pagar, or confirm_payment) finds the succeeded PaymentIntent and issues the policy without charging again.
+- Stripe's own frame uses a system font (our self-hosted fonts aren't passed into it).
 - Policies issued before the snapshot feature have no snapshot and show the current config (`coverage_source: "current_config_legacy_policy"`).
 - Emails sent before 28 Oct 2026 (afternoon) load their logo from an old tunnel address, so it no longer shows in them.

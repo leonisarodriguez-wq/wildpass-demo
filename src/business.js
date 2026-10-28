@@ -18,6 +18,7 @@ export function fail(error_code, message, how_to_fix, extra = {}) {
 }
 
 const toEur = cents => Math.round(cents) / 100;
+const fill = (template, values) => String(template).replace(/\{(\w+)\}/g, (m, k) => (k in values ? values[k] : m));
 const sha256 = text => createHash('sha256').update(text).digest('hex');
 const countryName = code => new Intl.DisplayNames(['es'], { type: 'region' }).of(code) ?? code;
 
@@ -82,7 +83,8 @@ function cleanEmail(value) {
 
 const DELIVERY_RECHECK_MS = 60_000; // ask Brevo at most once a minute per policy
 
-export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, now = () => new Date() }) {
+// stripe: from createStripe() (src/stripe.js). When it is off, payments are simulated.
+export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, stripe = { enabled: false }, now = () => new Date() }) {
   const L = pricing.limits;
   const PLAN_IDS = Object.keys(pricing.plans);
   const planIdList = PLAN_IDS.map(id => `"${id}"`).join(' or ');
@@ -375,7 +377,7 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, no
         plan.adventure_sports_included
           ? `Deportes de aventura ${plan.coverage.adventure_sports}. Búsqueda y rescate hasta ${formatEur(plan.coverage.search_and_rescue_eur)}.`
           : 'Los deportes de aventura NO están incluidos.',
-        'Pago simulado: no se cobra nada.',
+        stripe.enabled ? brand.texts.payment.stripeCondition : brand.texts.payment.simulatedCondition,
         brand.demoBanner,
       ],
       terms_url: `${ctx.baseUrl ?? ''}/condiciones`,
@@ -385,35 +387,121 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, no
     };
   }
 
-  // ---------- 5. confirm_payment ----------
-  async function confirmPayment(input, ctx = {}) {
-    const shapeError = checkShape(input, ['order_id', 'review_token', 'accept_terms', 'confirmed_total_eur', 'user_confirmed'], 'confirm_payment');
-    if (shapeError) return shapeError;
+  // ---------- 5. confirm_payment (and the website's card payment) ----------
+  // Every check runs BEFORE any call to Stripe: review token, accepted terms, user confirmation, exact total.
+  const PAY_FIELDS = ['order_id', 'review_token', 'accept_terms', 'confirmed_total_eur', 'user_confirmed'];
+  function checkPayable(input, action, extraFields = []) {
+    const shapeError = checkShape(input, [...PAY_FIELDS, ...extraFields], action);
+    if (shapeError) return { error: shapeError };
     const { order, quote, error } = loadOrder(input.order_id);
-    if (error) return error;
+    if (error) return { error };
 
     if (order.status !== 'reviewed' || !order.review_token_hash || !order.review_snapshot_json) {
-      return fail('NOT_REVIEWED', 'El pedido no se ha revisado (o cambió después de revisarlo).', 'Llama a review_order, enseña el resumen al usuario y usa el review_token nuevo.');
+      return { error: fail('NOT_REVIEWED', 'El pedido no se ha revisado (o cambió después de revisarlo).', 'Llama a review_order, enseña el resumen al usuario y usa el review_token nuevo.') };
     }
     const given = typeof input.review_token === 'string' ? sha256(input.review_token) : '';
     if (given.length !== order.review_token_hash.length || !timingSafeEqual(Buffer.from(given), Buffer.from(order.review_token_hash))) {
-      return fail('INVALID_REVIEW_TOKEN', 'El review_token no es válido o ya no está vigente.', 'Usa el review_token del último review_order. Si no lo tienes, vuelve a llamar a review_order y enseña el resumen al usuario.');
+      return { error: fail('INVALID_REVIEW_TOKEN', 'El review_token no es válido o ya no está vigente.', 'Usa el review_token del último review_order. Si no lo tienes, vuelve a llamar a review_order y enseña el resumen al usuario.') };
     }
     if (input.accept_terms !== true) {
-      return fail('TERMS_NOT_ACCEPTED', 'Hay que aceptar las condiciones del seguro para pagar.', 'Enseña las condiciones al usuario. Solo si las acepta expresamente, envía accept_terms: true.');
+      return { error: fail('TERMS_NOT_ACCEPTED', 'Hay que aceptar las condiciones del seguro para pagar.', 'Enseña las condiciones al usuario. Solo si las acepta expresamente, envía accept_terms: true.') };
     }
     if (input.user_confirmed !== true) {
-      return fail('USER_CONFIRMATION_REQUIRED', 'Falta la confirmación expresa del usuario.', 'Enseña el resumen y el total al usuario y pregúntale si quiere pagar. Solo si dice que sí, envía user_confirmed: true.');
+      return { error: fail('USER_CONFIRMATION_REQUIRED', 'Falta la confirmación expresa del usuario.', 'Enseña el resumen y el total al usuario y pregúntale si quiere pagar. Solo si dice que sí, envía user_confirmed: true.') };
     }
     if (typeof input.confirmed_total_eur !== 'number' || !Number.isFinite(input.confirmed_total_eur)
         || Math.round(input.confirmed_total_eur * 100) !== order.review_total_cents
         || Math.abs(input.confirmed_total_eur * 100 - order.review_total_cents) > 1e-6) {
-      return fail('TOTAL_MISMATCH', `El total confirmado no coincide con el total revisado (${formatEur(toEur(order.review_total_cents))}).`, 'Envía confirmed_total_eur como número, exactamente igual al total_eur que devolvió review_order y que el usuario ha aceptado.', { reviewed_total_eur: toEur(order.review_total_cents) });
+      return { error: fail('TOTAL_MISMATCH', `El total confirmado no coincide con el total revisado (${formatEur(toEur(order.review_total_cents))}).`, 'Envía confirmed_total_eur como número, exactamente igual al total_eur que devolvió review_order y que el usuario ha aceptado.', { reviewed_total_eur: toEur(order.review_total_cents) }) };
     }
     const depError = departureCheck(quote.departure_date);
-    if (depError) return depError;
+    if (depError) return { error: depError };
+    return { order, quote };
+  }
 
-    // Create the policy number and PDF, then commit only if the order is still unpaid and unchanged.
+  // Stripe problems become clear errors. The policy is never issued and there is no silent fallback.
+  function stripeFailure(err) {
+    if (err?.kind === 'card_error') {
+      return fail('PAYMENT_DECLINED', 'Stripe ha rechazado la tarjeta. No se ha emitido la póliza.', 'Prueba con otra tarjeta de prueba, por ejemplo 4242 4242 4242 4242.', { decline_code: err.declineCode ?? err.code });
+    }
+    if (err?.kind === 'unreachable') {
+      return fail('PAYMENT_PROVIDER_UNAVAILABLE', 'No hemos podido contactar con Stripe y la póliza no se ha emitido.', 'Vuelve a intentarlo en unos minutos. Un mismo pedido nunca se cobra dos veces.');
+    }
+    if (err?.kind === 'api_error') {
+      console.error('Stripe refused a request:', err.code ?? '', err.message);
+      return fail('PAYMENT_ERROR', 'Stripe no ha podido procesar el pago y la póliza no se ha emitido.', 'Vuelve a intentarlo en unos minutos. Un mismo pedido nunca se cobra dos veces.');
+    }
+    throw err;
+  }
+
+  // The order's single PaymentIntent: reused if it exists, so an order can never be charged twice.
+  async function orderPaymentIntent(order) {
+    const pi = order.payment_intent_id
+      ? await stripe.retrievePaymentIntent(order.payment_intent_id)
+      : await stripe.createPaymentIntent({ orderId: order.id, plan: order.plan, amountCents: order.total_cents });
+    if (!order.payment_intent_id) db.prepare('UPDATE orders SET payment_intent_id = ? WHERE id = ? AND payment_intent_id IS NULL').run(pi.id, order.id);
+    return pi;
+  }
+
+  // Stripe's answer must be for this order and exactly the reviewed total, in euros.
+  function paymentMatches(pi, order) {
+    return pi.amount === order.review_total_cents && pi.currency === 'eur' && pi.metadata?.order_id === order.id;
+  }
+  const paymentMismatch = () => fail('PAYMENT_MISMATCH', 'El pago de Stripe no corresponde a este pedido o a este total.', 'Vuelve a revisar el pedido con review_order y paga de nuevo.');
+  const paymentNotDone = () => fail('PAYMENT_NOT_COMPLETED', 'Stripe todavía no ha confirmado el pago, así que la póliza no se ha emitido.', 'Completa el pago con la tarjeta y vuelve a intentarlo.');
+
+  // AI agents (and the website when Stripe is off). With Stripe on, the server pays with Stripe's test card pm_card_visa.
+  async function confirmPayment(input, ctx = {}) {
+    const { order, quote, error } = checkPayable(input, 'confirm_payment');
+    if (error) return error;
+    if (!stripe.enabled) return issuePolicy(order, quote, ctx, null);
+    try {
+      let pi = await orderPaymentIntent(order);
+      if (!paymentMatches(pi, order)) return paymentMismatch();
+      if (pi.status !== 'succeeded') pi = await stripe.confirmWithTestCard(pi.id);
+      if (pi.status !== 'succeeded') return paymentNotDone();
+      return await issuePolicy(order, quote, ctx, pi.id);
+    } catch (err) {
+      return stripeFailure(err);
+    }
+  }
+
+  // Website, Stripe on, step A: after all checks, returns the client_secret for the Stripe Payment Element.
+  // The card data goes from the browser straight to Stripe; it never reaches this server.
+  async function startCardPayment(input) {
+    const { order, error } = checkPayable(input, 'start_card_payment');
+    if (error) return error;
+    if (!stripe.enabled) return fail('CARD_PAYMENT_OFF', 'El pago con tarjeta de prueba no está activo.', 'Usa confirm_payment (pago simulado).');
+    try {
+      const pi = await orderPaymentIntent(order);
+      if (!paymentMatches(pi, order)) return paymentMismatch();
+      return { ok: true, order_id: order.id, payment_intent_id: pi.id, client_secret: pi.client_secret, status: pi.status };
+    } catch (err) {
+      return stripeFailure(err);
+    }
+  }
+
+  // Website, step B: the server asks Stripe itself whether the payment succeeded; only then is the policy issued.
+  async function finishCardPayment(input, ctx = {}) {
+    const { order, quote, error } = checkPayable(input, 'finish_card_payment', ['payment_intent_id']);
+    if (error) return error;
+    if (!stripe.enabled) return fail('CARD_PAYMENT_OFF', 'El pago con tarjeta de prueba no está activo.', 'Usa confirm_payment (pago simulado).');
+    if (!order.payment_intent_id || input.payment_intent_id !== order.payment_intent_id) return paymentMismatch();
+    try {
+      const pi = await stripe.retrievePaymentIntent(order.payment_intent_id);
+      if (!paymentMatches(pi, order)) return paymentMismatch();
+      if (pi.status !== 'succeeded') return paymentNotDone();
+      return await issuePolicy(order, quote, ctx, pi.id);
+    } catch (err) {
+      return stripeFailure(err);
+    }
+  }
+
+  const paymentText = ref => (ref ? fill(brand.texts.payment.stripeRef, { ref }) : brand.texts.payment.simulated);
+
+  // Creates the policy number and PDF, then commits only if the order is still unpaid and unchanged.
+  // paymentRef: the Stripe PaymentIntent id (pi_…) that succeeded, or null for a simulated payment.
+  async function issuePolicy(order, quote, ctx, paymentRef) {
     const issuedAt = now();
     const year = todayMadrid(issuedAt).slice(0, 4);
     let policy_number;
@@ -422,8 +510,8 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, no
     } while (db.prepare('SELECT 1 FROM policies WHERE policy_number = ?').get(policy_number));
     const pdf_token = randomBytes(32).toString('base64url');
     const policyholder = JSON.parse(order.policyholder_json);
-    // The policy keeps exactly what the customer reviewed and accepted, never later config changes.
-    const summary = JSON.parse(order.review_snapshot_json);
+    // The policy keeps exactly what the customer reviewed and accepted (plus how it was paid), never later config changes.
+    const summary = { ...JSON.parse(order.review_snapshot_json), payment: { provider: paymentRef ? 'stripe_test' : 'simulated', ref: paymentRef, text: paymentText(paymentRef) } };
 
     const pdfBuffer = await buildPdf({ policy_number, issued_at: issuedAt.toISOString(), summary, brand, terms_url: `${ctx.baseUrl ?? ''}/condiciones` });
     const pdfPath = join(pdfDir, `${pdf_token}.pdf`);
@@ -437,8 +525,8 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, no
           db.exec('ROLLBACK');
           return false;
         }
-        db.prepare(`INSERT INTO policies (policy_number, order_id, issued_at, pdf_token, email_status, snapshot_json) VALUES (?, ?, ?, ?, 'pending', ?)`)
-          .run(policy_number, order.id, issuedAt.toISOString(), pdf_token, order.review_snapshot_json);
+        db.prepare(`INSERT INTO policies (policy_number, order_id, issued_at, pdf_token, email_status, snapshot_json, payment_ref) VALUES (?, ?, ?, ?, 'pending', ?, ?)`)
+          .run(policy_number, order.id, issuedAt.toISOString(), pdf_token, JSON.stringify(summary), paymentRef);
         db.prepare(`UPDATE orders SET status = 'paid', review_token_hash = NULL, updated_at = ? WHERE id = ?`)
           .run(issuedAt.toISOString(), order.id);
         db.exec('COMMIT');
@@ -462,7 +550,9 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, no
       policy_number,
       status: 'active',
       paid_total_eur: toEur(order.review_total_cents),
-      payment: 'simulated — nothing was charged',
+      payment: paymentRef ? 'Stripe test mode — paid with a Stripe test card, nothing real was charged' : 'simulated — nothing was charged',
+      ...(paymentRef && { payment_ref: paymentRef }),
+      payment_text: paymentText(paymentRef),
       pdf_url,
       email_status,
       disclaimer: brand.demoBanner,
@@ -559,6 +649,8 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, no
       // snapshots existed fall back to the current config, and say so.
       details: policy.snapshot_json ? JSON.parse(policy.snapshot_json) : orderSummary(order, quote),
       coverage_source: policy.snapshot_json ? 'snapshot_at_sale' : 'current_config_legacy_policy',
+      payment: paymentText(policy.payment_ref),
+      ...(policy.payment_ref && { payment_ref: policy.payment_ref }),
       pdf_url: `${ctx.baseUrl ?? ''}/poliza/${policy.pdf_token}.pdf`,
       email_delivery: await emailDelivery(policy),
       disclaimer: brand.demoBanner,
@@ -571,5 +663,5 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, no
     return policy ? { path: join(pdfDir, `${token}.pdf`), policy_number: policy.policy_number } : null;
   }
 
-  return { getQuote, selectPlan, setTravelerDetails, reviewOrder, confirmPayment, getPolicy, pdfPathForToken, pricePerTravelerCents };
+  return { getQuote, selectPlan, setTravelerDetails, reviewOrder, confirmPayment, startCardPayment, finishCardPayment, getPolicy, pdfPathForToken, pricePerTravelerCents };
 }

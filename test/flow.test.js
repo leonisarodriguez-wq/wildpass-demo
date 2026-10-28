@@ -176,7 +176,11 @@ test('a sold policy keeps its original coverage when the config changes later', 
     const policy = await call('get_policy', { policy_number: paid.policy_number, email: 'ana.prueba@example.com' });
     assert.equal(policy.ok, true, policy.message);
     assert.equal(policy.coverage_source, 'snapshot_at_sale');
-    assert.deepEqual(policy.details, review.summary);
+    // What was reviewed, plus how it was paid (Stripe is off in these tests).
+    const { payment, ...sold } = policy.details;
+    assert.deepEqual(sold, review.summary);
+    assert.deepEqual(payment, { provider: 'simulated', ref: null, text: 'Pago simulado' });
+    assert.equal(policy.payment, 'Pago simulado');
     assert.equal(policy.details.plan.coverage_limits_eur.baggage_theft_damage_eur, original.baggage);
     assert.equal(policy.details.plan.excess_per_medical_claim_eur, original.excess);
     assert.ok(!policy.details.exclusions.includes('NUEVA EXCLUSIÓN'));

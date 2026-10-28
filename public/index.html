@@ -166,10 +166,15 @@
         <button type="button" class="link-button" data-go="2">{{t.checkout.editDetails}}</button>
         <h2 id="step-3-title" tabindex="-1">{{t.checkout.step3Title}}</h2>
         <div id="review"></div>
+        <div class="card-payment" id="card-payment" hidden>
+          <h3>{{t.checkout.cardTitle}}</h3>
+          <div id="payment-element"><p class="form-note">{{t.checkout.cardLoading}}</p></div>
+          <p class="form-note stripe-note">{{t.checkout.stripeNote}}</p>
+        </div>
         <label class="check" for="accept-terms"><input type="checkbox" id="accept-terms"> <span>{{t.checkout.accept}}</span></label>
         <div class="error" role="alert" hidden></div>
-        <button type="button" class="primary block" id="pay"></button>
-        <p class="form-note">{{t.checkout.payNote}}</p>
+        <button type="button" class="primary block" id="pay" disabled></button>
+        <p class="form-note" id="pay-note">{{t.checkout.payNote}}</p>
       </section>
 
       <section class="step" id="step-4" hidden aria-labelledby="step-4-title">
@@ -177,6 +182,7 @@
         <p class="policy-number"><span>{{t.checkout.policyNumber}}</span> <strong id="policy-number"></strong></p>
         <a class="primary button-link block" id="pdf-link" target="_blank" rel="noopener">{{t.checkout.download}}</a>
         <p id="email-line"></p>
+        <p class="form-note" id="payment-line"></p>
         <button type="button" class="secondary" id="start-over">{{t.checkout.startOver}}</button>
       </section>
     </div>

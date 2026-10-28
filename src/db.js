@@ -63,6 +63,9 @@ export function openDb(file) {
   // The exact summary the customer reviewed and accepted; becomes the policy snapshot on payment.
   const orderColumns = new Set(db.prepare('PRAGMA table_info(orders)').all().map(c => c.name));
   if (!orderColumns.has('review_snapshot_json')) db.exec('ALTER TABLE orders ADD COLUMN review_snapshot_json TEXT');
+  // Stripe (test mode): the order's single PaymentIntent, reused so an order is never charged twice.
+  if (!orderColumns.has('payment_intent_id')) db.exec('ALTER TABLE orders ADD COLUMN payment_intent_id TEXT');
+  if (!existing.has('payment_ref')) db.exec('ALTER TABLE policies ADD COLUMN payment_ref TEXT'); // pi_… or NULL (simulated)
 
   // Plans were renamed (esencial → wild, premium → wild_plus). Safe to run every start.
   const RENAMED = { esencial: 'wild', premium: 'wild_plus' };

@@ -36,7 +36,8 @@ button { font: inherit; cursor: pointer; }
 .primary { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 14px 28px; border: 0; border-radius: 12px; box-shadow: none;
   background: var(--yellow); color: var(--night); font-family: var(--font-text); font-size: 1.1rem; font-weight: 700; text-decoration: none; text-align: center; }
 .primary:hover { filter: brightness(0.95); }
-.primary:disabled { opacity: 0.7; cursor: progress; }
+.primary:disabled { opacity: 0.55; cursor: not-allowed; } /* e.g. "Pagar" until the terms are accepted */
+.primary[aria-busy="true"] { opacity: 0.7; cursor: progress; }
 .block { display: flex; width: 100%; }
 .secondary { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 12px 22px; border: 2px solid var(--night); border-radius: 12px;
   background: var(--white); color: var(--night); font-size: 1.1rem; font-weight: 700; text-decoration: none; text-align: center; }
@@ -215,6 +216,11 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .summary dt { color: var(--secondary); font-weight: 600; font-size: 0.9rem; }
 .summary dd { margin: 0; font-weight: 600; }
 .summary h3 { font-size: 1.05rem; margin: 16px 0 6px; }
+/* Stripe test-mode card form (Stripe's own frame inside a white card, like the summary). */
+.card-payment { background: var(--white); border-radius: 16px; padding: 6px 16px 16px; margin-top: 16px; }
+.card-payment h3 { font-size: 1.05rem; margin: 16px 0 10px; }
+.card-payment #payment-element { min-height: 120px; }
+.card-payment .stripe-note { text-align: left; margin-top: 12px; }
 .summary ul { margin: 0; padding-left: 20px; }
 .summary li { margin-bottom: 4px; }
 .summary .people { width: 100%; border-collapse: collapse; font-size: 0.9rem; }

@@ -103,10 +103,10 @@ export default {
     // Landing: FAQ (answers use values from the pricing config)
     faqTitle: 'Preguntas frecuentes',
     faq: [
-      { q: '¿Esto es un seguro real?', a: 'No. Seguros Wildpass es una demostración: no ofrece ninguna cobertura, ningún pago es real y no se piden datos de tarjeta. La póliza que recibes es un documento de prueba sin validez.' },
+      { q: '¿Esto es un seguro real?', a: 'No. Seguros Wildpass es una demostración: no ofrece ninguna cobertura y ningún pago es real. Si se te pide una tarjeta, es solo la tarjeta de prueba de Stripe (modo test): nunca se cobra nada. La póliza que recibes es un documento de prueba sin validez.' },
       { q: '¿Qué diferencia hay entre Wild y Wild+?', a: 'Wild cubre gastos médicos hasta {wildMedEurope} en Europa y {wildMedWorld} en el resto del mundo, equipaje hasta {wildBaggage} y tiene una franquicia de {wildExcess} por siniestro médico. No incluye cancelación ni deportes de aventura. Wild+ sube los gastos médicos a {plusMedEurope} y {plusMedWorld}, el equipaje a {plusBaggage}, no tiene franquicia e incluye cancelación hasta {plusCancellation} por viajero, deportes de aventura y rescate hasta {rescue}.' },
       { q: '¿Qué deportes de aventura cubre Wild+?', a: 'Wild+ incluye trekking hasta {trekkingAltitude} m, buceo hasta {divingDepth} m, esquí y snowboard en pistas señalizadas, surf, rafting y barranquismo, con búsqueda y rescate hasta {rescue}. No cubre deportes profesionales ni actividades extremas como el salto BASE, ni lo que pase de esos límites.' },
-      { q: '¿Cuánto tarda en llegar la póliza?', a: 'La póliza se emite en cuanto confirmas el pago (simulado): puedes descargarla al momento y te la enviamos por email, donde suele llegar en un par de minutos. Si no la ves, mira en Spam.' },
+      { q: '¿Cuánto tarda en llegar la póliza?', a: 'La póliza se emite en cuanto se confirma el pago (de prueba): puedes descargarla al momento y te la enviamos por email, donde suele llegar en un par de minutos. Si no la ves, mira en Spam.' },
       { q: '¿Puede contratarlo mi asistente de IA?', a: 'Sí, si tu asistente es compatible con WebMCP, el estándar que permite a los agentes de IA usar una web. Tu asistente pide el precio, te enseña el resumen completo y solo puede pagar cuando tú lo confirmas expresamente.' },
       { q: '¿Cómo calculáis el precio?', a: 'El precio depende del destino (Europa, resto del mundo, o EE. UU., Canadá y Japón), de los días de viaje y de la edad de cada viajero. Lo calibramos con {count} presupuestos reales de otras aseguradoras.' },
     ],
@@ -191,6 +191,13 @@ export default {
       accept: 'He leído y acepto las condiciones y exclusiones.',
       pay: 'Pagar {total} (simulado)',
       payNote: 'Es una demo: no se cobra nada ni se piden datos de tarjeta.',
+      // Stripe test mode (only when test keys are configured).
+      payStripe: 'Pagar {total}',
+      cardTitle: 'Pago con tarjeta',
+      cardLoading: 'Cargando el pago seguro de Stripe…',
+      stripeNote: 'Pago de prueba con Stripe (modo test). Usa la tarjeta 4242 4242 4242 4242, cualquier fecha futura y cualquier CVC. No se cobra nada.',
+      processing: 'Procesando pago…',
+      totalPaidStripeLabel: 'Pagado (prueba Stripe)',
       editDetails: '← Editar datos',
 
       step4Title: '¡Listo! Ya puedes irte salvaje',
@@ -222,6 +229,24 @@ export default {
       AGE_MISMATCH: 'Con esa fecha de nacimiento, el viajero {traveler} tendría {actualAge} años, y el precio es para {quotedAge}. ¿La revisamos?',
       QUOTE_EXPIRED: 'Este precio ha caducado. Calcúlalo de nuevo, solo tarda un momento.',
       NETWORK_ERROR: 'No hemos podido conectar. Revisa tu conexión y vuelve a intentarlo.',
+      PAYMENT_DECLINED: 'La tarjeta ha sido rechazada. No se ha cobrado nada. Prueba con la tarjeta 4242 4242 4242 4242.',
+      PAYMENT_PROVIDER_UNAVAILABLE: 'No hemos podido conectar con Stripe y la póliza no se ha emitido. Vuelve a intentarlo en unos minutos: nunca cobramos dos veces el mismo pedido.',
+      PAYMENT_ERROR: 'Stripe no ha podido procesar el pago y la póliza no se ha emitido. Vuelve a intentarlo en unos minutos.',
+      PAYMENT_NOT_COMPLETED: 'El pago no se ha completado, así que no hemos emitido la póliza. Vuelve a intentarlo.',
+      PAYMENT_MISMATCH: 'Algo no cuadra con este pago. Vuelve a revisar tus datos y paga de nuevo.',
+      stripeLoadError: 'No hemos podido cargar el pago con tarjeta de Stripe. Revisa tu conexión y recarga la página.',
+      // Declined Stripe test cards, by Stripe decline_code / error code.
+      card: {
+        insufficient_funds: 'La tarjeta no tiene fondos suficientes. No se ha cobrado nada. Prueba con la tarjeta 4242 4242 4242 4242.',
+        expired_card: 'La tarjeta está caducada. Prueba con la tarjeta 4242 4242 4242 4242 y una fecha futura.',
+        incorrect_cvc: 'El código de seguridad (CVC) no es correcto. Revísalo y vuelve a intentarlo.',
+        incorrect_number: 'El número de la tarjeta no es correcto. Revísalo y vuelve a intentarlo.',
+        processing_error: 'Ha habido un error al procesar la tarjeta. No se ha cobrado nada. Vuelve a intentarlo.',
+        lost_card: 'La tarjeta ha sido rechazada. No se ha cobrado nada. Prueba con la tarjeta 4242 4242 4242 4242.',
+        stolen_card: 'La tarjeta ha sido rechazada. No se ha cobrado nada. Prueba con la tarjeta 4242 4242 4242 4242.',
+        payment_intent_authentication_failure: 'No se ha completado la verificación de la tarjeta. No se ha cobrado nada. Vuelve a intentarlo.',
+        card_declined: 'La tarjeta ha sido rechazada. No se ha cobrado nada. Prueba con la tarjeta 4242 4242 4242 4242.',
+      },
       missingDestination: 'Elige a dónde vas.',
       missingDates: 'Elige las fechas de ida y vuelta.',
       missingName: 'Escribe el nombre y apellidos.',
@@ -235,6 +260,13 @@ export default {
     planExclusionsTitle: 'No cubre',
     exclusionsTitle: 'Exclusiones de ambos planes',
     networkError: 'No se pudo conectar con el servidor. Inténtalo de nuevo.',
+    // How a policy was paid (review conditions, get_policy, PDF and email). {ref} = Stripe PaymentIntent id.
+    payment: {
+      simulated: 'Pago simulado',
+      stripeRef: 'Pago de prueba Stripe · ref. {ref}',
+      simulatedCondition: 'Pago simulado: no se cobra nada.',
+      stripeCondition: 'Pago de prueba con Stripe (modo test): no se cobra nada.',
+    },
 
     // Terms page, PDF and email
     termsTitle: 'Condiciones del seguro (demo)',
@@ -251,6 +283,7 @@ export default {
       origin: 'Origen',
       total: 'Prima total',
       simulatedPayment: 'Pago simulado',
+      stripePayment: 'Pago de prueba Stripe',
       days: 'días',
       travelerOne: 'viajero',
       travelerMany: 'viajeros',
@@ -285,6 +318,7 @@ export default {
       travelers: 'Viajeros',
       total: 'Total',
       totalNote: 'pago simulado',
+      totalNoteStripe: 'pago de prueba Stripe · ref. {ref}',
       days: 'días',
       button: 'Descargar mi póliza',
       attachedNote: 'También va adjunta a este correo.',

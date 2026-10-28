@@ -26,8 +26,12 @@ function loadScript(src) {
 const DATE = { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' };
 const ID = { type: 'string', minLength: 1, maxLength: 100 };
 
-function buildTools({ limits, plans, brand }) {
-  const DEMO = `DEMO ONLY (${brand.name}): this is not real insurance and payment is simulated.`;
+function buildTools({ limits, plans, brand, payments }) {
+  const stripeOn = payments?.provider === 'stripe_test';
+  const DEMO = `DEMO ONLY (${brand.name}): this is not real insurance and ${stripeOn ? 'payment is a Stripe TEST-MODE payment (nothing real is charged)' : 'payment is simulated'}.`;
+  const HOW_PAID = stripeOn
+    ? 'Payment runs in Stripe TEST MODE: only after all the checks above pass, the server confirms a Stripe PaymentIntent for exactly the reviewed total using Stripe\'s test payment method pm_card_visa, and issues the policy only if Stripe reports the payment succeeded. You never see, ask for or send card data. An order can never be charged twice: calling again after success returns ALREADY_PAID. If Stripe is unreachable you get PAYMENT_PROVIDER_UNAVAILABLE and no policy is issued; just retry later.'
+    : 'No card data is needed or accepted.';
   const planIds = Object.keys(plans); // e.g. ["wild", "wild_plus"]
   const planList = planIds.map(id => `"${id}" (${plans[id]})`).join(' and ');
   return [
@@ -115,8 +119,8 @@ function buildTools({ limits, plans, brand }) {
     },
     {
       name: 'confirm_payment',
-      title: 'Confirm and pay (simulated)',
-      description: `Pay for a reviewed order and issue the policy. IMPORTANT: call this ONLY after you have shown the user the review_order summary and total, and the user has explicitly said yes to paying that exact total AND accepting the terms. Never set accept_terms or user_confirmed to true on your own. confirmed_total_eur must be exactly the total_eur from review_order. Returns the policy number and a PDF link. ${DEMO} No card data is needed or accepted.`,
+      title: stripeOn ? 'Confirm and pay (Stripe test mode)' : 'Confirm and pay (simulated)',
+      description: `Pay for a reviewed order and issue the policy. IMPORTANT: call this ONLY after you have shown the user the review_order summary and total, and the user has explicitly said yes to paying that exact total AND accepting the terms. Never set accept_terms or user_confirmed to true on your own. confirmed_total_eur must be exactly the total_eur from review_order. Returns the policy number and a PDF link. ${HOW_PAID} ${DEMO}`,
       inputSchema: {
         type: 'object',
         additionalProperties: false,

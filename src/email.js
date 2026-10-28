@@ -26,7 +26,7 @@ function emailData({ brand, policy_number, summary }) {
       [e.plan, plan.plan_name],
       [e.dates, `${dateEs(trip.departure_date)} – ${dateEs(trip.return_date)} (${trip.days} ${e.days})`],
       [e.travelers, travelers.map(t => t.full_name).join(', ')],
-      [e.total, `${formatEur(total_eur)} (${e.totalNote})`],
+      [e.total, `${formatEur(total_eur)} (${summary.payment?.ref ? fill(e.totalNoteStripe, { ref: summary.payment.ref }) : e.totalNote})`],
     ],
   };
 }

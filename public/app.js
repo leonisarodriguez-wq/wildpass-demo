@@ -9,6 +9,8 @@ let T = {};      // brand texts
 let C = {};      // checkout texts
 let E = {};      // friendly error texts
 let limits = {};
+let payments = { provider: 'simulated' }; // or { provider: 'stripe_test', publishable_key }
+const card = { stripe: null, elements: null }; // Stripe.js and the Payment Element of the current review
 
 // ---------- small helpers ----------
 const eur = n => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', useGrouping: 'always', minimumFractionDigits: n % 1 === 0 ? 0 : 2 }).format(n);
@@ -40,6 +42,7 @@ function el(tag, props = {}, ...children) {
   for (const [k, v] of Object.entries(props)) {
     if (k === 'class') node.className = v;
     else if (k === 'text') node.textContent = v;
+    else if (k === 'style') node.style.cssText = v; // via CSSOM: a style="" attribute would be blocked by our CSP
     else if (k.startsWith('on')) node.addEventListener(k.slice(2), v);
     else if (k in node && typeof v !== 'string') node[k] = v;
     else node.setAttribute(k, v);
@@ -129,7 +132,7 @@ function updateTotalBar() {
   const label = $('#total-label');
   const value = $('#total-value');
   if (state.paid) {
-    label.textContent = C.totalPaidLabel;
+    label.textContent = state.paid.payment_ref ? C.totalPaidStripeLabel : C.totalPaidLabel;
     value.textContent = eur(state.review.total_eur);
   } else if (state.review && state.step === '3') {
     label.textContent = `${C.totalLabel} · ${state.review.summary.plan.plan_name}`;
@@ -361,7 +364,7 @@ $('#details-form').addEventListener('submit', async e => {
   });
 });
 
-// ---------- step 3: review + simulated payment ----------
+// ---------- step 3: review + payment (Stripe test mode, or simulated when Stripe is off) ----------
 function renderStep3() {
   const r = state.review;
   const s = r.summary;
@@ -389,21 +392,90 @@ function renderStep3() {
     el('div', { class: 'total-row' }, el('span', { text: C.totalLabel }), el('strong', { text: eur(r.total_eur) })),
   ));
   $('#accept-terms').checked = false;
-  $('#pay').textContent = fill(C.pay, { total: eur(r.total_eur) });
+  syncPay();
+  const stripeOn = payments.provider === 'stripe_test';
+  $('#pay').textContent = fill(stripeOn ? C.payStripe : C.pay, { total: eur(r.total_eur) });
+  $('#card-payment').hidden = !stripeOn;
+  $('#pay-note').hidden = stripeOn;
+  if (stripeOn) mountCard(r.total_eur);
 }
 
-$('#pay').addEventListener('click', e => {
+// "Pagar" stays disabled until the terms box is ticked.
+function syncPay() { $('#pay').disabled = !$('#accept-terms').checked; }
+$('#accept-terms').addEventListener('change', syncPay);
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = el('script', { src });
+    s.onload = resolve;
+    s.onerror = () => reject(new Error(`Could not load ${src}`));
+    document.head.append(s);
+  });
+}
+
+// Brand colours for the Stripe card form (read from brand.css).
+function stripeAppearance() {
+  const v = name => getComputedStyle(document.documentElement).getPropertyValue(`--${name}`).trim();
+  return {
+    theme: 'stripe',
+    variables: { colorPrimary: v('turquoise'), colorText: v('night'), colorTextSecondary: v('secondary'), colorDanger: v('red'), colorBackground: v('white'), borderRadius: '10px', fontFamily: 'Inter, system-ui, sans-serif', spacingUnit: '4px' },
+    rules: {
+      '.Input': { border: `1.5px solid ${v('secondary')}`, boxShadow: 'none' },
+      '.Input:focus': { borderColor: v('night'), boxShadow: `0 0 0 2px ${v('turquoise')}` },
+      '.Label': { fontWeight: '600', color: v('night') },
+    },
+  };
+}
+
+// The Stripe Payment Element (cards only). Card data goes from Stripe's own frame straight to Stripe.
+async function mountCard(totalEur) {
+  card.elements = null;
+  try {
+    if (!window.Stripe) await loadScript('https://js.stripe.com/v3/');
+    card.stripe ??= window.Stripe(payments.publishable_key, { locale: 'es' });
+    const elements = card.stripe.elements({ mode: 'payment', amount: Math.round(totalEur * 100), currency: 'eur', allowedPaymentMethodTypes: ['card'], appearance: stripeAppearance() });
+    $('#payment-element').replaceChildren();
+    elements.create('payment', { layout: 'tabs', wallets: { applePay: 'never', googlePay: 'never', link: 'never' } }).mount('#payment-element');
+    card.elements = elements;
+  } catch {
+    $('#payment-element').replaceChildren(el('p', { class: 'form-note', text: E.stripeLoadError }));
+  }
+}
+
+// Friendly Spanish text for a Stripe card error (declined test cards, wrong CVC…).
+function cardMessage(error) {
+  return E.card[error.decline_code] ?? E.card[error.code] ?? (error.type === 'card_error' ? E.card.card_declined : error.message || E.generic);
+}
+
+// 1) Stripe checks the card form, 2) our server runs every check and prepares the payment,
+// 3) Stripe.js confirms the card with Stripe, 4) our server asks Stripe whether it succeeded and issues the policy.
+async function payWithCard(confirmation) {
+  if (!card.elements) return { ok: false, friendlyText: E.stripeLoadError };
+  const { error: invalid } = await card.elements.submit();
+  if (invalid) return { ok: false, friendlyText: cardMessage(invalid) };
+  const start = await callApi('start_card_payment', confirmation);
+  if (!start.ok) return start;
+  if (start.status !== 'succeeded') {
+    const { error } = await card.stripe.confirmPayment({ elements: card.elements, clientSecret: start.client_secret, confirmParams: { return_url: location.href }, redirect: 'if_required' });
+    if (error) return { ok: false, friendlyText: cardMessage(error) };
+  }
+  return callApi('finish_card_payment', { ...confirmation, payment_intent_id: start.payment_intent_id });
+}
+
+$('#pay').addEventListener('click', async e => {
   const step = $('#step-3');
-  return busy(e.currentTarget, C.working, async () => {
+  const stripeOn = payments.provider === 'stripe_test';
+  await busy(e.currentTarget, stripeOn ? C.processing : C.working, async () => {
     // Pressing "Pagar" after seeing the full summary is the person's explicit confirmation.
-    const result = await callApi('confirm_payment', {
+    const confirmation = {
       order_id: state.orderId,
       review_token: state.review.review_token,
       accept_terms: $('#accept-terms').checked,
       confirmed_total_eur: state.review.total_eur,
       user_confirmed: true,
-    });
-    if (!result.ok) return showError(step, friendly(result), result.error_code === 'TERMS_NOT_ACCEPTED' ? $('#accept-terms') : null);
+    };
+    const result = stripeOn ? await payWithCard(confirmation) : await callApi('confirm_payment', confirmation);
+    if (!result.ok) return showError(step, result.friendlyText ?? friendly(result), result.error_code === 'TERMS_NOT_ACCEPTED' ? $('#accept-terms') : null);
     showError(step, null);
     state.paid = result;
     $('#policy-number').textContent = result.policy_number;
@@ -411,10 +483,12 @@ $('#pay').addEventListener('click', e => {
     $('#email-line').textContent = result.email_status === 'not_configured'
       ? C.emailNotConfigured
       : fill(C.emailSent, { email: state.review.summary.policyholder.email });
+    $('#payment-line').textContent = result.payment_text ?? '';
     // The review and order can't be reused after payment: going back starts a new quote.
     history.replaceState({ step: 'landing' }, '', location.pathname);
     render('4');
   });
+  syncPay();
 });
 
 // ---------- navigation ----------
@@ -447,6 +521,7 @@ async function init() {
   C = T.checkout;
   E = T.errors;
   limits = config.limits;
+  payments = config.payments ?? payments;
   relabelAges();
   // A reload in the middle of the checkout starts again from the landing (nothing is stored in the browser).
   if (location.hash.startsWith('#paso-')) history.replaceState({ step: 'landing' }, '', location.pathname);

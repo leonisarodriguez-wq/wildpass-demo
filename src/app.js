@@ -8,6 +8,7 @@ import { openDb } from './db.js';
 import { createBusiness, fail, formatEur } from './business.js';
 import { buildPolicyPdf } from './pdf.js';
 import { createEmailService } from './email.js';
+import { createStripe } from './stripe.js';
 import { faviconSvg } from './logo.js';
 import { createLanding, pageShell } from './landing.js';
 import marketQuotes from '../config/market-quotes.js';
@@ -20,17 +21,19 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const STATUS_BY_CODE = {
   QUOTE_NOT_FOUND: 404, ORDER_NOT_FOUND: 404, POLICY_NOT_FOUND: 404,
   ALREADY_PAID: 409, NOT_REVIEWED: 409, INVALID_REVIEW_TOKEN: 409, DETAILS_MISSING: 409,
-  INTERNAL_ERROR: 500,
+  PAYMENT_DECLINED: 402, PAYMENT_NOT_COMPLETED: 409, PAYMENT_MISMATCH: 409, CARD_PAYMENT_OFF: 409,
+  PAYMENT_ERROR: 502, PAYMENT_PROVIDER_UNAVAILABLE: 503, INTERNAL_ERROR: 500,
 };
 
 const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
-// fetchImpl is only replaced in tests, to simulate Brevo without sending real emails.
-export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fetchImpl = fetch, now } = {}) {
+// fetchImpl / stripeFetch are only replaced in tests, to simulate Brevo and Stripe without real calls.
+export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fetchImpl = fetch, stripeFetch = fetch, log = console, now } = {}) {
   const pdfDir = join(dataDir, 'policies');
   mkdirSync(pdfDir, { recursive: true });
   const db = openDb(join(dataDir, 'travel.db'));
-  const business = createBusiness({ db, pricing, brand, pdfDir, buildPdf: buildPolicyPdf, email: createEmailService({ env, brand, fetchImpl }), ...(now && { now }) });
+  const stripe = createStripe({ env, fetchImpl: stripeFetch, log }); // test keys only, else simulated payments
+  const business = createBusiness({ db, pricing, brand, pdfDir, buildPdf: buildPolicyPdf, email: createEmailService({ env, brand, fetchImpl }), stripe, ...(now && { now }) });
 
   const regionNames = new Intl.DisplayNames(['es'], { type: 'region' });
   const countries = COUNTRY_CODES.map(code => ({ code, name: regionNames.of(code) ?? code })).sort((a, b) => a.name.localeCompare(b.name, 'es'));
@@ -40,11 +43,21 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
   app.set('trust proxy', 'loopback'); // cloudflared runs on this machine and sets X-Forwarded-Proto
   app.disable('x-powered-by');
 
+  // With Stripe on, only what Stripe.js and its card frames need: its script, its frames and its API.
+  const csp = [
+    "default-src 'self'",
+    ...(stripe.enabled ? [
+      "script-src 'self' https://js.stripe.com https://*.js.stripe.com",
+      'frame-src https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com',
+      "connect-src 'self' https://api.stripe.com",
+    ] : []),
+    "img-src 'self' data:", "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'",
+  ].join('; ');
   app.use((req, res, next) => {
     res.set({
       'X-Content-Type-Options': 'nosniff',
       'Referrer-Policy': 'no-referrer', // keeps the secret PDF link out of Referer headers
-      'Content-Security-Policy': "default-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+      'Content-Security-Policy': csp,
     });
     next();
   });
@@ -63,6 +76,9 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
   route('/set_traveler_details', business.setTravelerDetails);
   route('/review_order', business.reviewOrder);
   route('/confirm_payment', business.confirmPayment);
+  // Website only (not WebMCP tools): the card payment with the Stripe Payment Element.
+  route('/start_card_payment', business.startCardPayment);
+  route('/finish_card_payment', business.finishCardPayment);
   route('/get_policy', business.getPolicy);
 
   // Public settings for the website and the WebMCP tool schemas (no secrets here).
@@ -73,6 +89,8 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
       limits: pricing.limits,
       plans: Object.fromEntries(Object.entries(pricing.plans).map(([id, p]) => [id, p.name])),
       countries,
+      // The publishable key is meant to be public (it can't charge anything); the secret key never leaves the server.
+      payments: stripe.enabled ? { provider: 'stripe_test', publishable_key: stripe.publishableKey } : { provider: 'simulated' },
     });
   });
 
@@ -159,5 +177,5 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
     res.status(500).json(fail('INTERNAL_ERROR', 'Error interno del servidor.', 'Inténtalo de nuevo en unos segundos. Si se repite, avisa al soporte.'));
   });
 
-  return { app, db, business };
+  return { app, db, business, stripe: { enabled: stripe.enabled, reason: stripe.reason } };
 }
