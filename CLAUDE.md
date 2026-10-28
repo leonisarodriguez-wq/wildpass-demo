@@ -36,7 +36,15 @@ The owner is not a programmer: explain things simply, report test results honest
   Hero: form heading "Calcula tu precio" (h2 #quote-title, names the form) with "Seguros Wildpass" small under it; the pass notches use
   --notch-y, so keep .pass-title/.pass-brand line heights in sync. Sunrise 3.5 s + warm glow, once per visit (public/sun-once.js, a
   classic <head> script setting html.sun-seen from sessionStorage). Parallax far 0.14 / mid 0.07. Phones/tablets (<960 px): copy →
-  the WHOLE 3:1 landscape band (56 px of sky on top holds the route) → card on a turquoise "ground" (.hero-grid::after); nothing overlaps.
+  the WHOLE 3:1 landscape band (sky strip on top holds the route; phones <600 px: 20 px strip, ground cropped 8 %, sun lifted via .sun-pos) → card on a turquoise "ground" (.hero-grid::after); nothing overlaps.
+  Phones: compact first screen — on 375×812 "Ver mi precio" is visible without scrolling (re-check after any hero/form change).
+  Headline = two .claim-part blocks ("Travel wild." / "We've got you."); form and headline have NO entrance animation.
+  Live price ABOVE the button (#price-preview: .pp-main "Tu precio: desde X €" + .pp-sub "plan Wild · n viajeros"), placeholder
+  lines rendered by the server so the button never moves. Sticky phone bar: visible only while no other form CTA
+  (#quote-submit, [data-focus-form]) is on screen; hidden near .final-cta/footer and in the checkout; body gets 80 px padding.
+  Checkout step 1 <600 px: .plan-switch (two tappable cards + "Elegir") and .compare-rows (label, then Wild | Wild+); ≥600 px:
+  the two .plan-option cards. Destination strip: ‹ › buttons ≥700 px (hidden when it all fits), no native scrollbar.
+  AI chat: unplayed bubbles take no space (box grows); #showcase keeps its final min-height so nothing below moves.
 - Destination field: the server renders a `<select id="destination">` ("Destinos populares" optgroup first from `texts.form.popularDestinations`,
   then A–Z); `public/destination-picker.js` hides it and puts an accessible searchable combobox (`#destination-search`) in front. The select stays
   the source of truth (`.value` + `change`). Remote territories (AQ BV HM GS TF IO UM) are not in `config/countries.js`.

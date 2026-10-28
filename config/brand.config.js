@@ -68,7 +68,11 @@ export default {
       note: 'Gratis y sin compromiso: no te pedimos datos personales.',
       loading: 'Calculando…',
       passLabel: 'Calcula tu precio',
-      pricePreview: 'Desde {price} · plan {plan}', // live, from get_quote (cheapest plan, all travellers)
+      // Live price above "Ver mi precio", from get_quote (cheapest plan, all travellers). Before that: the empty + hint lines.
+      pricePreview: 'Tu precio: desde {price}',
+      pricePreviewSub: 'plan {plan} · {n} {travelersWord}',
+      pricePreviewEmpty: 'Tu precio',
+      pricePreviewHint: 'Elige destino y fechas para verlo',
       routeFrom: 'España',
       routeTo: '{name} · {days} días', // shown only once a destination is chosen; without dates just the name
       agesHelp: 'La edad influye en el precio.',
@@ -158,6 +162,8 @@ export default {
       price: '7 días desde {price}',
       note: 'Precio del plan Wild para 1 adulto.',
       cardLabel: 'Elegir {name}: 7 días desde {price}',
+      prev: 'Ver destinos anteriores',
+      next: 'Ver más destinos',
       countries: ['TH', 'JP', 'PE', 'IS', 'MX', 'US', 'IT'],
     },
 
@@ -286,6 +292,10 @@ export default {
         bothPlans: 'En los dos planes',
         onlyIn: 'Solo en {plan}',
         limitsOf: 'Límites de {plan}',
+        // Phones: compact switcher on top, then one row per coverage (label, then both values side by side).
+        switchLabel: 'Elige tu plan',
+        chooseShort: 'Elegir',
+        compareTitle: 'Compara las coberturas',
       },
       choose: 'Elegir {plan}',
 

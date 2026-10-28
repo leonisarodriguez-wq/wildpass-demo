@@ -131,7 +131,7 @@ const layerSvg = (layer, extra = '') => `<svg class="layer layer-${layer}" viewB
 
 // The hero: three layers. The sun (with a soft warm glow) rises once in the far layer, behind the hills.
 const sun = `<defs><radialGradient id="sun-glow"><stop offset="0" stop-color="${Y}" stop-opacity="0.55"/><stop offset="0.45" stop-color="${Y}" stop-opacity="0.18"/><stop offset="1" stop-color="${Y}" stop-opacity="0"/></radialGradient></defs>
-  <g class="sun-rise"><circle class="sun-glow" cx="250" cy="150" r="105" fill="url(#sun-glow)"/><circle class="sun" cx="250" cy="150" r="46" fill="${Y}"/></g>`;
+  <g class="sun-pos"><g class="sun-rise"><circle class="sun-glow" cx="250" cy="150" r="105" fill="url(#sun-glow)"/><circle class="sun" cx="250" cy="150" r="46" fill="${Y}"/></g></g>`;
 export const heroScene = `<div class="hero-scene" id="hero-scene" aria-hidden="true">${layerSvg('far', sun)}${layerSvg('mid')}${layerSvg('near')}</div>`;
 
 // A small static scene (destination cards): all three layers of one scene.

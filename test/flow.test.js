@@ -322,7 +322,11 @@ test('landing: complete server-rendered page with prices from the pricing engine
   const html = nbsp(await res.text());
   // Every template placeholder was filled (an unknown one would have thrown).
   assert.ok(!/\{\{|\}\}/.test(html), 'leftover template braces');
-  for (const text of ['Travel wild. We’ve got you.', 'Ver mi precio', 'Gratis y sin compromiso: no te pedimos datos personales.',
+  // Headline: two fixed lines, never a lonely "you.".
+  assert.ok(/<h1 id="hero-title"><span class="claim-part">Travel wild\.<\/span> <span class="claim-part">We(’|'|&#39;)ve got you\.<\/span><\/h1>/.test(html), 'headline in two parts');
+  // Live price line sits ABOVE the button, with its placeholder already there.
+  assert.ok(html.indexOf('id="price-preview"') < html.indexOf('id="quote-submit"') && html.includes('<span class="pp-main">Tu precio</span>'));
+  for (const text of ['Ver mi precio', 'Gratis y sin compromiso: no te pedimos datos personales.',
     'Viajeros y edad el día de la ida', 'La edad influye en el precio.', '+ Añadir viajero',
     'Tu asistente también puede contratarlo', 'Tú pon la aventura. Nosotros, todo lo demás.', 'Elige cómo quieres viajar',
     'El favorito de los aventureros', '¿Preparado para empezar tu viaje?', 'Hecho con WebMCP']) {

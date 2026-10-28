@@ -24,7 +24,7 @@
       <div class="wrap hero-grid">
         {{{heroScene}}}
         <div class="hero-copy">
-          <h1 id="hero-title">{{brand.claim}}</h1>
+          <h1 id="hero-title">{{{heroTitle}}}</h1>
           <p class="hero-sub">{{t.heroSubtitle}}</p>
         </div>
         <div class="route" id="route" aria-hidden="true">
@@ -59,8 +59,8 @@
             <template id="remove-icon">{{{iconRemove}}}</template>
           </fieldset>
           <div class="error" id="quote-error" role="alert" hidden></div>
+          <p class="price-preview" id="price-preview" aria-live="polite"><span class="pp-main">{{t.form.pricePreviewEmpty}}</span><span class="pp-sub">{{t.form.pricePreviewHint}}</span></p>
           <button type="submit" class="primary block" id="quote-submit">{{t.form.submit}}</button>
-          <p class="price-preview" id="price-preview" aria-live="polite"></p>
           <p class="form-note">{{t.form.note}}</p>
         </form>
       </div>
@@ -91,7 +91,11 @@
         <h2 id="dest-title">{{t.destinations.title}}</h2>
         <p class="section-intro">{{t.destinations.intro}}</p>
       </div>
-      <ul class="dest-strip">{{{destinations}}}</ul>
+      <div class="dest-scroller">
+        <button type="button" class="dest-arrow dest-prev" aria-controls="dest-strip" aria-label="{{t.destinations.prev}}" hidden><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <ul class="dest-strip" id="dest-strip">{{{destinations}}}</ul>
+        <button type="button" class="dest-arrow dest-next" aria-controls="dest-strip" aria-label="{{t.destinations.next}}" hidden><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
       <p class="wrap dest-note">{{t.destinations.note}}</p>
     </section>
 

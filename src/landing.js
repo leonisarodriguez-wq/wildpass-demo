@@ -217,6 +217,8 @@ export function createLanding({ brand, pricing, business, market, countries, tem
       countryOptions: countryOptionsHtml({ brand, pricing, countries }),
       showcase: showcaseHtml({ brand, pricing, business }),
       sceneSprite, heroScene, routeStrip,
+      // Each sentence of the claim stays on one line ("Travel wild. / We've got you."): never a lonely "you.".
+      heroTitle: brand.claim.match(/[^.!?]+[.!?]*/g).map(part => `<span class="claim-part">${escapeHtml(part.trim())}</span>`).join(' '),
       whatIf: whatIfHtml({ brand, pricing, values }),
       destinations: destinationsHtml({ brand, pricing, business, countries }),
       benefits: t.editorial.benefits.map((b, i) => `<li class="benefit">${[art.globePin, art.mountainRope, art.shieldCheck][i]}<h3>${escapeHtml(b.title)}</h3><p>${escapeHtml(fill(b.text, values))}</p></li>`).join(''),

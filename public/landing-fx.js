@@ -54,8 +54,13 @@ destination.addEventListener('change', showDestination);
 for (const id of ['#departure', '#return']) $(id).addEventListener('change', routeLabel);
 if (destination.value) showDestination(); // e.g. the browser restored the form after "back"
 
-// ---------- live price preview: "Desde X € · plan Wild" once destination, dates and ages are valid ----------
+// ---------- live price preview above the button: "Tu precio: desde X €" + "plan Wild · 2 viajeros" ----------
+// Both lines are in the page from the start ("Tu precio" / "Elige destino y fechas para verlo"), so nothing jumps.
 const preview = $('#price-preview');
+const previewMain = preview.querySelector('.pp-main');
+const previewSub = preview.querySelector('.pp-sub');
+const emptyMain = previewMain.textContent;
+const emptySub = previewSub.textContent;
 let seq = 0;
 let timer;
 function odometer(text, old) {
@@ -67,14 +72,18 @@ function odometer(text, old) {
     return `<span class="odo"><span class="odo-strip" data-to="${ch}" data-from="${from}">${'0123456789'.split('').map(d => `<span>${d}</span>`).join('')}</span></span>`;
   }).join('')}</span>`;
 }
-function showPrice(text) {
-  if (preview.dataset.text === text) return;
-  preview.innerHTML = text ? odometer(text, preview.dataset.text) : '';
-  preview.dataset.text = text;
-  const strips = [...preview.querySelectorAll('.odo-strip')];
-  for (const s of strips) s.style.transform = `translateY(${-s.dataset.from * 1.5}em)`;
-  preview.offsetHeight; // apply the start position before rolling
-  for (const s of strips) s.style.transform = `translateY(${-s.dataset.to * 1.5}em)`;
+function showPrice(main = '', sub = '') {
+  if (preview.dataset.text === main + sub) return;
+  preview.dataset.text = main + sub;
+  preview.classList.toggle('has-price', Boolean(main));
+  previewSub.textContent = main ? sub : emptySub;
+  if (!main) { previewMain.textContent = emptyMain; delete previewMain.dataset.text; return; }
+  previewMain.innerHTML = odometer(main, previewMain.dataset.text);
+  previewMain.dataset.text = main;
+  const strips = [...previewMain.querySelectorAll('.odo-strip')];
+  for (const s of strips) s.style.transform = `translateY(${-s.dataset.from * 1.2}em)`;
+  previewMain.offsetHeight; // apply the start position before rolling
+  for (const s of strips) s.style.transform = `translateY(${-s.dataset.to * 1.2}em)`;
 }
 function formReady() {
   const dep = $('#departure').value;
@@ -95,7 +104,9 @@ async function updatePrice() {
   if (n !== seq) return; // a newer change is already on its way
   if (!result.ok) return showPrice('');
   const cheapest = result.plans.reduce((a, b) => (b.total_price_eur < a.total_price_eur ? b : a));
-  showPrice(fill(T.form.pricePreview, { price: eur(cheapest.total_price_eur), plan: cheapest.plan_name }));
+  const people = result.trip.traveler_ages.length;
+  showPrice(fill(T.form.pricePreview, { price: eur(cheapest.total_price_eur) }),
+    fill(T.form.pricePreviewSub, { plan: cheapest.plan_name, n: people, travelersWord: people === 1 ? T.checkout.travelerOne : T.checkout.travelerMany }));
 }
 const form = $('#quote-form');
 const schedule = () => { clearTimeout(timer); timer = setTimeout(updatePrice, 500); };
@@ -119,6 +130,8 @@ function finalState() {
 async function play() {
   const me = ++run;
   const alive = () => me === run;
+  // The white chat box grows with each message; the section keeps its final height reserved so nothing below moves.
+  if (!show.classList.contains('is-playing')) { show.style.minHeight = ''; show.style.minHeight = `${show.offsetHeight}px`; }
   show.classList.add('is-playing');
   for (const b of bubbles) b.classList.remove('is-shown', 'is-typing', 'is-thinking');
   for (const b of bubbles) b.querySelector('.bubble-text').textContent = b.dataset.text;
@@ -212,6 +225,22 @@ for (const tab of tabs) {
 }
 
 // ---------- destination cards: set the destination, switch the hero scene, go to the form ----------
+// Destination strip arrows (computers): scroll by most of a screen; hidden when everything fits, disabled at each end.
+const strip = $('#dest-strip');
+const arrows = [[$('.dest-prev'), -1], [$('.dest-next'), 1]];
+function syncArrows() {
+  const max = strip.scrollWidth - strip.clientWidth;
+  for (const [button, dir] of arrows) {
+    const hadFocus = document.activeElement === button;
+    button.hidden = max <= 1;
+    button.disabled = dir < 0 ? strip.scrollLeft <= 1 : strip.scrollLeft >= max - 1;
+    if (hadFocus && button.disabled) arrows.find(([other]) => other !== button)[0].focus(); // keyboard focus never gets lost
+  }
+}
+for (const [button, dir] of arrows) button.addEventListener('click', () => strip.scrollBy({ left: dir * strip.clientWidth * 0.8, behavior: reduced.matches ? 'auto' : 'smooth' }));
+strip.addEventListener('scroll', syncArrows, { passive: true });
+new ResizeObserver(syncArrows).observe(strip);
+
 for (const card of document.querySelectorAll('.dest-card')) {
   card.addEventListener('click', () => {
     destination.value = card.dataset.country;
@@ -234,13 +263,20 @@ if (!reduced.matches && 'IntersectionObserver' in window) {
   }
 }
 
-// ---------- phones: sticky "Ver mi precio" bar once the hero is off screen (not while the form is visible) ----------
+// ---------- phones: sticky "Ver mi precio" bar ----------
+// Shown only while NO other "Ver mi precio" button is on screen, hidden near the final CTA and the footer, never in the
+// checkout (it lives inside #landing). The page gets bottom padding while it shows (CSS), so it never hides content.
 const sticky = $('#sticky-cta');
-let heroVisible = true;
-let formVisible = true;
-const syncSticky = () => { sticky.hidden = heroVisible || formVisible; };
-new IntersectionObserver(([e]) => { heroVisible = e.isIntersecting; syncSticky(); }).observe($('.hero'));
-new IntersectionObserver(([e]) => { formVisible = e.isIntersecting; syncSticky(); }).observe(form);
-new IntersectionObserver(([e]) => { if (e.isIntersecting) sticky.hidden = true; else syncSticky(); }).observe($('.final-cta'));
+const onScreen = new Set();
+const syncSticky = () => { sticky.hidden = onScreen.size > 0 || $('#landing').hidden; };
+const watch = (targets, margin = '0px') => {
+  const io = new IntersectionObserver(entries => {
+    for (const e of entries) e.isIntersecting ? onScreen.add(e.target) : onScreen.delete(e.target);
+    syncSticky();
+  }, { rootMargin: margin });
+  for (const t of targets) io.observe(t);
+};
+watch([$('#quote-submit'), ...[...document.querySelectorAll('[data-focus-form]')].filter(a => !sticky.contains(a))]);
+watch([$('.final-cta'), $('.site-footer')], '0px 0px 240px 0px'); // "near": starts hiding 240 px before they scroll in
 
 loadConfig().then(config => { T = config.brand.texts; routeLabel(); if (formReady()) updatePrice(); }).catch(() => {});
