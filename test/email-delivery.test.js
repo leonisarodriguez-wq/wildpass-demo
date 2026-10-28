@@ -76,7 +76,7 @@ const addDays = (date, n) => new Date(Date.parse(`${date}T00:00:00Z`) + n * 86_4
 async function buyPolicy() {
   const dep = addDays(today, 30);
   const q = await call('get_quote', { origin_country: 'ES', destination_country: 'FR', departure_date: dep, return_date: addDays(dep, 6), traveler_ages: [40] });
-  const o = await call('select_plan', { quote_id: q.quote_id, plan: 'esencial' });
+  const o = await call('select_plan', { quote_id: q.quote_id, plan: 'wild' });
   const birth = addDays(`${Number(dep.slice(0, 4)) - 40}${dep.slice(4)}`, -1);
   await call('set_traveler_details', { order_id: o.order_id, policyholder: { full_name: 'Eva Prueba', email: 'eva@example.com' }, travelers: [{ full_name: 'Eva Prueba', birth_date: birth }] });
   const r = await call('review_order', { order_id: o.order_id });

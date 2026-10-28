@@ -1,24 +1,48 @@
-/* Plain, functional styles. No visual design yet. Brand colours come from /brand.css. */
-body { margin: 0; font-family: system-ui, sans-serif; line-height: 1.4; color: #222; background: #fff; }
-.banner { background: var(--banner); color: var(--banner-text); padding: 10px 16px; font-weight: 700; text-align: center; }
+/* Brand basics only (no landing design yet). Colours and fonts come from /brand.css.
+   Contrast rules: never red text on cream, never yellow text on cream. */
+body { margin: 0; font-family: var(--font-text); line-height: 1.5; color: var(--night); background: var(--cream); }
+h1, h2, h3, h4 { font-family: var(--font-headings); font-weight: 700; color: var(--night); line-height: 1.2; }
+a { color: var(--night); }
+
+/* Demo banner: the only place (with errors) where red is used. */
+.banner { background: var(--red); color: var(--white); padding: 8px 16px; font-weight: 700; text-align: center; }
+
+.site-header { background: var(--night); padding: 14px 16px; }
+.logo { display: inline-flex; flex-direction: column; text-decoration: none; line-height: 1; }
+.logo .wordmark { font-family: var(--font-headings); font-weight: 700; font-size: 1.9rem; color: var(--cream); letter-spacing: -0.02em; }
+.logo .tagline { font-size: 0.8rem; color: var(--yellow); margin-top: 4px; }
+
 main { max-width: 52rem; margin: 0 auto; padding: 8px 16px 40px; }
-h1, h2, h3 { color: var(--primary); }
-label { display: block; margin: 8px 0; }
-input, select, button { font: inherit; padding: 6px 8px; }
-input:not([type="checkbox"]), select { display: block; width: 100%; max-width: 24rem; box-sizing: border-box; }
-fieldset { margin: 12px 0; border: 1px solid #ccc; }
-button { cursor: pointer; margin: 8px 8px 8px 0; }
-button.primary { background: var(--primary); color: #fff; border: 0; border-radius: 4px; padding: 8px 16px; }
+.claim { font-size: 2rem; margin: 24px 0 4px; }
+.claim-es { font-size: 1.15rem; color: var(--stone); margin: 0 0 8px; }
+.note, .muted { color: var(--stone); font-size: 0.9rem; }
+
+label { display: block; margin: 10px 0; font-weight: 600; }
+input, select, button { font: inherit; padding: 8px 10px; border-radius: 6px; }
+input:not([type="checkbox"]), select { display: block; width: 100%; max-width: 24rem; box-sizing: border-box; border: 1px solid var(--stone); background: var(--white); color: var(--night); font-weight: 400; }
+fieldset { margin: 12px 0; border: 1px solid var(--stone); border-radius: 8px; background: var(--white); }
+legend { font-weight: 600; padding: 0 4px; }
+
+button { cursor: pointer; margin: 8px 8px 8px 0; border: 1px solid var(--night); background: transparent; color: var(--night); }
+button.primary { background: var(--yellow); color: var(--night); border: 0; font-weight: 700; padding: 10px 18px; }
+button:disabled { opacity: 0.6; cursor: progress; }
+:focus-visible { outline: 3px solid var(--night); outline-offset: 2px; }
+
 .age-row { display: flex; gap: 8px; align-items: center; }
 .age-row input { width: 6rem; }
+
 .plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 16px; }
-.plan { border: 1px solid #ccc; border-radius: 6px; padding: 12px; }
-.plan .price { font-size: 1.6rem; font-weight: 700; }
-.error { background: #fdecea; border: 1px solid #b00020; padding: 8px 12px; margin: 8px 0; }
-.note { color: #555; font-size: 0.9rem; }
+.plan { background: var(--white); border: 1px solid var(--stone); border-radius: 10px; padding: 16px; }
+.plan.featured { border: 2px solid var(--night); }
+.plan .price { font-family: var(--font-headings); font-size: 1.8rem; font-weight: 700; }
+.plan h4 { margin-bottom: 4px; }
+
+/* Errors: red border, but the TEXT stays night blue (red on cream fails WCAG AA). */
+.error { background: var(--white); border: 2px solid var(--red); border-left-width: 8px; color: var(--night); padding: 10px 12px; margin: 8px 0; border-radius: 6px; }
+
 .check { display: flex; gap: 8px; align-items: center; }
-table { border-collapse: collapse; }
-td, th { border: 1px solid #ccc; padding: 4px 8px; text-align: left; }
+table { border-collapse: collapse; background: var(--white); }
+td, th { border: 1px solid var(--stone); padding: 6px 10px; text-align: left; }
 .table-wrap { overflow-x: auto; }
-.agent { margin-top: 32px; color: #555; font-size: 0.85rem; }
+.agent { margin-top: 32px; color: var(--stone); font-size: 0.85rem; }
 .agent pre { white-space: pre-wrap; }

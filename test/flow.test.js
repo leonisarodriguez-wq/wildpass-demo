@@ -45,12 +45,15 @@ async function expectError(action, body, code) {
   return r;
 }
 
+// Spanish money format puts a non-breaking space before €; compare with normal spaces.
+const nbsp = s => s.replace(/\u00a0/g, ' ');
+
 const quoteInput = (over = {}) => ({ origin_country: 'ES', destination_country: 'US', departure_date: DEP, return_date: addDays(DEP, 9), traveler_ages: [35, 38], ...over });
 
 // Birth date that gives exactly `age` on the departure date (birthday was the day before).
 const birthFor = (age, departure = DEP) => addDays(`${Number(departure.slice(0, 4)) - age}${departure.slice(4)}`, -1);
 
-async function orderReadyToReview(plan = 'esencial') {
+async function orderReadyToReview(plan = 'wild') {
   const q = await call('get_quote', quoteInput());
   const o = await call('select_plan', { quote_id: q.quote_id, plan });
   const d = await call('set_traveler_details', {
@@ -79,21 +82,45 @@ test('quote contains coverage, excess and exclusions for both plans', async () =
   const q = await call('get_quote', quoteInput());
   assert.equal(q.ok, true);
   assert.equal(q.plans.length, 2);
-  const [esencial, premium] = q.plans;
-  assert.equal(esencial.medical_limit_for_this_trip_eur, 1_000_000); // USA counts as rest of world
-  assert.equal(premium.medical_limit_for_this_trip_eur, 5_000_000);
-  assert.equal(esencial.excess_per_medical_claim_eur, 75);
-  assert.equal(premium.excess_per_medical_claim_eur, 0);
-  assert.equal(esencial.cancellation_included, false);
-  assert.equal(premium.cancellation_included, true);
-  assert.ok(q.exclusions.length >= 5);
-  const perPerson = esencial.price_per_traveler.map(t => t.price_eur);
-  assert.equal(esencial.total_price_eur, Math.round(perPerson.reduce((a, b) => a + b) * 100) / 100);
+  const [wild, wild_plus] = q.plans;
+  assert.equal(wild.medical_limit_for_this_trip_eur, 1_000_000); // USA counts as rest of world
+  assert.equal(wild_plus.medical_limit_for_this_trip_eur, 5_000_000);
+  assert.equal(wild.excess_per_medical_claim_eur, 75);
+  assert.equal(wild_plus.excess_per_medical_claim_eur, 0);
+  assert.equal(wild.cancellation_included, false);
+  assert.equal(wild_plus.cancellation_included, true);
+  assert.ok(q.exclusions_all_plans.length >= 5);
+  const perPerson = wild.price_per_traveler.map(t => t.price_eur);
+  assert.equal(wild.total_price_eur, Math.round(perPerson.reduce((a, b) => a + b) * 100) / 100);
+  assert.deepEqual(q.plans.map(p => [p.plan, p.plan_name]), [['wild', 'Wild'], ['wild_plus', 'Wild+']]);
+});
+
+test('only Wild+ covers adventure sports and search & rescue; extreme sports excluded in both', async () => {
+  const q = await call('get_quote', quoteInput());
+  const [wild, wildPlus] = q.plans;
+  assert.equal(wild.adventure_sports_included, false);
+  assert.equal(wild.search_and_rescue_eur, 0);
+  assert.ok(wild.exclusions.some(x => /deportes de aventura/i.test(x)));
+  assert.equal(wildPlus.adventure_sports_included, true);
+  assert.equal(wildPlus.search_and_rescue_eur, 15000);
+  assert.deepEqual(wildPlus.adventure_sports_limits, { trekking_max_altitude_m: 4000, scuba_diving_max_depth_m: 30, skiing_snowboarding: 'marked slopes only', other_included: ['surf', 'rafting', 'canyoning'] });
+  assert.ok(wildPlus.coverage_summary.map(nbsp).includes('Búsqueda y rescate: 15.000 €'));
+  for (const plan of [wild, wildPlus]) {
+    assert.ok(plan.exclusions.some(x => /profesionales/.test(x) && /BASE/.test(x)), `${plan.plan} must exclude professional and extreme sports`);
+  }
+  assert.ok(!wildPlus.exclusions.some(x => x.startsWith('Deportes de aventura (trekking')), 'Wild+ must not exclude adventure sports');
+
+  // The review shows the chosen plan's own exclusions and adventure condition.
+  const orderId = await orderReadyToReview('wild_plus');
+  const review = await call('review_order', { order_id: orderId });
+  assert.ok(review.key_conditions.some(x => nbsp(x).includes('Búsqueda y rescate hasta 15.000 €')));
+  assert.deepEqual(review.summary.exclusions, wildPlus.exclusions);
+  await expectError('select_plan', { quote_id: q.quote_id, plan: 'premium' }, 'INVALID_PLAN'); // old names are gone
 });
 
 // ---------- full flow ----------
 test('full purchase flow issues a policy with a downloadable PDF', async () => {
-  const orderId = await orderReadyToReview('premium');
+  const orderId = await orderReadyToReview('wild_plus');
   const review = await call('review_order', { order_id: orderId });
   assert.equal(review.ok, true);
   assert.ok(review.total_eur > 0);
@@ -103,7 +130,7 @@ test('full purchase flow issues a policy with a downloadable PDF', async () => {
 
   const paid = await call('confirm_payment', { order_id: orderId, review_token: review.review_token, accept_terms: true, confirmed_total_eur: total, user_confirmed: true });
   assert.equal(paid.ok, true, paid.message);
-  assert.match(paid.policy_number, /^BRAND-\d{4}-[A-Z2-9]{6}$/);
+  assert.match(paid.policy_number, /^WILD-\d{4}-[A-Z2-9]{6}$/);
   assert.equal(paid.email_status, 'not_configured');
   assert.match(paid.pdf_url, /\/poliza\/[A-Za-z0-9_-]{43}\.pdf$/);
 
@@ -122,7 +149,7 @@ test('full purchase flow issues a policy with a downloadable PDF', async () => {
   assert.equal(policy.details.travelers.length, 2);
 
   await expectError('get_policy', { policy_number: paid.policy_number, email: 'someone@else.com' }, 'POLICY_NOT_FOUND');
-  await expectError('get_policy', { policy_number: 'BRAND-2026-ZZZZZZ', email: 'ana.prueba@example.com' }, 'POLICY_NOT_FOUND');
+  await expectError('get_policy', { policy_number: 'WILD-2026-ZZZZZZ', email: 'ana.prueba@example.com' }, 'POLICY_NOT_FOUND');
   const again = await expectError('confirm_payment', { order_id: orderId, review_token: review.review_token, accept_terms: true, confirmed_total_eur: total, user_confirmed: true }, 'ALREADY_PAID');
   assert.equal(again.policy_number, paid.policy_number);
 });
@@ -157,13 +184,13 @@ test('quote refusals: origin, countries, dates, length, travellers, ages', async
 test('select_plan refusals', async () => {
   const q = await call('get_quote', quoteInput());
   await expectError('select_plan', { quote_id: q.quote_id, plan: 'gold' }, 'INVALID_PLAN');
-  await expectError('select_plan', { quote_id: 'nope', plan: 'esencial' }, 'QUOTE_NOT_FOUND');
+  await expectError('select_plan', { quote_id: 'nope', plan: 'wild' }, 'QUOTE_NOT_FOUND');
 });
 
 // ---------- traveller detail refusals ----------
 test('traveller details refusals: wrong ages, count, email, birth date, extra fields', async () => {
   const q = await call('get_quote', quoteInput());
-  const { order_id } = await call('select_plan', { quote_id: q.quote_id, plan: 'esencial' });
+  const { order_id } = await call('select_plan', { quote_id: q.quote_id, plan: 'wild' });
   const ph = { full_name: 'Ana Prueba', email: 'ana.prueba@example.com' };
   const ok = [{ full_name: 'Ana Prueba', birth_date: birthFor(35) }, { full_name: 'Luis Prueba', birth_date: birthFor(38) }];
 
@@ -223,7 +250,7 @@ test('payment refusals: no review, bad token, terms, confirmation, total mismatc
 
 test('review before traveller details is refused', async () => {
   const q = await call('get_quote', quoteInput());
-  const { order_id } = await call('select_plan', { quote_id: q.quote_id, plan: 'esencial' });
+  const { order_id } = await call('select_plan', { quote_id: q.quote_id, plan: 'wild' });
   await expectError('review_order', { order_id }, 'DETAILS_MISSING');
 });
 
@@ -241,4 +268,23 @@ test('demo banner is on every page', async () => {
     const html = await (await fetch(`${base}${path}`)).text();
     assert.ok(html.includes('Demo — no es un seguro real'), `banner missing on ${path}`);
   }
+});
+
+test('brand: name, claim, colours and self-hosted fonts', async () => {
+  const config = await (await fetch(`${base}/api/config`)).json();
+  assert.equal(config.brand.name, 'Seguros Wildpass');
+  assert.deepEqual(config.brand.logo, { wordmark: 'wildpass', tagline: 'seguros de viaje' });
+  assert.equal(config.brand.claim, "Travel wild. We've got you.");
+  assert.equal(config.brand.claimEs, 'Viaja salvaje. Nosotros te cubrimos.');
+  assert.deepEqual(config.plans, { wild: 'Wild', wild_plus: 'Wild+' });
+
+  const css = await (await fetch(`${base}/brand.css`)).text();
+  for (const colour of ['#0E1B2C', '#FFC629', '#F7F3EA', '#5B6573', '#D7263D']) assert.ok(css.includes(colour), `${colour} missing`);
+  assert.ok(css.includes('Space Grotesk') && css.includes('Inter'));
+  const font = await fetch(`${base}/fonts/inter-latin-400-normal.woff2`);
+  assert.equal(font.status, 200);
+  assert.equal((await fetch(`${base}/fonts/..%2Fpackage.json`)).status, 404);
+
+  const terms = nbsp(await (await fetch(`${base}/condiciones`)).text());
+  assert.ok(terms.includes('wildpass') && terms.includes('Wild+') && terms.includes('15.000 €'));
 });

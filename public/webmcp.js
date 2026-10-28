@@ -33,13 +33,15 @@ async function getModelContext() {
 const DATE = { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' };
 const ID = { type: 'string', minLength: 1, maxLength: 100 };
 
-function buildTools(limits) {
-  const DEMO = 'DEMO ONLY: this is not real insurance and payment is simulated.';
+function buildTools({ limits, plans, brand }) {
+  const DEMO = `DEMO ONLY (${brand.name}): this is not real insurance and payment is simulated.`;
+  const planIds = Object.keys(plans); // e.g. ["wild", "wild_plus"]
+  const planList = planIds.map(id => `"${id}" (${plans[id]})`).join(' and ');
   return [
     {
       name: 'get_quote',
       title: 'Get travel insurance quote',
-      description: `Get prices for travel insurance for one trip. Returns a quote_id and BOTH plans ("esencial" and "premium") with total price, price per traveller, coverage limits, medical excess and exclusions. Only trips starting in Spain (origin_country "ES") are accepted. Dates are YYYY-MM-DD; departure must be after today; the trip may last at most ${limits.maxTripDays} days counting both departure and return day. traveler_ages = each traveller's age ON THE DEPARTURE DATE. Show both plans to the user and let them choose. ${DEMO}`,
+      description: `Get prices for travel insurance for one trip. Returns a quote_id and BOTH plans, ${planList}, with total price, price per traveller, coverage limits, medical excess and each plan's exclusions. Only Wild+ covers adventure sports (trekking up to 4,000 m, scuba diving up to 30 m, skiing/snowboarding on marked slopes, surf, rafting, canyoning) and search & rescue up to 15,000 EUR; professional sports and extreme activities such as base jumping are excluded in both plans. Only trips starting in Spain (origin_country "ES") are accepted. Dates are YYYY-MM-DD; departure must be after today; the trip may last at most ${limits.maxTripDays} days counting both departure and return day. traveler_ages = each traveller's age ON THE DEPARTURE DATE. Show both plans to the user and let them choose. ${DEMO}`,
       inputSchema: {
         type: 'object',
         additionalProperties: false,
@@ -68,7 +70,7 @@ function buildTools(limits) {
         required: ['quote_id', 'plan'],
         properties: {
           quote_id: { ...ID, description: 'quote_id returned by get_quote.' },
-          plan: { type: 'string', enum: ['esencial', 'premium'], description: 'The plan the user chose.' },
+          plan: { type: 'string', enum: planIds, description: `The plan the user chose: ${planList}. If the user will do adventure sports, only Wild+ covers them.` },
         },
       },
     },
@@ -145,7 +147,7 @@ function buildTools(limits) {
         additionalProperties: false,
         required: ['policy_number', 'email'],
         properties: {
-          policy_number: { type: 'string', maxLength: 40, description: 'e.g. BRAND-2026-AB12CD' },
+          policy_number: { type: 'string', maxLength: 40, description: 'e.g. WILD-2026-AB12CD' },
           email: { type: 'string', maxLength: 254, description: 'The policyholder email used when buying.' },
         },
       },
@@ -159,7 +161,7 @@ async function register() {
   try {
     const config = await loadConfig();
     const { ctx, source } = await getModelContext();
-    for (const tool of buildTools(config.limits)) {
+    for (const tool of buildTools(config)) {
       await ctx.registerTool({
         ...tool,
         execute: async input => {

@@ -1,18 +1,32 @@
-// Brand name, colours and ALL website texts live here. "BRAND" is a placeholder.
+// Brand name, logo text, claim, colours, fonts and ALL website texts live here.
 
 export default {
-  name: 'BRAND',
-  policyPrefix: 'BRAND', // policy numbers look like BRAND-2026-XXXXXX
+  name: 'Seguros Wildpass',
+  logo: { wordmark: 'wildpass', tagline: 'seguros de viaje' }, // wordmark: lowercase, bold
+  claim: "Travel wild. We've got you.",
+  claimEs: 'Viaja salvaje. Nosotros te cubrimos.',
+  policyPrefix: 'WILD', // policy numbers look like WILD-2026-XXXXXX
+  emailSenderName: 'Seguros Wildpass (demo)',
+
+  // WCAG AA checked (normal text needs 4.5:1): night on cream 15.7, night on yellow 11.0,
+  // stone on cream 5.3, white on red 5.0. Red TEXT on cream is only 4.48 (fails), and
+  // yellow on cream is 1.4 (fails): never use those two combinations for text.
   colors: {
-    primary: '#1f4e8c',
-    banner: '#b00020',
-    bannerText: '#ffffff',
+    night: '#0E1B2C', // main text, header
+    yellow: '#FFC629', // buttons (with night text), accents on night
+    cream: '#F7F3EA', // page background
+    stone: '#5B6573', // secondary text
+    red: '#D7263D', // ONLY the demo banner and errors
+    white: '#FFFFFF',
   },
+  // Self-hosted from @fontsource (no requests to Google).
+  fonts: { headings: 'Space Grotesk', text: 'Inter' },
+
   demoBanner: 'Demo — no es un seguro real',
   pdfDisclaimer: 'DEMO — NO ES UN SEGURO REAL',
 
   texts: {
-    pageTitle: 'BRAND · Seguro de viaje',
+    pageTitle: 'Seguros Wildpass · Seguro de viaje (demo)',
     heading: 'Seguro de viaje',
     intro: 'Calcula tu precio en segundos. Solo para viajes que salen de España.',
 
@@ -33,7 +47,8 @@ export default {
     total: 'Total',
     excess: 'Franquicia por siniestro médico',
     notIncluded: 'No incluida',
-    exclusionsTitle: 'Exclusiones (ambos planes)',
+    planExclusionsTitle: 'No cubre',
+    exclusionsTitle: 'Exclusiones de ambos planes',
     choosePlan: 'Elegir',
 
     // Step 3: travellers
@@ -42,7 +57,9 @@ export default {
     fullName: 'Nombre y apellidos',
     email: 'Correo electrónico',
     traveler: 'Viajero',
-    age: 'edad',
+    age: 'años',
+    ageColumn: 'Edad',
+    priceColumn: 'Precio',
     birthDate: 'Fecha de nacimiento',
     noIdNote: 'No te pedimos DNI ni datos de tarjeta.',
     continue: 'Continuar',
@@ -52,6 +69,7 @@ export default {
     trip: 'Viaje',
     plan: 'Plan',
     travelers: 'Viajeros',
+    reviewExclusionsTitle: 'Exclusiones',
     acceptTerms: 'He leído y acepto las condiciones del seguro',
     termsLink: 'Ver condiciones',
     payButton: 'Pagar (simulado)',
@@ -86,6 +104,7 @@ export default {
     termsTitle: 'Condiciones del seguro (demo)',
     termsIntro: 'Esto es una demostración. No es un seguro real y no ofrece ninguna cobertura.',
     certificateTitle: 'Certificado de seguro de viaje',
-    emailSubject: 'Tu póliza de demostración',
+    emailSubject: 'Tu póliza Wildpass de demostración',
+    emailGreeting: 'Hola',
   },
 };

@@ -58,5 +58,18 @@ export function openDb(file) {
   ]) {
     if (!existing.has(column)) db.exec(`ALTER TABLE policies ADD COLUMN ${column} ${type}`);
   }
+
+  // Plans were renamed (esencial → wild, premium → wild_plus). Safe to run every start.
+  const RENAMED = { esencial: 'wild', premium: 'wild_plus' };
+  for (const [from, to] of Object.entries(RENAMED)) {
+    db.prepare('UPDATE orders SET plan = ? WHERE plan = ?').run(to, from);
+  }
+  for (const q of db.prepare(`SELECT id, prices_json FROM quotes WHERE prices_json LIKE '%"esencial"%' OR prices_json LIKE '%"premium"%'`).all()) {
+    const prices = JSON.parse(q.prices_json);
+    for (const [from, to] of Object.entries(RENAMED)) {
+      if (from in prices) { prices[to] = prices[from]; delete prices[from]; }
+    }
+    db.prepare('UPDATE quotes SET prices_json = ? WHERE id = ?').run(JSON.stringify(prices), q.id);
+  }
   return db;
 }

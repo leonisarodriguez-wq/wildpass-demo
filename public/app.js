@@ -67,7 +67,7 @@ $('#quote-form').addEventListener('submit', async e => {
 // ---------- Step 2: plans ----------
 function renderPlans() {
   const q = state.quote;
-  $('#trip-line').textContent = `${q.trip.origin_name} → ${q.trip.destination_name} (${q.trip.zone_name}) · ${q.trip.departure_date} → ${q.trip.return_date} · ${q.trip.days} días · ${q.trip.traveler_ages.length} ${T.travelers.toLowerCase()}`;
+  $('#trip-line').textContent = `${q.trip.origin_name} → ${q.trip.destination_name} (${q.trip.zone_name}) · ${q.trip.departure_date} → ${q.trip.return_date} · ${q.trip.days} días · ${q.trip.traveler_ages.length} ${(q.trip.traveler_ages.length === 1 ? T.traveler : T.travelers).toLowerCase()}`;
   $('#plans').replaceChildren(...q.plans.map(p => el('div', { className: 'plan' },
     el('h3', { textContent: p.plan_name }),
     el('div', { className: 'price', textContent: eur(p.total_price_eur) }),
@@ -75,9 +75,11 @@ function renderPlans() {
     el('ul', {}, p.price_per_traveler.map(t => el('li', { textContent: `${T.traveler} ${t.traveler} (${t.age} ${T.age}): ${eur(t.price_eur)}` }))),
     el('ul', {}, p.coverage_summary.map(s => el('li', { textContent: s }))),
     el('p', { textContent: `${T.excess}: ${eur(p.excess_per_medical_claim_eur)}` }),
+    el('h4', { textContent: T.planExclusionsTitle }),
+    el('ul', {}, p.exclusions.filter(x => !q.exclusions_all_plans.includes(x)).map(x => el('li', { textContent: x }))),
     el('button', { type: 'button', className: 'primary', textContent: `${T.choosePlan} ${p.plan_name}`, onclick: e => choosePlan(p.plan, e.target) }),
   )));
-  $('#exclusions').replaceChildren(...q.exclusions.map(x => el('li', { textContent: x })));
+  $('#exclusions').replaceChildren(...q.exclusions_all_plans.map(x => el('li', { textContent: x })));
 }
 
 async function choosePlan(plan, button) {
@@ -129,13 +131,13 @@ function renderReview() {
     el('p', { textContent: `${T.plan}: ${s.plan.plan_name}` }),
     el('p', { textContent: `${T.policyholder}: ${s.policyholder.full_name} · ${s.policyholder.email}` }),
     el('div', { className: 'table-wrap' }, el('table', {},
-      el('tr', {}, el('th', { textContent: T.traveler }), el('th', { textContent: T.birthDate }), el('th', { textContent: T.age }), el('th', { textContent: 'Precio' })),
+      el('tr', {}, el('th', { textContent: T.traveler }), el('th', { textContent: T.birthDate }), el('th', { textContent: T.ageColumn }), el('th', { textContent: T.priceColumn })),
       s.travelers.map(t => el('tr', {}, el('td', { textContent: t.full_name }), el('td', { textContent: t.birth_date }), el('td', { textContent: t.age_at_departure }), el('td', { textContent: eur(t.price_eur) }))),
     )),
     el('h3', { textContent: `${T.total}: ${eur(r.total_eur)}` }),
     el('ul', {}, r.key_conditions.map(c => el('li', { textContent: c }))),
     el('ul', {}, s.plan.coverage_summary.map(c => el('li', { textContent: c }))),
-    el('h4', { textContent: T.exclusionsTitle }),
+    el('h4', { textContent: T.reviewExclusionsTitle }),
     el('ul', {}, s.exclusions.map(x => el('li', { textContent: x }))),
   );
   $('#terms-link').href = r.terms_url;
@@ -179,6 +181,10 @@ async function init() {
   document.title = T.pageTitle;
   $('#brand-name').textContent = config.brand.name;
   $('#demo-banner').textContent = config.brand.demoBanner;
+  $('#logo-wordmark').textContent = config.brand.logo.wordmark;
+  $('#logo-tagline').textContent = config.brand.logo.tagline;
+  $('#claim').textContent = config.brand.claim;
+  $('#claim-es').textContent = config.brand.claimEs;
   for (const node of document.querySelectorAll('[data-t]')) node.textContent = T[node.dataset.t] ?? node.textContent;
 
   const options = config.countries.map(c => el('option', { value: c.code, textContent: c.name }));

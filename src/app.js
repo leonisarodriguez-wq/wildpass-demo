@@ -63,7 +63,7 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
     const names = new Intl.DisplayNames(['es'], { type: 'region' });
     res.json({
       ok: true,
-      brand: { name: brand.name, demoBanner: brand.demoBanner, texts: brand.texts },
+      brand: { name: brand.name, logo: brand.logo, claim: brand.claim, claimEs: brand.claimEs, demoBanner: brand.demoBanner, texts: brand.texts },
       limits: pricing.limits,
       plans: Object.fromEntries(Object.entries(pricing.plans).map(([id, p]) => [id, p.name])),
       countries: COUNTRY_CODES.map(code => ({ code, name: names.of(code) ?? code })).sort((a, b) => a.name.localeCompare(b.name, 'es')),
@@ -74,21 +74,51 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
   app.use('/api', api);
 
   // ---------- pages and files ----------
+  // Brand colours and self-hosted fonts, generated from config/brand.config.js.
   app.get('/brand.css', (req, res) => {
-    res.type('text/css').send(`:root{--primary:${brand.colors.primary};--banner:${brand.colors.banner};--banner-text:${brand.colors.bannerText}}`);
+    const c = brand.colors;
+    const face = (family, file, weight) => `@font-face{font-family:"${family}";src:url(/fonts/${file}.woff2) format("woff2");font-weight:${weight};font-style:normal;font-display:swap}`;
+    res.type('text/css').send([
+      face(brand.fonts.headings, 'space-grotesk-latin-500-normal', 500),
+      face(brand.fonts.headings, 'space-grotesk-latin-700-normal', 700),
+      face(brand.fonts.text, 'inter-latin-400-normal', 400),
+      face(brand.fonts.text, 'inter-latin-600-normal', 600),
+      face(brand.fonts.text, 'inter-latin-700-normal', 700),
+      `:root{--night:${c.night};--yellow:${c.yellow};--cream:${c.cream};--stone:${c.stone};--red:${c.red};--white:${c.white};` +
+      `--font-headings:"${brand.fonts.headings}",system-ui,sans-serif;--font-text:"${brand.fonts.text}",system-ui,sans-serif}`,
+    ].join('\n'));
   });
+
+  // Only these font files are served (from the @fontsource packages).
+  const FONT_FILES = {
+    'space-grotesk-latin-500-normal.woff2': '@fontsource/space-grotesk/files/space-grotesk-latin-500-normal.woff2',
+    'space-grotesk-latin-700-normal.woff2': '@fontsource/space-grotesk/files/space-grotesk-latin-700-normal.woff2',
+    'inter-latin-400-normal.woff2': '@fontsource/inter/files/inter-latin-400-normal.woff2',
+    'inter-latin-600-normal.woff2': '@fontsource/inter/files/inter-latin-600-normal.woff2',
+    'inter-latin-700-normal.woff2': '@fontsource/inter/files/inter-latin-700-normal.woff2',
+  };
+  app.get('/fonts/:file', (req, res) => {
+    const path = Object.hasOwn(FONT_FILES, req.params.file) && FONT_FILES[req.params.file];
+    if (!path) return res.status(404).type('text').send('No encontrado');
+    res.set('Cache-Control', 'public, max-age=31536000, immutable').sendFile(join(ROOT, 'node_modules', path));
+  });
+
+  const header = () => `<div class="banner">${escapeHtml(brand.demoBanner)}</div>
+    <header class="site-header"><a class="logo" href="/"><span class="wordmark">${escapeHtml(brand.logo.wordmark)}</span><span class="tagline">${escapeHtml(brand.logo.tagline)}</span></a></header>`;
 
   app.get('/condiciones', (req, res) => {
     const plans = Object.values(pricing.plans).map(p => `
       <h2>${escapeHtml(p.name)}</h2>
       <ul>${Object.entries(p.coverage).map(([k, v]) => `<li>${escapeHtml(pricing.coverageLabels[k] ?? k)}: ${escapeHtml(typeof v === 'string' ? v : v > 0 ? formatEur(v) : 'no incluida')}</li>`).join('')}
-      <li>Franquicia por siniestro médico: ${escapeHtml(formatEur(p.excess_per_medical_claim_eur))}</li></ul>`).join('');
+      <li>Franquicia por siniestro médico: ${escapeHtml(formatEur(p.excess_per_medical_claim_eur))}</li></ul>
+      <h3>${escapeHtml(brand.texts.planExclusionsTitle)} (solo ${escapeHtml(p.name)})</h3>
+      <ul>${p.extraExclusions.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>`).join('');
     res.type('html').send(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-      <title>${escapeHtml(brand.texts.termsTitle)}</title><link rel="stylesheet" href="/brand.css"><link rel="stylesheet" href="/style.css"></head>
-      <body><div class="banner">${escapeHtml(brand.demoBanner)}</div><main>
+      <title>${escapeHtml(brand.texts.termsTitle)} · ${escapeHtml(brand.name)}</title><link rel="stylesheet" href="/brand.css"><link rel="stylesheet" href="/style.css"></head>
+      <body>${header()}<main>
       <h1>${escapeHtml(brand.texts.termsTitle)}</h1><p>${escapeHtml(brand.texts.termsIntro)}</p>
       <p>Solo viajes que salen de España, de hasta ${pricing.limits.maxTripDays} días, de ${pricing.limits.minTravelers} a ${pricing.limits.maxTravelers} viajeros de ${pricing.limits.minAge} a ${pricing.limits.maxAge} años.</p>
-      ${plans}<h2>Exclusiones (ambos planes)</h2><ul>${pricing.exclusions.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>
+      ${plans}<h2>${escapeHtml(brand.texts.exclusionsTitle)}</h2><ul>${pricing.exclusions.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>
       <p><a href="/">← ${escapeHtml(brand.texts.back)}</a></p></main></body></html>`);
   });
 

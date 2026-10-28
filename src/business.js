@@ -6,7 +6,6 @@ import { writeFile, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { COUNTRY_SET } from '../config/countries.js';
 
-const PLAN_IDS = ['esencial', 'premium'];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const EMAIL_RE = /^[^\s@<>()[\]\\,;:"]+@[^\s@<>()[\]\\,;:"]+\.[A-Za-z]{2,}$/;
 const POLICY_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O or 1/I to avoid confusion
@@ -85,6 +84,8 @@ const DELIVERY_RECHECK_MS = 60_000; // ask Brevo at most once a minute per polic
 
 export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, now = () => new Date() }) {
   const L = pricing.limits;
+  const PLAN_IDS = Object.keys(pricing.plans);
+  const planIdList = PLAN_IDS.map(id => `"${id}"`).join(' or ');
 
   const zoneOf = code => {
     for (const [zone, codes] of Object.entries(pricing.zones)) if (codes.includes(code)) return zone;
@@ -93,9 +94,20 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, no
 
   const ageFactor = age => pricing.ageFactors.find(b => age >= b.minAge && age <= b.maxAge)?.factor ?? null;
 
+  // Trip-length multiplier: a falling per-day cost up to longTrip.fromDay - 1, then a flat
+  // cost per extra day equal to the average of what the days in longTrip.averageOfDays add.
+  const curve = days => Math.pow(days / pricing.baseDays, pricing.lengthExponent);
+  function lengthMultiplier(days) {
+    const { fromDay, averageOfDays: [first, last] } = pricing.longTrip;
+    const lastCurveDay = fromDay - 1;
+    if (days <= lastCurveDay) return curve(days);
+    const perExtraDay = (curve(last) - curve(first - 1)) / (last - first + 1);
+    return curve(lastCurveDay) + (days - lastCurveDay) * perExtraDay;
+  }
+
   function pricePerTravelerCents(zone, plan, days, age) {
     const base = pricing.basePrice7Days[zone][plan];
-    const scaled = base * Math.pow(days / pricing.baseDays, pricing.lengthExponent) * ageFactor(age);
+    const scaled = base * lengthMultiplier(days) * ageFactor(age);
     return Math.round((scaled + Number.EPSILON) * 100);
   }
 
@@ -113,8 +125,12 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, no
       coverage_limits_eur: plan.coverage,
       medical_limit_for_this_trip_eur: plan.coverage[medicalKey],
       cancellation_included: plan.coverage.cancellation_per_traveler_eur > 0,
+      adventure_sports_included: plan.adventure_sports_included,
+      ...(plan.adventure_sports_limits && { adventure_sports_limits: plan.adventure_sports_limits }),
+      search_and_rescue_eur: plan.coverage.search_and_rescue_eur,
       excess_per_medical_claim_eur: plan.excess_per_medical_claim_eur,
       coverage_summary,
+      exclusions: [...pricing.exclusions, ...plan.extraExclusions],
     };
   }
 
@@ -233,9 +249,9 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, no
         total_price_eur: toEur(prices[plan].total_cents),
         price_per_traveler: ages.map((age, i) => ({ traveler: i + 1, age, price_eur: toEur(prices[plan].per_traveler_cents[i]) })),
       })),
-      exclusions: pricing.exclusions,
+      exclusions_all_plans: pricing.exclusions,
       disclaimer: brand.demoBanner,
-      next_step: 'Show both plans to the user. When the user chooses, call select_plan with this quote_id and plan "esencial" or "premium".',
+      next_step: `Show both plans to the user (only Wild+ covers adventure sports). When the user chooses, call select_plan with this quote_id and plan ${planIdList}.`,
     };
   }
 
@@ -247,7 +263,7 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, no
     if (error) return error;
     const plan = typeof input.plan === 'string' ? input.plan.trim().toLowerCase() : '';
     if (!PLAN_IDS.includes(plan)) {
-      return fail('INVALID_PLAN', 'El plan no existe.', 'Usa plan "esencial" o "premium".');
+      return fail('INVALID_PLAN', 'El plan no existe.', `Usa plan ${PLAN_IDS.map(id => `"${id}"`).join(' o ')}.`);
     }
     const depError = departureCheck(quote.departure_date);
     if (depError) return depError;
@@ -320,7 +336,7 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, no
       policyholder: order.policyholder_json ? JSON.parse(order.policyholder_json) : null,
       travelers: travelers.map((t, i) => ({ ...t, age_at_departure: ages[i], price_eur: toEur(prices.per_traveler_cents[i]) })),
       total_eur: toEur(order.total_cents),
-      exclusions: pricing.exclusions,
+      exclusions: planDetails(order.plan, quote.zone).exclusions,
     };
   }
 
@@ -352,6 +368,9 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, no
         plan.coverage.cancellation_per_traveler_eur > 0
           ? `Cancelación incluida hasta ${formatEur(plan.coverage.cancellation_per_traveler_eur)} por viajero.`
           : 'La cancelación del viaje NO está incluida.',
+        plan.adventure_sports_included
+          ? `Deportes de aventura ${plan.coverage.adventure_sports}. Búsqueda y rescate hasta ${formatEur(plan.coverage.search_and_rescue_eur)}.`
+          : 'Los deportes de aventura NO están incluidos.',
         'Pago simulado: no se cobra nada.',
         brand.demoBanner,
       ],
@@ -515,7 +534,7 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, no
     if (shapeError) return shapeError;
     const number = typeof input.policy_number === 'string' ? input.policy_number.trim().toUpperCase() : '';
     const email = typeof input.email === 'string' ? input.email.trim().toLowerCase() : '';
-    const notFound = fail('POLICY_NOT_FOUND', 'No encontramos ninguna póliza con ese número y ese correo.', 'Revisa el número de póliza (formato BRAND-2026-XXXXXX) y usa el correo del tomador.');
+    const notFound = fail('POLICY_NOT_FOUND', 'No encontramos ninguna póliza con ese número y ese correo.', `Revisa el número de póliza (formato ${brand.policyPrefix}-AAAA-XXXXXX) y usa el correo del tomador.`);
     const policy = db.prepare('SELECT * FROM policies WHERE policy_number = ?').get(number);
     if (!policy) return notFound;
     const order = getOrderRow(policy.order_id);

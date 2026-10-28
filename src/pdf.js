@@ -1,37 +1,57 @@
-// Builds the policy certificate PDF with PDFKit. Returns a Buffer.
+// Builds the policy certificate PDF with PDFKit and the brand fonts. Returns a Buffer.
 import PDFDocument from 'pdfkit';
+import { fileURLToPath } from 'node:url';
 import { formatEur } from './business.js';
+
+const font = path => fileURLToPath(new URL(`../node_modules/@fontsource/${path}`, import.meta.url));
+const FONTS = {
+  heading: font('space-grotesk/files/space-grotesk-latin-700-normal.woff'),
+  text: font('inter/files/inter-latin-400-normal.woff'),
+  bold: font('inter/files/inter-latin-700-normal.woff'),
+};
 
 export function buildPolicyPdf({ policy_number, issued_at, summary, brand, pricing }) {
   return new Promise((resolve, reject) => {
+    const c = brand.colors;
     const doc = new PDFDocument({ size: 'A4', margin: 50, info: { Title: `${brand.texts.certificateTitle} ${policy_number}`, Author: brand.name } });
     const chunks = [];
-    doc.on('data', c => chunks.push(c));
+    doc.on('data', chunk => chunks.push(chunk));
     doc.on('end', () => resolve(Buffer.concat(chunks)));
     doc.on('error', reject);
+    for (const [name, path] of Object.entries(FONTS)) doc.registerFont(name, path);
 
+    const text = () => doc.font('text').fontSize(10).fillColor(c.night);
     const disclaimerBox = () => {
       const y = doc.y;
-      doc.rect(50, y, 495, 46).fill(brand.colors.banner);
-      doc.fillColor(brand.colors.bannerText).font('Helvetica-Bold').fontSize(22)
-        .text(brand.pdfDisclaimer, 50, y + 13, { width: 495, align: 'center' });
-      doc.fillColor('#000000').font('Helvetica').fontSize(10);
-      doc.y = y + 60;
+      doc.rect(50, y, 495, 44).fill(c.red);
+      doc.fillColor(c.white).font('heading').fontSize(20).text(brand.pdfDisclaimer, 50, y + 11, { width: 495, align: 'center' });
+      text();
+      doc.y = y + 56;
       doc.x = 50;
     };
-    const heading = text => {
-      doc.moveDown(0.6).font('Helvetica-Bold').fontSize(13).fillColor(brand.colors.primary).text(text);
-      doc.font('Helvetica').fontSize(10).fillColor('#000000').moveDown(0.2);
+    const heading = label => {
+      doc.moveDown(0.6).font('heading').fontSize(13).fillColor(c.night).text(label);
+      const y = doc.y + 1;
+      doc.moveTo(50, y).lineTo(90, y).lineWidth(2).strokeColor(c.yellow).stroke();
+      text().moveDown(0.35);
     };
     const line = (label, value) => {
-      doc.font('Helvetica-Bold').text(`${label}: `, { continued: true }).font('Helvetica').text(String(value));
+      doc.font('bold').text(`${label}: `, { continued: true }).font('text').text(String(value));
     };
 
     const { trip, plan, policyholder, travelers, total_eur, exclusions } = summary;
 
+    // Logo bar
+    doc.rect(50, 50, 495, 56).fill(c.night);
+    doc.fillColor(c.cream).font('heading').fontSize(26).text(brand.logo.wordmark, 66, 58, { lineBreak: false });
+    doc.fillColor(c.yellow).font('text').fontSize(9).text(brand.logo.tagline, 67, 89, { lineBreak: false });
+    doc.fillColor(c.cream).font('text').fontSize(9).text(brand.claim, 300, 74, { width: 230, align: 'right' });
+    doc.x = 50;
+    doc.y = 118;
+
     disclaimerBox();
-    doc.font('Helvetica-Bold').fontSize(18).fillColor(brand.colors.primary).text(`${brand.name} · ${brand.texts.certificateTitle}`);
-    doc.font('Helvetica').fontSize(10).fillColor('#000000').moveDown(0.3);
+    doc.font('heading').fontSize(18).fillColor(c.night).text(brand.texts.certificateTitle);
+    text().moveDown(0.3);
     line('Número de póliza', policy_number);
     line('Emitida', issued_at.slice(0, 10));
     line('Plan', plan.plan_name);
@@ -56,9 +76,11 @@ export function buildPolicyPdf({ policy_number, issued_at, summary, brand, prici
     heading('Exclusiones');
     exclusions.forEach(e => doc.text(`• ${e}`));
 
-    doc.moveDown(1);
+    // Closing banner + footnote need about 80pt; only start a new page if they really don't fit.
+    doc.moveDown(0.6);
+    if (doc.y + 80 > doc.page.height - doc.page.margins.bottom) doc.addPage();
     disclaimerBox();
-    doc.fontSize(8).fillColor('#555555').text(`Documento de demostración generado por ${brand.name}. No tiene validez como contrato de seguro y no ofrece ninguna cobertura. Moneda: ${pricing.currency}.`);
+    doc.fontSize(8).fillColor(c.stone).text(`Documento de demostración generado por ${brand.name}. No tiene validez como contrato de seguro y no ofrece ninguna cobertura. Moneda: ${pricing.currency}.`);
     doc.end();
   });
 }
