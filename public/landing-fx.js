@@ -13,7 +13,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;'
 
 // ---------- hero parallax: far layers move slower than the page while the hero is on screen ----------
 const scene = $('#hero-scene');
-const layers = [['.layer-far', 0.28], ['.layer-mid', 0.14]].map(([sel, speed]) => [scene.querySelector(sel), speed]);
+const layers = [['.layer-far', 0.14], ['.layer-mid', 0.07]].map(([sel, speed]) => [scene.querySelector(sel), speed]);
 let ticking = false;
 function parallax() {
   ticking = false;

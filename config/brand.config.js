@@ -67,7 +67,7 @@ export default {
       submit: 'Ver mi precio',
       note: 'Gratis y sin compromiso: no te pedimos datos personales.',
       loading: 'Calculando…',
-      passLabel: 'Pase de viaje',
+      passLabel: 'Calcula tu precio',
       pricePreview: 'Desde {price} · plan {plan}', // live, from get_quote (cheapest plan, all travellers)
       routeFrom: 'España',
       routeTo: '{name} · {days} días', // shown only once a destination is chosen; without dates just the name

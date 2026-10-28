@@ -129,9 +129,10 @@ const layerSvg = (layer, extra = '') => `<svg class="layer layer-${layer}" viewB
   SCENE_IDS.map(id => `<g class="scene${id === 'mountains' ? ' is-active' : ''}" data-scene="${id}"><use href="#sc-${id}-${layer}" width="1200" height="400"/></g>`).join('')
 }</svg>`;
 
-// The hero: three layers (the sun rises once in the far layer, behind the hills).
-export const heroScene = `<div class="hero-scene" id="hero-scene" aria-hidden="true">${
-  layerSvg('far', `<circle class="sun" cx="250" cy="130" r="46" fill="${Y}"/>`)}${layerSvg('mid')}${layerSvg('near')}</div>`;
+// The hero: three layers. The sun (with a soft warm glow) rises once in the far layer, behind the hills.
+const sun = `<defs><radialGradient id="sun-glow"><stop offset="0" stop-color="${Y}" stop-opacity="0.55"/><stop offset="0.45" stop-color="${Y}" stop-opacity="0.18"/><stop offset="1" stop-color="${Y}" stop-opacity="0"/></radialGradient></defs>
+  <g class="sun-rise"><circle class="sun-glow" cx="250" cy="150" r="105" fill="url(#sun-glow)"/><circle class="sun" cx="250" cy="150" r="46" fill="${Y}"/></g>`;
+export const heroScene = `<div class="hero-scene" id="hero-scene" aria-hidden="true">${layerSvg('far', sun)}${layerSvg('mid')}${layerSvg('near')}</div>`;
 
 // A small static scene (destination cards): all three layers of one scene.
 export const miniScene = id => `<svg class="mini-scene" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">`

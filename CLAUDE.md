@@ -33,6 +33,10 @@ The owner is not a programmer: explain things simply, report test results honest
   Agent activity (public/agent-pill.js, texts `agentPill`): a floating pill "Tu asistente está usando Wildpass", hidden until a WebMCP
   tool is really called; expands to a timed log of FIXED phrases (never names, emails, ids, tokens or links); hides after 2 min idle.
   In the checkout it docks as a strip on top of the total bar (and the page gets extra bottom room) so it never covers a button.
+  Hero: form heading "Calcula tu precio" (h2 #quote-title, names the form) with "Seguros Wildpass" small under it; the pass notches use
+  --notch-y, so keep .pass-title/.pass-brand line heights in sync. Sunrise 3.5 s + warm glow, once per visit (public/sun-once.js, a
+  classic <head> script setting html.sun-seen from sessionStorage). Parallax far 0.14 / mid 0.07. Phones/tablets (<960 px): copy →
+  the WHOLE 3:1 landscape band (56 px of sky on top holds the route) → card on a turquoise "ground" (.hero-grid::after); nothing overlaps.
 - Destination field: the server renders a `<select id="destination">` ("Destinos populares" optgroup first from `texts.form.popularDestinations`,
   then A–Z); `public/destination-picker.js` hides it and puts an accessible searchable combobox (`#destination-search`) in front. The select stays
   the source of truth (`.value` + `change`). Remote territories (AQ BV HM GS TF IO UM) are not in `config/countries.js`.

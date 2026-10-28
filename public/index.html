@@ -10,6 +10,7 @@
   {{{fontPreloads}}}
   <link rel="stylesheet" href="/brand.css">
   <link rel="stylesheet" href="/style.css">
+  <script src="/sun-once.js"></script>
 </head>
 <!-- Template filled in by the server (src/landing.js): double braces = escaped text, triple braces = built HTML. -->
 <body>
@@ -31,8 +32,8 @@
           {{{routeStrip}}}
           <span class="route-to" id="route-to"></span>
         </div>
-        <form id="quote-form" class="quote-card pass" novalidate>
-          <p class="pass-head" aria-hidden="true"><span>{{t.form.passLabel}}</span><span>{{brand.name}}</span></p>
+        <form id="quote-form" class="quote-card pass" aria-labelledby="quote-title" novalidate>
+          <h2 class="pass-head" id="quote-title"><span class="pass-title">{{t.form.passLabel}}</span><span class="pass-brand" aria-hidden="true">{{brand.name}}</span></h2>
           <div class="field">
             <label for="destination">{{t.form.destination}}</label>
             <select id="destination" name="destination" aria-required="true">

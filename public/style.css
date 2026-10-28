@@ -79,38 +79,46 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .hero { position: relative; overflow: hidden; padding: 10px 0 32px; }
 .hero h1 { font-size: clamp(1.75rem, 7.6vw, 3.6rem); letter-spacing: -0.02em; margin-bottom: 8px; }
 .hero-sub { font-size: 0.95rem; line-height: 1.45; color: var(--secondary); margin-bottom: 10px; }
-/* Phone: copy, then a landscape band (with the route strip in its sky), then the pass card overlapping the band. */
+/* Phone: copy, then the WHOLE landscape as a band (a strip of sky on top holds the route), then the pass card standing on
+   the ground: nothing overlaps the mountains. The turquoise behind the card continues the ground of the picture. */
 .hero-grid { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "copy" "scene" "form"; }
+.hero-grid::after { content: ''; grid-area: form; margin: 0 -16px -32px; background: var(--turquoise); }
 .hero-copy { grid-area: copy; position: relative; z-index: 1; }
 .quote-card { grid-area: form; position: relative; z-index: 1; background: var(--white); border-radius: 16px; padding: 14px; }
 
 /* Layered landscape behind the hero: 3 parallax layers (public/landing-fx.js moves them on scroll), one <g> per scene,
    cross-faded when a destination is picked. Absolutely placed, so it never moves the page (no layout shift). */
-.hero-scene { grid-area: scene; position: relative; height: 200px; margin: 0 -16px -40px; overflow: hidden; pointer-events: none; }
-.hero-scene .layer { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.hero-scene { grid-area: scene; position: relative; padding-top: 56px; margin: 0 -16px; overflow: hidden; pointer-events: none; }
+.hero-scene::before { content: ''; display: block; aspect-ratio: 3 / 1; } /* the 1200×400 picture, shown whole */
+.hero-scene .layer { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; aspect-ratio: 3 / 1; overflow: visible; }
 .hero-scene .layer-far, .hero-scene .layer-mid { will-change: transform; }
 .hero-scene .scene { opacity: 0; transition: opacity 0.7s ease; }
 .hero-scene .scene.is-active { opacity: 1; }
 .sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
-/* The sun rises once on load; headline, form and route slide in gently (all off with reduced motion). */
-.hero-scene .sun { transform-box: fill-box; animation: sunrise 1.2s 0.1s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
-@keyframes sunrise { from { transform: translateY(160%); } }
-/* Phones/tablets show only the middle of the 1200-wide scene: move the sun inwards, below the route label. */
-@media (max-width: 959px) { .hero-scene .sun { cx: 700px; cy: 175px; } }
+/* Slow sunrise from behind the hills (ease-out), then a soft warm glow fades in. Once per visit (public/sun-once.js
+   adds .sun-seen on later loads); with reduced motion everything is simply shown in its final place. */
+.hero-scene .sun-rise { animation: sunrise 3.5s 0.3s cubic-bezier(0.33, 1, 0.68, 1) both; }
+@keyframes sunrise { from { transform: translateY(240px); } }
+.hero-scene .sun-glow { animation: sun-glow 2.2s 1.8s ease-out both; }
+@keyframes sun-glow { from { opacity: 0; } }
+.sun-seen .hero-scene .sun-rise, .sun-seen .hero-scene .sun-glow { animation: none; }
 .hero-copy, .quote-card, .route { animation: rise-in 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 .quote-card { animation-delay: 0.15s; }
 .route { animation-delay: 0.3s; }
 @keyframes rise-in { from { opacity: 0; transform: translateY(16px); } }
 
 /* The form as a "travel pass": a stub on top, a dashed tear line and two half-circle notches cut at its ends. */
-.pass { --pass-pad: 14px; --notch-y: calc(var(--pass-pad) + 29px);
+.pass { --pass-pad: 14px; --notch-y: calc(var(--pass-pad) + 55px);
   -webkit-mask: radial-gradient(circle 9px at 0 var(--notch-y), #0000 8.5px, #000 9px) left / 51% 100% no-repeat,
                 radial-gradient(circle 9px at 100% var(--notch-y), #0000 8.5px, #000 9px) right / 51% 100% no-repeat;
           mask: radial-gradient(circle 9px at 0 var(--notch-y), #0000 8.5px, #000 9px) left / 51% 100% no-repeat,
                 radial-gradient(circle 9px at 100% var(--notch-y), #0000 8.5px, #000 9px) right / 51% 100% no-repeat; }
-.pass-head { display: flex; justify-content: space-between; gap: 12px; margin: 0 calc(-1 * var(--pass-pad)) 12px; padding: 0 var(--pass-pad) 10px;
-  border-bottom: 2px dashed var(--border); font-family: var(--font-headings); font-size: 0.75rem; line-height: 18px; font-weight: 700;
-  letter-spacing: 0.14em; text-transform: uppercase; color: var(--turquoise-text); }
+/* Stub: "Calcula tu precio" (the form's heading) with "Seguros Wildpass" small underneath. Fixed line heights keep the
+   tear line exactly at --notch-y. */
+.pass-head { display: flex; flex-direction: column; gap: 2px; margin: 0 calc(-1 * var(--pass-pad)) 12px; padding: 0 var(--pass-pad) 10px;
+  border-bottom: 2px dashed var(--border); font-family: var(--font-headings); font-weight: 700; }
+.pass-title { font-size: 1.25rem; line-height: 26px; letter-spacing: -0.01em; color: var(--night); }
+.pass-brand { font-size: 0.7rem; line-height: 16px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--turquoise-text); }
 
 /* Live "Desde X € · plan Wild" under the button: its line is always reserved, digits roll like an odometer. */
 .price-preview { min-height: 1.5em; margin: 8px 0 0; text-align: center; font-family: var(--font-headings); font-weight: 700; font-size: 1.05rem; line-height: 1.5; color: var(--turquoise-text); }
@@ -119,7 +127,7 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .odo-strip span { height: 1.5em; }
 
 /* Route strip: Spain → destination on a dotted texture, the flight path draws itself and a little plane flies it. */
-.route { grid-area: scene; align-self: start; position: relative; z-index: 1; display: flex; align-items: center; gap: 8px; margin-top: 6px; padding: 4px 12px; border-radius: 14px;
+.route { grid-area: scene; align-self: start; position: relative; z-index: 1; display: flex; align-items: center; gap: 8px; margin-top: 0; padding: 4px 12px; border-radius: 14px;
   background: rgb(255 255 255 / 0.85); font-weight: 700; font-size: 0.85rem; color: var(--night); }
 .route-map { flex: 1; min-width: 0; height: 48px; }
 .route-from, .route-to { flex: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -494,7 +502,9 @@ html:has(.agent-pill:not([hidden])) .site-footer { padding-bottom: 90px; }
   .hero-copy { align-self: end; }
   .route { grid-area: route; align-self: start; max-width: 30rem; margin-top: 18px; }
   /* Desktop: the landscape fills the bottom of the whole hero, behind the copy and the card. */
-  .hero-scene { position: absolute; left: 0; right: 0; bottom: 0; height: 380px; margin: 0; }
+  .hero-scene { position: absolute; left: 0; right: 0; bottom: 0; height: 380px; margin: 0; padding: 0; }
+  .hero-scene::before, .hero-grid::after { display: none; }
+  .hero-scene .layer { inset: 0; height: 100%; aspect-ratio: auto; }
   .hero-sub { font-size: 1.2rem; max-width: 30rem; }
   .quote-card { padding: 24px; }
   .pass { --pass-pad: 24px; }
