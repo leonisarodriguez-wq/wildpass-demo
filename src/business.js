@@ -202,6 +202,10 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
     if (destination === origin) {
       return fail('SAME_COUNTRY', 'El país de destino debe ser distinto del país de salida.', 'Indica un país de destino diferente de España.');
     }
+    if (pricing.destinationsNotCovered.includes(destination)) {
+      return fail('DESTINATION_NOT_COVERED', `No podemos asegurar viajes a destinos con recomendación oficial de no viajar (${countryName(destination)}).`,
+        'Elige otro destino. Las recomendaciones de viaje oficiales están en exteriores.gob.es.', { destination_country: destination });
+    }
 
     const dep = parseDate(input.departure_date);
     const ret = parseDate(input.return_date);

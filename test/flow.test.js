@@ -323,7 +323,7 @@ test('landing: complete server-rendered page with prices from the pricing engine
   // Every template placeholder was filled (an unknown one would have thrown).
   assert.ok(!/\{\{|\}\}/.test(html), 'leftover template braces');
   for (const text of ['Travel wild. We’ve got you.', 'Ver mi precio', 'Gratis y sin compromiso: no te pedimos datos personales.',
-    'Viajeros y edad el día de la ida', '+ Añadir viajero', 'Cómo funciona',
+    'Viajeros y edad el día de la ida', 'La edad influye en el precio.', '+ Añadir viajero',
     'Tu asistente también puede contratarlo', 'Tú pon la aventura. Nosotros, todo lo demás.', 'Elige cómo quieres viajar',
     'El favorito de los aventureros', '¿Preparado para empezar tu viaje?', 'Hecho con WebMCP']) {
     assert.ok(html.includes(text.replace('’', "'")) || html.includes(text) || html.includes(text.replace('’', '&#39;')), `missing: ${text}`);
@@ -366,10 +366,6 @@ test('landing hero: destination scenes and the AI example use real prices and th
   const plus = q.plans.find(p => p.plan === 'wild_plus').total_price_eur.toLocaleString('es-ES', { minimumFractionDigits: 2 });
   assert.ok(html.includes(`Wild+: ${plus} € para los dos`), `example price ${plus}`);
   assert.ok(html.includes(`¿Confirmas el pago de ${plus} €?`));
-  // The timeline lists exactly the real tools, in their real order, and confirm_payment's safety checks.
-  const tools = buildTools({ limits: pricing.limits, plans: { wild: 'Wild', wild_plus: 'Wild+' }, brand, payments: { provider: 'simulated' } }).map(t => t.name);
-  assert.deepEqual([...html.matchAll(/data-tool="(\w+)"/g)].map(m => m[1]), tools);
-  assert.deepEqual([...html.matchAll(/data-check="(\w+)"/g)].map(m => m[1]), ['review_token', 'accept_terms', 'user_confirmed', 'confirmed_total_eur']);
 });
 
 test('the old methodology page is gone (research stays in docs/pricing-research.md)', async () => {
@@ -422,27 +418,81 @@ test('brand rule: yellow only on clickable primary buttons', async () => {
   assert.ok(!css.includes('--pale-yellow'), 'pale yellow is not used on the site');
 });
 
-test('AI block: example prompt, honest note and a developers list generated from the REAL WebMCP tools', async () => {
-  const { buildTools } = await import('../public/webmcp-tools.js');
-  const html = await (await fetch(`${base}/`)).text();
-  assert.ok(html.includes('Búscame un seguro de viaje para 2 personas de 35 y 38 años, de España a Tailandia, del 10 al 24 de diciembre, y enséñame el resumen antes de pagar.'));
-  assert.ok(html.includes('id="copy-prompt"'));
-  assert.ok(html.includes('Funciona con asistentes y navegadores compatibles con WebMCP, un estándar nuevo que se está incorporando a Chrome.'));
-  assert.match(html, /<details class="dev-tools">\s*<summary>Para desarrolladores<\/summary>/); // closed by default (no "open")
+test('AI block on the landing: only title, text, the example chat and the compatibility line', async () => {
+  const html = nbsp(await (await fetch(`${base}/`)).text());
+  const ai = html.slice(html.indexOf('id="ia"'), html.indexOf('</section>', html.indexOf('id="ia"')));
+  assert.ok(ai.includes('Tu asistente también puede contratarlo') && ai.includes('id="showcase"') && ai.includes('id="showcase-replay"'));
+  assert.ok(ai.includes('Funciona con asistentes y navegadores compatibles con WebMCP'));
+  // Developer material lives on /agentes now.
+  for (const gone of ['copy-prompt', 'Para desarrolladores</summary>', 'Herramientas WebMCP que usa', 'data-tool=', 'Prueba a pedirle esto']) assert.ok(!html.includes(gone), gone);
+  // Screen readers: each message once. The visual copy is aria-hidden, the sr-only copy carries the speaker.
+  const bubbles = [...ai.matchAll(/<li class="bubble[^"]*"[^>]*>(.*?)<\/li>/g)].map(m => m[1]);
+  assert.equal(bubbles.length, 6);
+  for (const b of bubbles) {
+    const readable = b.replace(/<span class="bubble-text" aria-hidden="true">.*?<\/span>/, '');
+    assert.equal((readable.match(/<span class="sr-only">/g) ?? []).length, 1, b);
+    assert.ok(b.includes('<span class="bubble-text" aria-hidden="true">'), b);
+  }
+  assert.ok(bubbles[0].startsWith('<span class="sr-only">Usuario: Necesito un seguro para Tailandia'));
+  // Section order: hero → benefits → ¿Y si…? → destinations → plans → AI → FAQ → final CTA; footer links.
+  const order = ['hero-title', 'editorial-title', 'whatif-title', 'dest-title', 'plans-title', 'ai-title', 'faq-title', 'cta-title'].map(id => html.indexOf(`id="${id}"`));
+  assert.deepEqual([...order].sort((a, b) => a - b), order);
+  assert.ok(!order.includes(-1));
+  assert.ok(html.includes('<a href="/condiciones">') && html.includes('<a href="/agentes">Para desarrolladores y agentes de IA</a>'));
+  // Benefits: no AI repeat; plans: two cards only.
+  assert.ok(html.includes('Sin franquicia en Wild+') && !html.includes('Contrátalo con tu asistente de IA'));
+  assert.equal((html.match(/<li class="plan-card/g) ?? []).length, 2);
+  assert.ok(html.includes('Me tuerzo el tobillo haciendo trekking'));
+});
 
+test('/agentes: WebMCP explained, example prompt, the real tools and the confirm_payment rules', async () => {
+  const res = await fetch(`${base}/agentes`);
+  assert.equal(res.status, 200);
+  const html = await res.text();
+  assert.ok(html.includes('Demo — no es un seguro real'), 'demo banner');
+  assert.ok(html.includes('<h1>Para desarrolladores y agentes de IA</h1>') && html.includes('Qué es WebMCP'));
+  assert.ok(html.includes('Búscame un seguro de viaje para 2 personas de 35 y 38 años, de España a Tailandia, del 10 al 24 de diciembre, y enséñame el resumen antes de pagar.'));
+  assert.ok(html.includes('id="copy-prompt"') && html.includes('<script type="module" src="/agentes.js"></script>'));
+  assert.equal((await fetch(`${base}/agentes.js`)).status, 200);
   const plans = Object.fromEntries(Object.entries(pricing.plans).map(([id, p]) => [id, p.name]));
   for (const payments of [{ provider: 'simulated' }, { provider: 'stripe_test' }]) {
     const tools = buildTools({ limits: pricing.limits, plans, brand: { name: 'Seguros Wildpass' }, payments });
     assert.deepEqual(tools.map(t => t.name), ['get_quote', 'select_plan', 'set_traveler_details', 'review_order', 'confirm_payment', 'get_policy']);
     for (const t of tools) assert.ok(t.es?.length > 10, `${t.name} has no Spanish line`);
-    // Every safety field of confirm_payment (all required fields except order_id) has a plain Spanish rule.
     const pay = tools.find(t => t.name === 'confirm_payment');
     for (const field of pay.inputSchema.required.filter(f => f !== 'order_id')) assert.ok(pay.rulesEs[field], `no Spanish rule for ${field}`);
   }
   const tools = buildTools({ limits: pricing.limits, plans, brand: { name: 'Seguros Wildpass' }, payments: { provider: 'simulated' } });
-  assert.ok(html.includes(`Esta página ofrece ${tools.length} herramientas WebMCP`));
+  assert.ok(html.includes(`Las ${tools.length} herramientas`));
   for (const t of tools) assert.ok(html.includes(`<li><code>${t.name}</code> ${t.es.replace(/[<>&]/g, '')}`), `${t.name} missing from the list`);
   for (const field of ['review_token', 'accept_terms', 'user_confirmed', 'confirmed_total_eur']) assert.ok(html.includes(`<li><code>${field}</code>:`), field);
+});
+
+test('destinations: popular first, remote territories gone, "do not travel" countries refused everywhere', async () => {
+  const html = nbsp(await (await fetch(`${base}/`)).text());
+  const popular = html.slice(html.indexOf('<optgroup label="Destinos populares">'), html.indexOf('</optgroup>'));
+  assert.deepEqual([...popular.matchAll(/<option value="([A-Z]{2})"/g)].map(m => m[1]), ['FR', 'IT', 'PT', 'GB', 'US', 'MX', 'TH', 'JP', 'PE', 'MA']);
+  assert.ok(html.includes('<optgroup label="Todos los destinos">'));
+  for (const code of ['AQ', 'BV', 'HM', 'GS', 'TF', 'IO', 'UM']) {
+    assert.ok(!html.includes(`value="${code}"`), `${code} still offered`);
+    await expectError('get_quote', quoteInput({ destination_country: code }), 'INVALID_COUNTRY');
+  }
+  assert.equal((html.match(/value="FR"/g) ?? []).length, 1, 'popular countries are not listed twice');
+  // Every "do not travel" country is marked in the page and refused by the server (= the WebMCP get_quote tool).
+  assert.ok(pricing.destinationsNotCovered.length >= 18);
+  for (const code of pricing.destinationsNotCovered) {
+    assert.ok(new RegExp(`value="${code}" data-scene="\\w+" data-blocked="true"`).test(html), `${code} not marked`);
+    const r = await call('get_quote', quoteInput({ destination_country: code }));
+    assert.equal(r.ok, false);
+    assert.equal(r.error_code, 'DESTINATION_NOT_COVERED', code);
+    assert.match(r.message, /recomendación oficial de no viajar/);
+    assert.match(r.how_to_fix, /otro destino/);
+  }
+  assert.ok(!/value="FR"[^>]*data-blocked/.test(html));
+  // The agent is told about the rule in the tool description; the website shows the friendly text.
+  const tools = buildTools({ limits: pricing.limits, plans: { wild: 'Wild', wild_plus: 'Wild+' }, brand, payments: { provider: 'simulated' } });
+  assert.match(tools[0].description, /DESTINATION_NOT_COVERED/);
+  assert.equal(brand.texts.errors.DESTINATION_NOT_COVERED, 'No podemos asegurar viajes a destinos con recomendación oficial de no viajar.');
 });
 
 test('checkout copy: Spanish dates, new success title and the boarding pass on the success step', async () => {

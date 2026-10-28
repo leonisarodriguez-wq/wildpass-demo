@@ -7,7 +7,9 @@ import brand from '../config/brand.config.js';
 
 const { night: N, turquoise: T, white: W, yellow: Y, mint: M } = brand.colors;
 const line = (w = 3) => `stroke="${N}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"`;
-const far = (d, o = 0.22) => `<path d="${d}" fill="${T}" opacity="${o}"/>`;
+// Turquoise mixed with the sky colour, as a SOLID colour: hills look see-through but really hide the sun behind them.
+const tint = o => '#' + [1, 3, 5].map(i => Math.round(parseInt(T.slice(i, i + 2), 16) * o + parseInt(brand.colors.sky.slice(i, i + 2), 16) * (1 - o)).toString(16).padStart(2, '0')).join('');
+const far = (d, o = 0.22) => `<path d="${d}" fill="${tint(o)}"/>`;
 const ground = d => `<path d="${d}" fill="${T}"/>`;
 
 // Shared pieces.
@@ -39,7 +41,7 @@ export const SCENES = {
   },
   thailand: {
     far: softHills,
-    mid: `<g fill="${T}" fill-opacity=".8" ${line(3)}>
+    mid: `<g fill="${tint(0.8)}" ${line(3)}>
         <path d="M600 108v62"/>
         <path d="M548 222l20-44h64l20 44z"/>
         <path d="M498 266q-14-4-18-22l42 6 20-30h116l20 30 42-6q-4 18-18 22z"/>
@@ -51,7 +53,7 @@ export const SCENES = {
     near: `${ground('M0 400V362c180-14 380-18 600-10s420 8 600-4V400z')}${palm(300, -1)}${palm(900, 1)}`,
   },
   japan: {
-    far: `<path d="M290 400L520 168q80-20 160 0l230 232z" fill="${T}" opacity=".35"/>
+    far: `<path d="M290 400L520 168q80-20 160 0l230 232z" fill="${tint(0.35)}"/>
       <path d="M520 168q80-20 160 0l-38 46-24-14-26 22-24-20-26 14z" fill="${W}"/>`,
     mid: far('M0 400V320c140-30 260-30 400 0s300 20 420-10 260-30 380 0V400z', 0.55),
     near: `${ground('M0 400V366c220-16 420-20 640-12s380 8 560-2V400z')}
@@ -62,7 +64,7 @@ export const SCENES = {
   peru: {
     far: `${far('M0 400V232l92-62 58 40 112-112 80 70 92-92 120 122 70-50 132 92 110-100 110 82 92-42 132 62V400z', 0.3)}
       <path d="M262 98l-30 30 14-4 16 12 14-12 16 6z M554 98l-26 26 12-4 14 10 12-10 14 4z" fill="${W}"/>`,
-    mid: `<path d="M240 400C370 250 560 196 760 226c120 18 200 70 280 174z" fill="${T}" opacity=".6"/>
+    mid: `<path d="M240 400C370 250 560 196 760 226c120 18 200 70 280 174z" fill="${tint(0.6)}"/>
       <g fill="none" ${line(3)}>
         <path d="M318 352c150-34 400-46 660-8"/><path d="M372 312c130-30 330-40 540-10"/>
         <path d="M430 276c110-24 270-32 420-8"/><path d="M500 246c90-18 200-22 300-6"/>
@@ -80,7 +82,7 @@ export const SCENES = {
   },
   mexico: {
     far: softHills,
-    mid: `<g fill="${T}" fill-opacity=".75" ${line(3)}>
+    mid: `<g fill="${tint(0.75)}" ${line(3)}>
         <path d="M390 360h420l-30-44H420z"/><path d="M420 316h360l-30-42H450z"/>
         <path d="M450 274h300l-30-40H480z"/><path d="M480 234h240l-28-38H508z"/>
         <path d="M546 196v-34h108v34z"/>
@@ -91,7 +93,7 @@ export const SCENES = {
   },
   usa: {
     far: far('M0 400V262h110l26-40h150l26 40h60V214h150l36 56h120l30-46h140l24 46h110V230h120l40 40h60V400z', 0.3),
-    mid: `<path d="M0 400V250h150l40 60 70 18v72z M1200 400V240h-140l-50 70-80 20v70z" fill="${T}" opacity=".7" ${line(3)}/>
+    mid: `<path d="M0 400V250h150l40 60 70 18v72z M1200 400V240h-140l-50 70-80 20v70z" fill="${tint(0.7)}" ${line(3)}/>
       <path d="M40 286h120M1090 290h-110" ${line(2)}/>`,
     near: `${ground('M0 400V330h1200V400z')}
       <path d="M430 400L586 330h28L770 400z" fill="${N}" opacity=".85"/>
@@ -129,21 +131,19 @@ const layerSvg = (layer, extra = '') => `<svg class="layer layer-${layer}" viewB
 
 // The hero: three layers (the sun rises once in the far layer, behind the hills).
 export const heroScene = `<div class="hero-scene" id="hero-scene" aria-hidden="true">${
-  layerSvg('far', `<circle class="sun" cx="430" cy="200" r="46" fill="${Y}"/>`)}${layerSvg('mid')}${layerSvg('near')}</div>`;
+  layerSvg('far', `<circle class="sun" cx="250" cy="130" r="46" fill="${Y}"/>`)}${layerSvg('mid')}${layerSvg('near')}</div>`;
 
 // A small static scene (destination cards): all three layers of one scene.
 export const miniScene = id => `<svg class="mini-scene" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">`
-  + `<rect width="1200" height="400" fill="${brand.colors.sky}"/><circle cx="430" cy="200" r="46" fill="${Y}"/>`
+  + `<rect width="1200" height="400" fill="${brand.colors.sky}"/><circle cx="250" cy="130" r="46" fill="${Y}"/>`
   + ['far', 'mid', 'near'].map(l => `<use href="#sc-${id}-${l}" width="1200" height="400"/>`).join('') + '</svg>';
 
-// Route strip: Spain → destination on a dotted "map" texture, a dotted flight path and a small plane.
+// Route strip: Spain → destination, a dotted flight path and a small plane (hidden until a destination is chosen).
 const ROUTE = 'M34 50Q160 -4 286 28';
 export const routeStrip = `<svg class="route-map" viewBox="0 0 320 64" aria-hidden="true" focusable="false">
   <defs>
-    <pattern id="route-dots" width="10" height="10" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.3" fill="${T}" opacity=".35"/></pattern>
     <mask id="route-reveal" maskUnits="userSpaceOnUse"><path id="route-mask" d="${ROUTE}" fill="none" stroke="#fff" stroke-width="8" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></mask>
   </defs>
-  <rect x="0" y="0" width="320" height="64" rx="12" fill="url(#route-dots)"/>
   <path id="route-path" d="${ROUTE}" fill="none" stroke="${N}" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="0.1 7" mask="url(#route-reveal)"/>
   <circle cx="34" cy="50" r="6" fill="${T}" stroke="${N}" stroke-width="2.5"/>
   <g class="route-end"><path d="M286 30s-9-8.6-9-15.5a9 9 0 0 1 18 0C295 21.4 286 30 286 30z" fill="${W}" stroke="${N}" stroke-width="2.5"/><circle cx="286" cy="14.5" r="3" fill="${T}"/></g>

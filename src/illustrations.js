@@ -23,15 +23,12 @@ export const mountainRope = svg(`
   <circle cx="18" cy="80" r="7" stroke="${N}" stroke-width="8"/>
   <circle cx="18" cy="80" r="7" stroke="${Y}" stroke-width="3.5"/>`);
 
-export const chatRobotCheck = svg(`
-  <path d="M14 14h58a8 8 0 0 1 8 8v36a8 8 0 0 1-8 8H40L26 78V66H14a8 8 0 0 1-8-8V22a8 8 0 0 1 8-8z" fill="${T}" stroke="${N}" stroke-width="3"/>
-  <path d="M43 30v-6" stroke="${N}" stroke-width="3"/>
-  <circle cx="43" cy="21" r="3.5" fill="${Y}" stroke="${N}" stroke-width="2.5"/>
-  <rect x="28" y="30" width="30" height="25" rx="7" fill="${W}" stroke="${N}" stroke-width="3"/>
-  <circle cx="37" cy="42" r="3" fill="${N}"/><circle cx="49" cy="42" r="3" fill="${N}"/>
-  <path d="M38 49h10" stroke="${N}" stroke-width="2.5"/>
-  <circle cx="76" cy="72" r="14" fill="${Y}" stroke="${N}" stroke-width="3"/>
-  <path d="m69 72 5 5 9-10" stroke="${N}" stroke-width="3.5"/>`);
+// No excess with Wild+: a shield with a check, a small sun rising behind it.
+export const shieldCheck = svg(`
+  <circle cx="70" cy="26" r="12" fill="${Y}" stroke="${N}" stroke-width="3"/>
+  <path d="M48 10 80 22v24c0 20-13 34-32 42C29 80 16 66 16 46V22z" fill="${T}" stroke="${N}" stroke-width="3"/>
+  <path d="M48 20 70 28v18c0 14-9 24-22 30-13-6-22-16-22-30V28z" fill="${W}" stroke="${N}" stroke-width="2.5"/>
+  <path d="m37 47 8 8 15-17" stroke="${N}" stroke-width="4.5"/>`);
 
 // ---------- "¿Y si…?" scenarios ----------
 // Ankle sprain on a trek: boot with a bandage, trail peaks behind.

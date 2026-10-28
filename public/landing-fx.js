@@ -7,6 +7,7 @@ const $ = sel => document.querySelector(sel);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 const fill = (template, values) => String(template).replace(/\{(\w+)\}/g, (m, k) => (k in values ? values[k] : m));
 const eur = n => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', useGrouping: 'always', minimumFractionDigits: n % 1 === 0 ? 0 : 2 }).format(n);
+let T = null; // brand texts (from /api/config)
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
@@ -25,26 +26,36 @@ addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimat
 const destination = $('#destination');
 const route = $('#route');
 const fly = $('#route-fly');
+// Inclusive day count, like the pricing engine (departure and return both count).
+const tripDays = () => {
+  const dep = $('#departure').value, ret = $('#return').value;
+  return dep && ret && ret > dep ? Math.round((Date.parse(ret) - Date.parse(dep)) / 86_400_000) + 1 : 0;
+};
+// The strip stays hidden until a (coverable) destination is chosen: "España ✈ Tailandia · 15 días".
+function routeLabel() {
+  const option = destination.selectedOptions[0];
+  const days = tripDays();
+  $('#route-to').textContent = !destination.value ? '' : days && T ? fill(T.form.routeTo, { name: option.textContent, days }) : option.textContent;
+}
 function showDestination() {
   const option = destination.selectedOptions[0];
-  const id = option?.dataset.scene ?? 'mountains';
+  const blocked = option?.dataset.blocked === 'true';
+  const id = blocked ? 'mountains' : option?.dataset.scene ?? 'mountains';
   for (const g of scene.querySelectorAll('.scene')) g.classList.toggle('is-active', g.dataset.scene === id);
-  const chosen = Boolean(destination.value);
-  $('#route-to').textContent = chosen ? option.textContent : $('#route-to').dataset.empty;
+  const chosen = Boolean(destination.value) && !blocked;
+  routeLabel();
   route.classList.toggle('has-dest', chosen);
   if (chosen && fly?.beginElement) {
     fly.setAttribute('dur', reduced.matches ? '0.001s' : '1.6s');
     fly.beginElement();
   }
 }
-$('#route-to').dataset.empty = $('#route-to').textContent;
 destination.addEventListener('change', showDestination);
-destination.addEventListener('wildpass:set', showDestination); // fired when other parts of the page pick a destination
+for (const id of ['#departure', '#return']) $(id).addEventListener('change', routeLabel);
 if (destination.value) showDestination(); // e.g. the browser restored the form after "back"
 
 // ---------- live price preview: "Desde X € · plan Wild" once destination, dates and ages are valid ----------
 const preview = $('#price-preview');
-let T = null;
 let seq = 0;
 let timer;
 function odometer(text, old) {
@@ -68,7 +79,8 @@ function showPrice(text) {
 function formReady() {
   const dep = $('#departure').value;
   const ret = $('#return').value;
-  return destination.value && dep && ret && ret > dep && dep >= $('#departure').min && document.querySelectorAll('#ages .age').length > 0;
+  const blocked = destination.selectedOptions[0]?.dataset.blocked === 'true'; // refused anyway: don't ask
+  return destination.value && !blocked && dep && ret && ret > dep && dep >= $('#departure').min && document.querySelectorAll('#ages .age').length > 0;
 }
 async function updatePrice() {
   if (!formReady() || !T) return showPrice('');
@@ -91,24 +103,14 @@ form.addEventListener('change', schedule);
 form.addEventListener('input', schedule);
 form.addEventListener('click', e => { if (e.target.closest('.remove-age, #add-age')) schedule(); });
 
-// ---------- AI example: self-typing chat + the real tools lighting up ----------
+// ---------- AI example: a self-typing chat ----------
 const show = $('#showcase');
 const replay = $('#showcase-replay');
+// Each bubble has an sr-only copy (read once) and an aria-hidden visual copy (.bubble-text) that is typed out here.
 const bubbles = [...show.querySelectorAll('.bubble')];
-const tools = [...show.querySelectorAll('.tool')];
-const checks = [...show.querySelectorAll('.tool-checks li')];
-for (const b of bubbles) {
-  const text = b.querySelector('.bubble-text');
-  b.dataset.text = text.textContent;
-  text.setAttribute('aria-hidden', 'true'); // screen readers get one clean copy, not the typing
-  const copy = document.createElement('span');
-  copy.className = 'sr-only';
-  copy.textContent = text.textContent;
-  b.append(copy);
-}
+for (const b of bubbles) b.dataset.text = b.querySelector('.bubble-text').textContent;
 let run = 0;
 let visible = false;
-const on = (list, test) => list.filter(test).forEach(x => x.classList.add('is-on'));
 
 function finalState() {
   show.classList.remove('is-playing');
@@ -118,7 +120,7 @@ async function play() {
   const me = ++run;
   const alive = () => me === run;
   show.classList.add('is-playing');
-  for (const x of [...bubbles, ...tools, ...checks]) x.classList.remove('is-shown', 'is-on', 'is-typing', 'is-thinking');
+  for (const b of bubbles) b.classList.remove('is-shown', 'is-typing', 'is-thinking');
   for (const b of bubbles) b.querySelector('.bubble-text').textContent = b.dataset.text;
   await wait(500);
   for (const b of bubbles) {
@@ -143,15 +145,7 @@ async function play() {
       await wait(900);
       b.classList.remove('is-thinking');
     }
-    await wait(450);
-    // The tools this message triggers light up one by one; confirm_payment ticks its 4 safety checks first.
-    for (const name of (b.dataset.tools ?? '').split(' ').filter(Boolean)) {
-      if (!alive()) return;
-      on(tools, t => t.dataset.tool === name);
-      await wait(550);
-      if (name === 'confirm_payment') for (const c of checks) { if (!alive()) return; c.classList.add('is-on'); await wait(450); }
-    }
-    await wait(700);
+    await wait(1100);
   }
   if (!alive()) return;
   show.classList.remove('is-playing');
@@ -249,4 +243,4 @@ new IntersectionObserver(([e]) => { heroVisible = e.isIntersecting; syncSticky()
 new IntersectionObserver(([e]) => { formVisible = e.isIntersecting; syncSticky(); }).observe(form);
 new IntersectionObserver(([e]) => { if (e.isIntersecting) sticky.hidden = true; else syncSticky(); }).observe($('.final-cta'));
 
-loadConfig().then(config => { T = config.brand.texts; if (formReady()) updatePrice(); }).catch(() => {});
+loadConfig().then(config => { T = config.brand.texts; routeLabel(); if (formReady()) updatePrice(); }).catch(() => {});

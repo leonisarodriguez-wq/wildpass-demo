@@ -25,7 +25,16 @@ The owner is not a programmer: explain things simply, report test results honest
   (`src/scenes.js`: one `<symbol>` per scene × layer in a hidden sprite, reused with `<use>`; `<option data-scene>` picks it; Europe → old town,
   unknown → mountains), a stylised Spain → destination flight path (SMIL animateMotion), a live "Desde X € · plan Wild" preview (debounced get_quote,
   no order), and the AI example chat + the real tools timeline (`showcaseHtml` in landing.js: tool names from webmcp-tools.js, price from the engine
-  for `texts.ai.example`, final state server-rendered). `prefers-reduced-motion` → no animation, final state shown. Form fields use `--field-border`
+  for `texts.ai.example`, final state server-rendered; each message = one sr-only copy + one aria-hidden typed copy, so screen readers read it once).
+  Landing order: hero + form → benefits → ¿Y si…? → destinations → plans (Wild, Wild+) → AI block (chat only) → FAQ → final CTA → footer.
+  Developer material (WebMCP explained, example prompt + Copiar, the tools and confirm_payment's rules, all from webmcp-tools.js) is on
+  `/agentes` (`agentsPageBody` in landing.js, `public/agentes.js`), linked ONLY from the footer.
+- Destination field: the server renders a `<select id="destination">` ("Destinos populares" optgroup first from `texts.form.popularDestinations`,
+  then A–Z); `public/destination-picker.js` hides it and puts an accessible searchable combobox (`#destination-search`) in front. The select stays
+  the source of truth (`.value` + `change`). Remote territories (AQ BV HM GS TF IO UM) are not in `config/countries.js`.
+  `pricing.destinationsNotCovered` = countries with official Spanish "do not travel" advice (TO VERIFY at exteriores.gob.es before launch):
+  options get `data-blocked`, the form says "No podemos asegurar viajes a destinos con recomendación oficial de no viajar.", and get_quote
+  refuses them with DESTINATION_NOT_COVERED (website and WebMCP alike; the tool description says so). `prefers-reduced-motion` → no animation, final state shown. Form fields use `--field-border`
   #6F94A7 (3.25:1 on white; #7FA3B5 was asked for but is only 2.69:1); `--border` #C9DCE6 stays for decorative card lines.
   Below the benefits: "¿Y si…?" (ARIA tabs, `whatIfHtml`: limits from pricing config, big figure counts up once) and "¿A dónde te escapas?"
   (`destinationsHtml`: scroll-snap cards, mini scene, "7 días desde X €" = Wild, 1 adult, engine; tap → sets destination + scene, scrolls to form).

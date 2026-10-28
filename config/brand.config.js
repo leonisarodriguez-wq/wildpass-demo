@@ -70,7 +70,16 @@ export default {
       passLabel: 'Pase de viaje',
       pricePreview: 'Desde {price} · plan {plan}', // live, from get_quote (cheapest plan, all travellers)
       routeFrom: 'España',
-      routeTo: 'Tu destino',
+      routeTo: '{name} · {days} días', // shown only once a destination is chosen; without dates just the name
+      agesHelp: 'La edad influye en el precio.',
+      // Searchable destination box (public/destination-picker.js)
+      destinationSearch: 'Escribe un país',
+      popularDestinations: ['FR', 'IT', 'PT', 'GB', 'US', 'MX', 'TH', 'JP', 'PE', 'MA'],
+      popularLabel: 'Destinos populares',
+      allLabel: 'Todos los destinos',
+      noResults: 'No encontramos ese destino. Prueba con otro nombre.',
+      resultsCount: '{n} destinos',
+      resultsOne: '1 destino',
     },
 
     // Landing: AI block
@@ -89,18 +98,14 @@ export default {
       showcaseLabel: 'Ilustración de cómo funciona',
       example: { destination: 'TH', days: 15, ages: [35, 38], plan: 'wild_plus' }, // 10–24 Dec, counted inclusively
       chat: [
-        { who: 'user', text: 'Necesito un seguro para Tailandia, del 10 al 24 de diciembre, 2 personas de 35 y 38 años.', tools: ['get_quote'] },
+        { who: 'user', text: 'Necesito un seguro para Tailandia, del 10 al 24 de diciembre, 2 personas de 35 y 38 años.' },
         { who: 'assistant', text: '{plan}: {price} para los dos, con aventura y cancelación. ¿Te enseño el resumen?' },
-        { who: 'user', text: 'Sí, y págalo.', tools: ['select_plan', 'set_traveler_details', 'review_order'] },
+        { who: 'user', text: 'Sí, y págalo.' },
         { who: 'assistant', text: 'He revisado las condiciones contigo. ¿Confirmas el pago de {price}?' },
-        { who: 'user', text: 'Confirmo.', tools: ['confirm_payment', 'get_policy'] },
+        { who: 'user', text: 'Confirmo.' },
         { who: 'done', text: '✓ Póliza enviada a tu email.' },
       ],
       speakers: { user: 'Usuario', assistant: 'Asistente' },
-      toolsTitle: 'Herramientas WebMCP que usa',
-      // Short label per real tool (a test fails if a tool has none) and per confirm_payment safety field.
-      toolLabels: { get_quote: 'Calcula el precio', select_plan: 'Elige el plan', set_traveler_details: 'Guarda los viajeros', review_order: 'Prepara el resumen', confirm_payment: 'Paga solo si…', get_policy: 'Entrega la póliza' },
-      checks: { review_token: 'Resumen revisado', accept_terms: 'Condiciones aceptadas', user_confirmed: 'El usuario confirma', confirmed_total_eur: 'Total exacto' },
       replay: 'Repetir',
     },
 
@@ -111,7 +116,7 @@ export default {
       benefits: [
         { title: 'Asistencia 24 h, estés donde estés', text: 'Médicos, equipaje y demoras, en español.' },
         { title: 'Aventura cubierta', text: 'Trekking, buceo, esquí, surf… y rescate hasta {rescue} con Wild+.' },
-        { title: 'Contrátalo con tu asistente de IA', text: 'Él cotiza, tú confirmas.' },
+        { title: 'Sin franquicia en Wild+', text: 'Si te pasa algo, no pagas los primeros euros.' },
       ],
     },
 
@@ -127,7 +132,7 @@ export default {
       covered: 'Cubierto',
       notCovered: 'No cubierto',
       scenarios: [
-        { id: 'sprain', tab: 'Me tuerzo el tobillo de trekking', title: 'Te cubre Wild+',
+        { id: 'sprain', tab: 'Me tuerzo el tobillo haciendo trekking', title: 'Te cubre Wild+',
           figure: { plan: 'wild_plus', key: 'medical_expenses_rest_of_world_eur' }, figureLabel: 'en gastos médicos fuera de Europa con Wild+',
           text: 'Los dos planes cubren gastos médicos: Wild hasta {wildMedEurope} en Europa y {wildMedWorld} fuera; Wild+ hasta {plusMedEurope} y {plusMedWorld}, sin franquicia. Pero el trekking es un deporte de aventura, y solo Wild+ lo cubre (hasta {trekkingAltitude} m de altitud).',
           plans: { wild: { ok: false, text: 'No cubre lesiones en deportes de aventura' }, wild_plus: { ok: true, text: 'Médico y trekking incluidos' } } },
@@ -165,12 +170,9 @@ export default {
       wildDescription: 'Lo esencial para viajar tranquilo.',
       wildPlusDescription: 'Aventura y cancelación incluidas.',
       wildPlusBadge: 'El favorito de los aventureros',
-      aiName: 'Con tu asistente de IA',
-      aiDescription: 'Pídeselo y solo confirma.',
       from: 'Desde {price}',
       fromNote: '7 días en Europa, 1 adulto.',
       seePrice: 'Ver mi precio',
-      howItWorks: 'Cómo funciona',
     },
 
     // Landing: FAQ (answers use values from the pricing config)
@@ -190,6 +192,20 @@ export default {
     footerLegal: 'Seguros Wildpass es un producto ficticio creado para una demostración. No es un seguro real, no ofrece cobertura y ningún pago es real.',
     footerTerms: 'Condiciones del seguro',
     footerWebmcp: 'Hecho con WebMCP',
+    footerAgents: 'Para desarrolladores y agentes de IA',
+
+    // /agentes: the developer & AI-agent page (linked only from the footer). Tool lines come from public/webmcp-tools.js.
+    agents: {
+      title: 'Para desarrolladores y agentes de IA',
+      intro: 'Esta demo se puede contratar entera desde un asistente de IA, sin rellenar ningún formulario.',
+      webmcpTitle: 'Qué es WebMCP',
+      webmcpText: 'WebMCP es un estándar web nuevo (en preparación en el W3C y en pruebas en Chrome) que permite a una página ofrecer «herramientas» a los asistentes de IA del navegador: en vez de leer la pantalla y pulsar botones, el asistente llama a funciones con datos claros. La página principal de Wildpass registra sus herramientas al cargarse, y cada una usa las mismas reglas del servidor que la web.',
+      promptTitle: 'Pruébalo',
+      toolsTitle: 'Las {count} herramientas',
+      rulesTitle: 'Reglas de seguridad de confirm_payment',
+      rulesIntro: 'El pago se rechaza si falta cualquiera de estas condiciones:',
+      where: 'Las herramientas están disponibles en la página principal.',
+    },
     agentActivity: 'Actividad del asistente de IA en esta página',
 
     // Checkout
@@ -299,6 +315,7 @@ export default {
 
     // Friendly error messages by server error_code ({placeholders} come from limits or the error).
     errors: {
+      DESTINATION_NOT_COVERED: 'No podemos asegurar viajes a destinos con recomendación oficial de no viajar.',
       RETURN_BEFORE_DEPARTURE: 'La vuelta tiene que ser después de la ida. ¿Lo revisamos?',
       TRIP_TOO_LONG: 'Cubrimos viajes de hasta {maxTripDays} días.',
       INVALID_AGE: 'Por ahora aseguramos a viajeros de {minAge} a {maxAge} años.',

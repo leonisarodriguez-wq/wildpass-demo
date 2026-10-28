@@ -3,8 +3,12 @@
 // the WebMCP tools use. Error texts are friendly versions (brand config `texts.errors`) of the server's codes.
 import { callApi, loadConfig } from './api.js';
 import { qrSvg } from './qr.js';
+import { enhanceDestination } from './destination-picker.js';
 
 const $ = sel => document.querySelector(sel);
+// The destination field people see: the searchable box once it exists, else the plain <select>.
+const destField = () => $('#destination-search') ?? $('#destination');
+const destBlocked = () => $('#destination').selectedOptions[0]?.dataset.blocked === 'true';
 const state = { quote: null, plan: null, orderId: null, review: null, paid: null, step: 'landing' };
 let T = {};      // brand texts
 let C = {};      // checkout texts
@@ -182,6 +186,13 @@ function addTraveler() {
 }
 
 $('#add-age').addEventListener('click', () => addTraveler().focus());
+// Destinations with official "do not travel" advice: say so at once, right under the box (the quote is refused anyway).
+$('#destination').addEventListener('change', () => {
+  const form = $('#quote-form');
+  if (destBlocked()) showError(form, E.DESTINATION_NOT_COVERED, destField());
+  else if (destField().getAttribute('aria-invalid')) showError(form, null);
+});
+
 $('#departure').addEventListener('change', () => {
   const dep = $('#departure').value;
   if (!dep) return;
@@ -194,7 +205,8 @@ $('#quote-form').addEventListener('submit', async e => {
   const form = $('#quote-form');
   const ages = ageInputs();
   // Convenience checks only (empty fields). Every real rule is decided by the server.
-  if (!$('#destination').value) return showError(form, E.missingDestination, $('#destination'));
+  if (!$('#destination').value) return showError(form, E.missingDestination, destField());
+  if (destBlocked()) return showError(form, E.DESTINATION_NOT_COVERED, destField()); // the server refuses it too
   if (!$('#departure').value) return showError(form, E.missingDates, $('#departure'));
   if (!$('#return').value) return showError(form, E.missingDates, $('#return'));
 
@@ -208,7 +220,7 @@ $('#quote-form').addEventListener('submit', async e => {
     });
     if (!result.ok) {
       const fieldFor = {
-        SAME_COUNTRY: '#destination', INVALID_COUNTRY: '#destination',
+        SAME_COUNTRY: '#destination-search', INVALID_COUNTRY: '#destination-search', DESTINATION_NOT_COVERED: '#destination-search',
         DEPARTURE_NOT_IN_FUTURE: '#departure', INVALID_DATE: '#departure',
         RETURN_BEFORE_DEPARTURE: '#return', TRIP_TOO_LONG: '#return',
         INVALID_TRAVELER_COUNT: '#add-age',
@@ -229,7 +241,7 @@ for (const link of document.querySelectorAll('[data-focus-form]')) {
   link.addEventListener('click', e => {
     e.preventDefault();
     $('#quote-form').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
-    $('#destination').focus({ preventScroll: true });
+    destField().focus({ preventScroll: true });
   });
 }
 
@@ -537,22 +549,6 @@ $('#pay').addEventListener('click', async e => {
   syncPay();
 });
 
-// ---------- AI block: copy the example prompt ----------
-$('#copy-prompt').addEventListener('click', async e => {
-  const button = e.currentTarget;
-  const text = $('#example-prompt').textContent.trim();
-  let copied = false;
-  try { await navigator.clipboard.writeText(text); copied = true; } catch {
-    // Older browsers / no permission: select the text so the person can copy it by hand.
-    getSelection().selectAllChildren($('#example-prompt'));
-  }
-  if (!copied) return;
-  button.textContent = T.ai.copied;
-  $('#copy-status').textContent = T.ai.copied;
-  clearTimeout(button.reset);
-  button.reset = setTimeout(() => { button.textContent = T.ai.copy; $('#copy-status').textContent = ''; }, 2000);
-});
-
 // ---------- navigation ----------
 for (const b of document.querySelectorAll('[data-go]')) {
   b.addEventListener('click', () => {
@@ -560,7 +556,7 @@ for (const b of document.querySelectorAll('[data-go]')) {
     if (step === 'landing') {
       render('landing');
       $('#quote-form').scrollIntoView({ block: 'center' });
-      $('#destination').focus({ preventScroll: true });
+      destField().focus({ preventScroll: true });
     } else render(step);
   });
 }
@@ -570,7 +566,7 @@ $('#start-over').addEventListener('click', () => {
   $('#details-form').reset();
   render('landing');
   window.scrollTo(0, 0);
-  $('#destination').focus({ preventScroll: true });
+  destField().focus({ preventScroll: true });
 });
 
 // ---------- start ----------
@@ -585,6 +581,7 @@ async function init() {
   limits = config.limits;
   payments = config.payments ?? payments;
   relabelAges();
+  enhanceDestination($('#destination'), T.form);
   // A reload in the middle of the checkout starts again from the landing (nothing is stored in the browser).
   if (location.hash.startsWith('#paso-')) history.replaceState({ step: 'landing' }, '', location.pathname);
   history.replaceState({ step: 'landing' }, '', location.pathname + location.hash);

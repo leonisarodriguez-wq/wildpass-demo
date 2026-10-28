@@ -29,7 +29,7 @@
         <div class="route" id="route" aria-hidden="true">
           <span class="route-from">{{t.form.routeFrom}}</span>
           {{{routeStrip}}}
-          <span class="route-to" id="route-to">{{t.form.routeTo}}</span>
+          <span class="route-to" id="route-to"></span>
         </div>
         <form id="quote-form" class="quote-card pass" novalidate>
           <p class="pass-head" aria-hidden="true"><span>{{t.form.passLabel}}</span><span>{{brand.name}}</span></p>
@@ -50,8 +50,9 @@
               <input type="date" id="return" name="return" lang="es" aria-required="true">
             </div>
           </div>
-          <fieldset class="field ages-field">
+          <fieldset class="field ages-field" aria-describedby="ages-help">
             <legend>{{t.form.travelers}}</legend>
+            <p class="field-help" id="ages-help">{{t.form.agesHelp}}</p>
             <div class="travelers" id="ages">{{{travelerRow}}}</div>
             <button type="button" class="add-traveler" id="add-age">{{t.form.addTraveler}}</button>
             <template id="remove-icon">{{{iconRemove}}}</template>
@@ -64,29 +65,7 @@
       </div>
     </section>
 
-    <!-- 2. AI block -->
-    <section class="ai" id="ia" aria-labelledby="ai-title">
-      <div class="wrap">
-        <h2 id="ai-title">{{t.ai.title}}</h2>
-        <p class="ai-text">{{t.ai.text}}</p>
-        {{{showcase}}}
-        <div class="ai-extra">
-          <figure class="prompt-card">
-            <figcaption class="prompt-label">{{t.ai.promptLabel}}</figcaption>
-            <blockquote class="prompt-text" id="example-prompt">{{t.ai.examplePrompt}}</blockquote>
-            <button type="button" class="secondary copy-prompt" id="copy-prompt" aria-label="{{t.ai.copyLabel}}">{{t.ai.copy}}</button>
-            <span class="sr-only" role="status" id="copy-status"></span>
-          </figure>
-          <p class="ai-note">{{t.ai.compatNote}}</p>
-          <details class="dev-tools">
-            <summary>{{t.ai.devTitle}}</summary>
-            <div class="dev-tools-body">{{{devTools}}}</div>
-          </details>
-        </div>
-      </div>
-    </section>
-
-    <!-- 3. Editorial headline + benefits -->
+    <!-- 2. Editorial headline + benefits -->
     <section class="editorial" aria-labelledby="editorial-title">
       <div class="wrap">
         <p class="eyebrow">{{t.editorial.label}}</p>
@@ -95,7 +74,7 @@
       </div>
     </section>
 
-    <!-- 4. Plans band -->
+    <!-- 3. "¿Y si…?" scenarios -->
     <section class="whatif" id="y-si" aria-labelledby="whatif-title">
       <div class="wrap">
         <h2 id="whatif-title">{{t.whatIf.title}}</h2>
@@ -105,6 +84,7 @@
       </div>
     </section>
 
+    <!-- 4. Destinations strip -->
     <section class="destinations" aria-labelledby="dest-title">
       <div class="wrap">
         <h2 id="dest-title">{{t.destinations.title}}</h2>
@@ -114,6 +94,7 @@
       <p class="wrap dest-note">{{t.destinations.note}}</p>
     </section>
 
+    <!-- 5. Plans band -->
     <section class="plans-band" aria-labelledby="plans-title">
       <div class="wrap">
         <h2 id="plans-title">{{t.plans.title}}</h2>
@@ -131,17 +112,22 @@
             <p class="from-price">{{price.wild_plus}}<sup aria-hidden="true">*</sup></p>
             <a class="primary block card-button" href="#quote-form" data-focus-form>{{t.plans.seePrice}}</a>
           </li>
-          <li class="plan-card">
-            <h3>{{t.plans.aiName}}</h3>
-            <p class="desc">{{t.plans.aiDescription}}</p>
-            <a class="secondary block card-button" href="#ia">{{t.plans.howItWorks}}</a>
-          </li>
         </ul>
         <p class="from-note"><span aria-hidden="true">* </span>{{t.plans.fromNote}}</p>
       </div>
     </section>
 
-    <!-- 5. FAQ + final CTA -->
+    <!-- 6. AI block: title, short text, the animated example chat, one compatibility line -->
+    <section class="ai" id="ia" aria-labelledby="ai-title">
+      <div class="wrap">
+        <h2 id="ai-title">{{t.ai.title}}</h2>
+        <p class="ai-text">{{t.ai.text}}</p>
+        {{{showcase}}}
+        <p class="ai-note">{{t.ai.compatNote}}</p>
+      </div>
+    </section>
+
+    <!-- 7. FAQ + final CTA -->
     <section class="faq" aria-labelledby="faq-title">
       <div class="wrap narrow">
         <h2 id="faq-title">{{t.faqTitle}}</h2>
@@ -253,7 +239,7 @@
   <footer class="site-footer">
     <div class="wrap">
       <p class="footer-legal">{{t.footerLegal}}</p>
-      <p class="footer-links"><a href="/condiciones">{{t.footerTerms}}</a><span>{{t.footerWebmcp}}</span></p>
+      <p class="footer-links"><a href="/condiciones">{{t.footerTerms}}</a><a href="/agentes">{{t.footerAgents}}</a><span>{{t.footerWebmcp}}</span></p>
       <details class="agent">
         <summary>{{t.agentActivity}} · <span id="webmcp-status">WebMCP…</span></summary>
         <pre id="agent-activity">—</pre>

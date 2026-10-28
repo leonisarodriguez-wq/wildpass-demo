@@ -63,18 +63,18 @@ function footerHtml(brand) {
   const t = brand.texts;
   return `<footer class="site-footer"><div class="wrap">
     <p class="footer-legal">${escapeHtml(t.footerLegal)}</p>
-    <p class="footer-links"><a href="/condiciones">${escapeHtml(t.footerTerms)}</a><span>${escapeHtml(t.footerWebmcp)}</span></p>
+    <p class="footer-links"><a href="/condiciones">${escapeHtml(t.footerTerms)}</a><a href="/agentes">${escapeHtml(t.footerAgents)}</a><span>${escapeHtml(t.footerWebmcp)}</span></p>
   </div></footer>`;
 }
 
 // Shared shell for simple pages (terms).
-export function pageShell({ brand, title, body }) {
+export function pageShell({ brand, title, body, scripts = [] }) {
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(title)} · ${escapeHtml(brand.name)}</title>${iconLinks}${fontPreloads}<link rel="stylesheet" href="/brand.css"><link rel="stylesheet" href="/style.css"></head>
 <body><div class="banner">${escapeHtml(brand.siteBanner)}</div>
 <header class="site-header"><div class="wrap">${logoHtml()}</div></header>
 <main class="page"><div class="wrap"><div class="card-page">${body}</div></div></main>
-${footerHtml(brand)}</body></html>`;
+${footerHtml(brand)}${scripts.map(src => `<script type="module" src="${src}"></script>`).join('')}</body></html>`;
 }
 
 // Age dropdown options ("Menos de 1 año", "1 año", "2 años"… "85 años"), from the pricing limits.
@@ -93,18 +93,6 @@ function firstTravelerRow(form, limits) {
     + `<select id="age-1" class="age" name="age">${ageOptions(form, limits, form.defaultAge)}</select></div>`;
 }
 
-// "Para desarrolladores": built from the REAL WebMCP tool definitions (public/webmcp-tools.js), never typed in.
-export function devToolsHtml({ brand, pricing, payments }) {
-  const tools = realTools({ brand, pricing, payments });
-  const items = tools.map(tool => {
-    const rules = tool.rulesEs ? (tool.inputSchema.required ?? []).filter(f => tool.rulesEs[f]) : [];
-    return `<li><code>${escapeHtml(tool.name)}</code> ${escapeHtml(tool.es)}`
-      + (rules.length ? `<ul class="dev-rules">${rules.map(f => `<li><code>${escapeHtml(f)}</code>: ${escapeHtml(tool.rulesEs[f])}</li>`).join('')}</ul>` : '')
-      + '</li>';
-  }).join('');
-  return `<p>${escapeHtml(fill(brand.texts.ai.devIntro, { count: tools.length }))}</p><ul class="dev-tool-list">${items}</ul>`;
-}
-
 // The real WebMCP tools in their real order (from public/webmcp-tools.js), so the landing can never list a fake one.
 function realTools({ brand, pricing, payments }) {
   return buildTools({ limits: pricing.limits, plans: Object.fromEntries(Object.entries(pricing.plans).map(([id, p]) => [id, p.name])), brand, payments });
@@ -113,40 +101,69 @@ function realTools({ brand, pricing, payments }) {
 // Pricing zone of a destination (same lookup as business.js).
 const zoneOf = (code, pricing) => Object.entries(pricing.zones).find(([, codes]) => codes.includes(code))?.[0] ?? 'rest_of_world';
 
-// "Tu asistente también puede contratarlo": an animated example chat (left) + the real tools lighting up (right).
-// Fully server-rendered in its FINAL state (readable without JS and with reduced motion); public/landing-fx.js only
-// hides and replays it. The price is computed by the pricing engine for the example trip in the brand config.
-export function showcaseHtml({ brand, pricing, business, payments }) {
+// "Tu asistente también puede contratarlo": an animated example chat. Each message has ONE accessible copy (sr-only,
+// with the speaker) and one visual copy marked aria-hidden that public/landing-fx.js types out, so screen readers read it once.
+// The visual copy is server-rendered in its final state (no JS / reduced motion). The price comes from the pricing engine.
+export function showcaseHtml({ brand, pricing, business }) {
   const a = brand.texts.ai;
   const ex = a.example;
   const zone = zoneOf(ex.destination, pricing);
   const totalCents = ex.ages.reduce((sum, age) => sum + business.pricePerTravelerCents(zone, ex.plan, ex.days, age), 0);
   const values = { price: formatEur(totalCents / 100), plan: pricing.plans[ex.plan].name };
-  const tools = realTools({ brand, pricing, payments });
-  const names = tools.map(tool => tool.name);
-  for (const line of a.chat) for (const name of line.tools ?? []) if (!names.includes(name)) throw new Error(`Showcase: unknown tool ${name}`);
-  const pay = tools.find(tool => tool.name === 'confirm_payment');
-  const checks = Object.keys(a.checks);
-  for (const field of checks) if (!pay.inputSchema.required.includes(field)) throw new Error(`Showcase: ${field} is not a confirm_payment rule`);
-
   const chat = a.chat.map((line, i) => {
-    const who = line.who === 'done' ? '' : `<span class="sr-only">${escapeHtml(a.speakers[line.who])}: </span>`;
-    return `<li class="bubble bubble-${line.who}" data-i="${i}"${line.tools ? ` data-tools="${line.tools.join(' ')}"` : ''}>${who}<span class="bubble-text">${escapeHtml(fill(line.text, values))}</span></li>`;
-  }).join('');
-  const timeline = tools.map(tool => {
-    if (!a.toolLabels[tool.name]) throw new Error(`Showcase: no label for tool ${tool.name}`);
-    const sub = tool.name === 'confirm_payment'
-      ? `<ul class="tool-checks">${checks.map(f => `<li data-check="${f}">${escapeHtml(a.checks[f])}</li>`).join('')}</ul>` : '';
-    return `<li class="tool" data-tool="${tool.name}"><code>${escapeHtml(tool.name)}</code><span class="tool-label">${escapeHtml(a.toolLabels[tool.name])}</span>${sub}</li>`;
+    const text = escapeHtml(fill(line.text, values));
+    const who = line.who === 'done' ? '' : `${escapeHtml(a.speakers[line.who])}: `;
+    return `<li class="bubble bubble-${line.who}" data-i="${i}"><span class="sr-only">${who}${text}</span><span class="bubble-text" aria-hidden="true">${text}</span></li>`;
   }).join('');
   return `<figure class="showcase" id="showcase">
     <figcaption class="showcase-label">${escapeHtml(a.showcaseLabel)}</figcaption>
-    <div class="showcase-grid">
-      <ol class="chat">${chat}</ol>
-      <div class="tools"><p class="tools-title">${escapeHtml(a.toolsTitle)}</p><ol class="tool-list">${timeline}</ol></div>
-    </div>
+    <ol class="chat">${chat}</ol>
     <button type="button" class="secondary showcase-replay" id="showcase-replay" hidden>${escapeHtml(a.replay)}</button>
   </figure>`;
+}
+
+// /agentes: what WebMCP is, the example prompt, the real tools (one plain line each) and confirm_payment's safety rules.
+export function agentsPageBody({ brand, pricing, payments }) {
+  const t = brand.texts;
+  const g = t.agents;
+  const tools = realTools({ brand, pricing, payments });
+  const pay = tools.find(tool => tool.name === 'confirm_payment');
+  const rules = (pay.inputSchema.required ?? []).filter(f => pay.rulesEs[f]);
+  return `<h1>${escapeHtml(g.title)}</h1>
+    <p>${escapeHtml(g.intro)}</p>
+    <h2>${escapeHtml(g.webmcpTitle)}</h2>
+    <p>${escapeHtml(g.webmcpText)}</p>
+    <h2>${escapeHtml(g.promptTitle)}</h2>
+    <figure class="prompt-card">
+      <figcaption class="prompt-label">${escapeHtml(t.ai.promptLabel)}</figcaption>
+      <blockquote class="prompt-text" id="example-prompt">${escapeHtml(t.ai.examplePrompt)}</blockquote>
+      <button type="button" class="secondary copy-prompt" id="copy-prompt" aria-label="${escapeHtml(t.ai.copyLabel)}" data-copied="${escapeHtml(t.ai.copied)}">${escapeHtml(t.ai.copy)}</button>
+      <span class="sr-only" role="status" id="copy-status"></span>
+    </figure>
+    <p class="ai-note">${escapeHtml(t.ai.compatNote)}</p>
+    <h2>${escapeHtml(fill(g.toolsTitle, { count: tools.length }))}</h2>
+    <p>${escapeHtml(g.where)}</p>
+    <ol class="dev-tool-list">${tools.map(tool => `<li><code>${escapeHtml(tool.name)}</code> ${escapeHtml(tool.es)}</li>`).join('')}</ol>
+    <h2>${escapeHtml(g.rulesTitle)}</h2>
+    <p>${escapeHtml(g.rulesIntro)}</p>
+    <ul class="dev-rules">${rules.map(f => `<li><code>${escapeHtml(f)}</code>: ${escapeHtml(pay.rulesEs[f])}</li>`).join('')}</ul>
+    <p><a href="/">← ${escapeHtml(t.back)}</a></p>`;
+}
+
+// Destination <select> (the source of truth; public/destination-picker.js turns it into a searchable box):
+// "Destinos populares" first, then all the others A–Z. data-scene = hero illustration (src/scenes.js);
+// data-blocked = official "do not travel" advice (pricing config): the quote is refused, the box says why.
+export function countryOptionsHtml({ brand, pricing, countries }) {
+  const f = brand.texts.form;
+  const option = c => `<option value="${c.code}" data-scene="${sceneFor(c.code, pricing)}"${pricing.destinationsNotCovered.includes(c.code) ? ' data-blocked="true"' : ''}>${escapeHtml(c.name)}</option>`;
+  const all = countries.filter(c => c.code !== 'ES');
+  const popular = f.popularDestinations.map(code => {
+    const c = all.find(x => x.code === code);
+    if (!c) throw new Error(`Popular destination ${code} is not in the country list`);
+    return c;
+  });
+  return `<optgroup label="${escapeHtml(f.popularLabel)}">${popular.map(option).join('')}</optgroup>`
+    + `<optgroup label="${escapeHtml(f.allLabel)}">${all.filter(c => !f.popularDestinations.includes(c.code)).map(option).join('')}</optgroup>`;
 }
 
 // "¿Y si…?": ARIA tabs, one panel per scenario. Every limit comes from the pricing config (placeholders + `figure`).
@@ -185,7 +202,7 @@ export function destinationsHtml({ brand, pricing, business, countries }) {
   }).join('');
 }
 
-export function createLanding({ brand, pricing, business, market, countries, templatePath, payments = { provider: 'simulated' } }) {
+export function createLanding({ brand, pricing, business, market, countries, templatePath }) {
   const template = readFileSync(templatePath, 'utf8');
   const t = brand.texts;
   const values = copyValues(pricing, market);
@@ -195,17 +212,15 @@ export function createLanding({ brand, pricing, business, market, countries, tem
     const html = {
       iconLinks, fontPreloads,
       logo: logoHtml(),
-      // data-scene picks the hero illustration for that destination (src/scenes.js).
-      countryOptions: countries.filter(c => c.code !== 'ES').map(c => `<option value="${c.code}" data-scene="${sceneFor(c.code, pricing)}">${escapeHtml(c.name)}</option>`).join(''),
-      showcase: showcaseHtml({ brand, pricing, business, payments }),
+      countryOptions: countryOptionsHtml({ brand, pricing, countries }),
+      showcase: showcaseHtml({ brand, pricing, business }),
       sceneSprite, heroScene, routeStrip,
       whatIf: whatIfHtml({ brand, pricing, values }),
       destinations: destinationsHtml({ brand, pricing, business, countries }),
-      benefits: t.editorial.benefits.map((b, i) => `<li class="benefit">${[art.globePin, art.mountainRope, art.chatRobotCheck][i]}<h3>${escapeHtml(b.title)}</h3><p>${escapeHtml(fill(b.text, values))}</p></li>`).join(''),
+      benefits: t.editorial.benefits.map((b, i) => `<li class="benefit">${[art.globePin, art.mountainRope, art.shieldCheck][i]}<h3>${escapeHtml(b.title)}</h3><p>${escapeHtml(fill(b.text, values))}</p></li>`).join(''),
       faq: t.faq.map(f => `<details class="faq-item"><summary>${escapeHtml(f.q)}</summary><p>${escapeHtml(fill(f.a, values))}</p></details>`).join(''),
       travelerRow: firstTravelerRow(t.form, pricing.limits),
       iconPin: art.iconPin, iconCalendar: art.iconCalendar, iconPeople: art.iconPeople, iconRemove: art.iconRemove,
-      devTools: devToolsHtml({ brand, pricing, payments }),
     };
     return render(template, {
       html,

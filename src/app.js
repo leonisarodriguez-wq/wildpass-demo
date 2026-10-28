@@ -10,7 +10,7 @@ import { buildPolicyPdf } from './pdf.js';
 import { createEmailService } from './email.js';
 import { createStripe } from './stripe.js';
 import { faviconSvg } from './logo.js';
-import { createLanding, pageShell } from './landing.js';
+import { agentsPageBody, createLanding, pageShell } from './landing.js';
 import marketQuotes from '../config/market-quotes.js';
 import { COUNTRY_CODES } from '../config/countries.js';
 import brand from '../config/brand.config.js';
@@ -37,8 +37,8 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
 
   const regionNames = new Intl.DisplayNames(['es'], { type: 'region' });
   const countries = COUNTRY_CODES.map(code => ({ code, name: regionNames.of(code) ?? code })).sort((a, b) => a.name.localeCompare(b.name, 'es'));
-  const landing = createLanding({ brand, pricing, business, market: marketQuotes, countries, templatePath: join(ROOT, 'public', 'index.html'),
-    payments: { provider: stripe.enabled ? 'stripe_test' : 'simulated' } });
+  const landing = createLanding({ brand, pricing, business, market: marketQuotes, countries, templatePath: join(ROOT, 'public', 'index.html') });
+  const payments = { provider: stripe.enabled ? 'stripe_test' : 'simulated' };
 
   const app = express();
   app.set('trust proxy', 'loopback'); // cloudflared runs on this machine and sets X-Forwarded-Proto
@@ -132,6 +132,11 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
   // Landing (public/index.html filled in on the server).
   app.get(['/', '/index.html'], (req, res) => res.type('html').send(landing.landingHtml()));
   app.get('/favicon.svg', (req, res) => res.type('image/svg+xml').set('Cache-Control', 'public, max-age=86400').send(faviconSvg()));
+
+  // Developer & AI-agent page, linked only from the footer.
+  app.get('/agentes', (req, res) => {
+    res.type('html').send(pageShell({ brand, title: brand.texts.agents.title, body: agentsPageBody({ brand, pricing, payments }), scripts: ['/agentes.js'] }));
+  });
 
   app.get('/condiciones', (req, res) => {
     const plans = Object.values(pricing.plans).map(p => `

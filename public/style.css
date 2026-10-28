@@ -95,6 +95,8 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 /* The sun rises once on load; headline, form and route slide in gently (all off with reduced motion). */
 .hero-scene .sun { transform-box: fill-box; animation: sunrise 1.2s 0.1s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 @keyframes sunrise { from { transform: translateY(160%); } }
+/* Phones/tablets show only the middle of the 1200-wide scene: move the sun inwards, below the route label. */
+@media (max-width: 959px) { .hero-scene .sun { cx: 700px; cy: 175px; } }
 .hero-copy, .quote-card, .route { animation: rise-in 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 .quote-card { animation-delay: 0.15s; }
 .route { animation-delay: 0.3s; }
@@ -120,15 +122,34 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .route { grid-area: scene; align-self: start; position: relative; z-index: 1; display: flex; align-items: center; gap: 8px; margin-top: 6px; padding: 4px 12px; border-radius: 14px;
   background: rgb(255 255 255 / 0.85); font-weight: 700; font-size: 0.85rem; color: var(--night); }
 .route-map { flex: 1; min-width: 0; height: 48px; }
-.route-from, .route-to { flex: none; max-width: 32%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.route-from, .route-to { flex: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.route-to { flex: 0 1 auto; max-width: 55%; }
+.route-map { min-width: 56px; }
 .route-to { color: var(--secondary); }
 .route.has-dest .route-to { color: var(--night); }
+.route:not(.has-dest) { visibility: hidden; } /* nothing until a destination is chosen (space kept: no jump) */
 #route-mask { transition: stroke-dashoffset 1.6s cubic-bezier(0.4, 0, 0.2, 1); }
 .route.has-dest #route-mask { stroke-dashoffset: 0; }
 .route-plane, .route-end { opacity: 0; transition: opacity 0.3s; }
 .route.has-dest .route-plane, .route.has-dest .route-end { opacity: 1; }
 .ages-field { margin-bottom: 6px; }
-.ages-field legend { margin-bottom: 4px; }
+.ages-field legend { margin-bottom: 0; }
+.field-help { margin: 0 0 6px; font-size: 0.85rem; color: var(--secondary); }
+
+/* Searchable destination box (public/destination-picker.js) */
+select[hidden] { display: none; } /* the plain <select> once the search box replaces it */
+.combo { position: relative; }
+.combo-input { padding-right: 36px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%230B1F3A' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center; }
+.combo-input::placeholder { color: var(--secondary); opacity: 1; }
+.combo-list { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 20; max-height: 300px; overflow-y: auto; overscroll-behavior: contain;
+  background: var(--white); border: 1.5px solid var(--field-border); border-radius: 12px; padding: 4px 0; box-shadow: 0 12px 28px rgb(11 31 58 / 0.16); }
+.combo-group { padding: 8px 14px 4px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--secondary); }
+.combo-option { padding: 10px 14px; min-height: 44px; display: flex; align-items: center; cursor: pointer; }
+.combo-option:hover { background: var(--sky); }
+.combo-option.is-active { background: var(--mint); outline: 2px solid var(--turquoise); outline-offset: -2px; }
+.combo-option[aria-selected="true"] { font-weight: 700; }
+.combo-empty { padding: 12px 14px; color: var(--secondary); }
 .travelers { display: grid; gap: 8px; }
 /* "Viajero N" | age dropdown | remove button (rows 2+; row 1 keeps the column empty so dropdowns line up) */
 .traveler-row { display: grid; grid-template-columns: 5rem minmax(0, 1fr) 44px; gap: 6px; align-items: center; }
@@ -146,10 +167,13 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .ai-text { font-size: 1.05rem; max-width: 40rem; }
 .showcase { margin: 28px 0 0; }
 .showcase-label { display: inline-block; margin-bottom: 10px; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
-.showcase-grid { display: grid; grid-template-columns: minmax(0, 1fr); background: var(--white); color: var(--night); border-radius: 18px; overflow: hidden; }
+/* AI block: title, text, the chat (centred, max 640 px) and one compatibility line. */
+.ai { text-align: center; }
+.ai-text { margin-left: auto; margin-right: auto; }
+.showcase { max-width: 640px; margin-left: auto; margin-right: auto; text-align: left; }
 /* Example chat. Every bubble is in the page from the start (final state); while playing, unplayed ones are only
    invisible, so nothing below ever moves. Typed text = visible part + transparent rest. */
-.chat { list-style: none; margin: 0; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.chat { list-style: none; margin: 0; padding: 16px; display: flex; flex-direction: column; gap: 10px; background: var(--white); color: var(--night); border-radius: 18px; }
 .bubble { position: relative; max-width: 88%; padding: 10px 14px; border-radius: 16px; font-size: 0.95rem; line-height: 1.4;
   transition: opacity 0.35s, transform 0.35s; }
 .bubble-user { align-self: flex-end; background: var(--turquoise); color: var(--white); border-bottom-right-radius: 4px; }
@@ -161,41 +185,20 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .bubble.is-thinking .bubble-text { color: transparent; }
 .bubble.is-thinking::after { content: '•••'; position: absolute; left: 14px; top: 10px; letter-spacing: 0.2em; color: var(--secondary); animation: blink 0.9s steps(1) infinite; }
 @keyframes blink { 50% { opacity: 0; } }
-/* The real WebMCP tools as a timeline, lighting up in sync with the chat. */
-.tools { padding: 16px; border-top: 2px dashed var(--border); }
-.tools-title { margin: 0 0 10px; font-size: 0.85rem; font-weight: 700; color: var(--secondary); }
-.tool-list { list-style: none; margin: 0; padding: 0; }
-.tool { position: relative; padding: 0 0 12px 30px; transition: opacity 0.3s; }
-.tool::before { content: ''; position: absolute; left: 0; top: 2px; width: 18px; height: 18px; box-sizing: border-box; border-radius: 50%; border: 2px solid var(--turquoise); background: var(--turquoise); transition: background 0.3s; }
-.tool::after { content: ''; position: absolute; left: 8px; top: 22px; bottom: 0; width: 2px; background: var(--border); }
-.tool:last-child::after { display: none; }
-.tool code { display: block; font-size: 0.9rem; font-weight: 700; }
-.tool-label { display: block; font-size: 0.85rem; color: var(--secondary); }
-.is-playing .tool:not(.is-on) { opacity: 0.4; }
-.is-playing .tool:not(.is-on)::before { background: var(--white); }
-.tool-checks { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; }
-.tool-checks li { position: relative; padding-left: 24px; font-size: 0.85rem; font-weight: 600; transition: opacity 0.3s; }
-.tool-checks li::before { content: '✓'; position: absolute; left: 0; top: 0; width: 18px; height: 18px; border-radius: 5px; background: var(--mint); color: var(--turquoise-text); font-size: 0.75rem; line-height: 18px; text-align: center; font-weight: 700; }
-.is-playing .tool-checks li:not(.is-on) { opacity: 0.4; }
-.is-playing .tool-checks li:not(.is-on)::before { content: ''; }
-.showcase-replay { margin-top: 12px; }
+.showcase-replay { display: flex; margin: 12px auto 0; }
 .showcase-replay[hidden] { display: none; }
-/* Example prompt (light card), compatibility note and the developers' tool list (built from the real WebMCP tools). */
-.ai-extra { margin-top: 32px; }
-.prompt-card { margin: 0; background: var(--white); color: var(--night); border-radius: 16px; padding: 16px; }
+/* /agentes page: example prompt card and the tool list (built from the real WebMCP tools). */
+.prompt-card { margin: 0; background: var(--sky); color: var(--night); border-radius: 16px; padding: 16px; }
 .prompt-card :focus-visible { outline-color: var(--night); }
 .prompt-label { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--secondary); }
 .prompt-text { margin: 6px 0 14px; font-size: 1.05rem; line-height: 1.45; quotes: "“" "”"; }
 .prompt-text::before { content: open-quote; } .prompt-text::after { content: close-quote; }
 .copy-prompt { min-height: 44px; padding: 8px 20px; font-size: 1rem; }
-.ai-note { font-size: 0.95rem; margin: 16px 0 0; max-width: 40rem; }
-.dev-tools { margin-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.45); }
-.dev-tools summary { cursor: pointer; font-weight: 700; padding: 14px 0; min-height: 44px; }
-.dev-tools-body { font-size: 0.95rem; padding-bottom: 8px; }
-.dev-tools-body p { margin: 0 0 8px; }
+.ai-note { font-size: 0.95rem; margin: 16px auto 0; max-width: 40rem; }
+.card-page .ai-note { margin-left: 0; color: var(--secondary); }
 .dev-tool-list { margin: 0; padding-left: 1.2rem; display: grid; gap: 8px; }
 .dev-rules { margin: 6px 0 0; padding-left: 1.2rem; display: grid; gap: 4px; }
-.dev-tools code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em; font-weight: 700; overflow-wrap: anywhere; }
+.card-page code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em; font-weight: 700; overflow-wrap: anywhere; }
 
 /* ---------- 3. editorial + benefits ---------- */
 .editorial { background: var(--white); padding: 56px 0; text-align: center; }
@@ -234,9 +237,9 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .faq-item[open] summary::after { content: '−'; }
 .faq-item p { padding: 0 16px 16px; margin: 0; color: var(--secondary); }
 /* Smooth open/close (browsers with ::details-content: Chrome, Edge, Safari 18.4+; others simply open at once). */
-.faq-item, .dev-tools { interpolate-size: allow-keywords; }
-.faq-item::details-content, .dev-tools::details-content { height: 0; overflow: clip; transition: height 0.3s ease, content-visibility 0.3s allow-discrete; }
-.faq-item[open]::details-content, .dev-tools[open]::details-content { height: auto; }
+.faq-item { interpolate-size: allow-keywords; }
+.faq-item::details-content { height: 0; overflow: clip; transition: height 0.3s ease, content-visibility 0.3s allow-discrete; }
+.faq-item[open]::details-content { height: auto; }
 .final-cta { background: var(--turquoise); padding: 48px 0; text-align: center; }
 .final-cta h2 { color: var(--white); font-size: clamp(1.8rem, 7vw, 2.6rem); margin-bottom: 18px; }
 
@@ -429,10 +432,8 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 /* ---------- wider screens ---------- */
 @media (min-width: 700px) {
   .benefits { grid-template-columns: repeat(3, 1fr); gap: 28px; }
-  .plan-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .plan-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; max-width: 46rem; margin: 0 auto; }
   .plan-card { padding: 24px 16px 18px; }
-  .showcase-grid { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); }
-  .tools { border-top: 0; border-left: 2px dashed var(--border); padding: 20px; }
   .chat { padding: 20px; }
   .bubble { max-width: 78%; }
   .card-page { padding: 12px 32px 28px; }
@@ -471,9 +472,6 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
   .quote-card { padding: 24px; }
   .pass { --pass-pad: 24px; }
   .ai { padding: 72px 0; }
-  .ai-extra { grid-area: extra; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr; column-gap: 48px; align-items: start; }
-  .ai-extra .prompt-card { grid-row: span 2; }
-  .ai-note { margin-top: 0; }
   .editorial, .plans-band { padding: 80px 0; }
   .final-cta { padding: 72px 0; }
 }
