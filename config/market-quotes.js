@@ -1,6 +1,5 @@
 // Real competitor quotes collected by the project owner on 28 Oct 2026 (see docs/pricing-research.md §1).
-// Used by the /metodologia page and the landing ("calibrados con N presupuestos").
-// The public page shows the insurers as "Aseguradora A/B/C": plans were matched by level, not line by line.
+// Used for the FAQ answer ("Lo calibramos con N presupuestos…"); the full research is in docs/pricing-research.md.
 // Prices in EUR, total for the quote unless perPerson is true. A "quote" = one insurer's answer for one trip.
 
 export default {

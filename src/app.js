@@ -109,9 +109,8 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
     res.set('Cache-Control', 'public, max-age=31536000, immutable').sendFile(join(ROOT, 'node_modules', path));
   });
 
-  // Landing (public/index.html filled in on the server) and the methodology page.
+  // Landing (public/index.html filled in on the server).
   app.get(['/', '/index.html'], (req, res) => res.type('html').send(landing.landingHtml()));
-  app.get('/metodologia', (req, res) => res.type('html').send(landing.methodologyHtml()));
   app.get('/favicon.svg', (req, res) => res.type('image/svg+xml').set('Cache-Control', 'public, max-age=86400').send(faviconSvg()));
 
   app.get('/condiciones', (req, res) => {

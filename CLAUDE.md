@@ -11,12 +11,16 @@ The owner is not a programmer: explain things simply, report test results honest
   `{{{name}}}` = built HTML block; an unknown key throws (so a typo fails at once). Pages arrive complete: no text pops in, no layout shift.
   The template is read at start-up: restart the server after editing it. Never write triple braces inside an HTML comment there.
   `public/app.js` runs the quote form and the 4-step checkout (Paso X de 4: compare plans → who travels → review + simulated pay → done),
-  with browser history per step and a fixed total bar. Friendly error texts: `brand.texts.errors`, keyed by the server's `error_code`
-  (+ client-only keys like `missingAge`); the message is shown right under the field it is about.
+  with browser history per step, a trip summary card (steps 1–3, "Editar" goes back to the form) and a fixed total bar
+  ("Elige un plan" + price range until a plan is chosen). Quote form: one row per traveller, "Viajero N" + age dropdown
+  (0–85, "Menos de 1 año", default 30; first row rendered by the server, others copied by app.js), max 8; sends the same `traveler_ages`.
+  Step 1: Wild and Wild+ as two separate cards; CSS subgrid aligns each coverage row across both cards; exclusions in a
+  closed-by-default `<details>` ("En los dos planes", "Solo en Wild", "Límites de Wild+"). Friendly error texts: `brand.texts.errors`, keyed by the server's `error_code`
+  (+ client-only keys like `missingDates`); the message is shown right under the field it is about.
   Birth dates are typed as dd/mm/aaaa (numeric keyboard) and sent as YYYY-MM-DD. Mobile-first CSS (`public/style.css`), breakpoints 700/960 px.
 - "Desde X €" on the plan cards = 7 days, Europe, 1 adult, computed by the pricing engine (`fromPrices` in `src/landing.js`), never typed in.
-- `/metodologia`: summary of `docs/pricing-research.md`; market quotes live in `config/market-quotes.js` (13 quotes, counted by `quoteCount`),
-  our prices are computed live. Competitors are shown anonymised (Aseguradora A/B/C): we matched plans by level, not limit by limit.
+- No public pricing-methodology page (removed 28 Oct 2026 at the owner's request). The research is in `docs/pricing-research.md`
+  (linked from README.md); market quotes in `config/market-quotes.js` (13 quotes, counted by `quoteCount` for the FAQ answer).
 - Illustrations: original inline SVGs in `src/illustrations.js` (night outline + turquoise fill + small yellow accent). No emoji, no stock art,
   no fake reviews/ratings/press logos/invented stats; only promise what the product really does.
 - SQLite via Node's built-in `node:sqlite` (no native npm module). DB file in `data/` (git-ignored). Small migrations run at start in `src/db.js`.
@@ -40,8 +44,11 @@ The owner is not a programmer: explain things simply, report test results honest
 - Website banner (`brand.siteBanner`, sticky red strip on every page): "Demo — no es un seguro real. Ningún pago es real."
 - Colours (`brand.colors`, exposed as CSS variables in /brand.css): sky #E3F4FB page background; white cards; night #0B1F3A main text; secondary #3C5368;
   turquoise #0E7C86 for highlighted sections (white text) and the logo mountain; turquoiseText #0B6770 for small turquoise text on light backgrounds;
-  yellow #FFC21A primary buttons (bold night text, large, NO border, NO shadow) and the sun; red #D7263D ONLY for the demo banner (white text) and error borders;
-  mint #D6F0EE for the plans band on the landing.
+  yellow #FFC21A ONLY for clickable primary buttons (bold night text, large, NO border, NO shadow) — badges and labels NEVER use yellow
+  (on the website the only other yellow is the logo sun and small accents inside the illustrations; tested in `test/flow.test.js`);
+  red #D7263D ONLY for the demo banner (white text) and error borders; mint #D6F0EE for the plans band and the Wild+ card.
+  Badge ("El favorito de los aventureros"): turquoise #0E7C86 pill with white text. Secondary buttons: white, 2px night border, night text.
+  The PDF certificate still uses pale yellow #FFF6D6 for its highlighted cells (not part of the website rule).
 - WCAG AA: never yellow or white text on the light background; #0E7C86 as small text on sky fails (4.38) → use #0B6770. Error boxes: night text on white with a red border.
 - Fonts: Space Grotesk (headings), Inter (text), self-hosted from `@fontsource` via `/fonts/` (no Google requests). The PDF uses the same fonts.
 
@@ -112,6 +119,8 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 - Supply-chain rule: only install package versions at least 2 weeks old; pin exact versions.
 
 ## Not done yet / known gaps
+- iOS gives date inputs a built-in minimum width (the Ida/Vuelta boxes overlapped on an iPhone): fixed with `appearance: none;
+  min-width: 0`, stacked below 360 px. Tested in Chrome's phone emulation only, not on a real iPhone.
 - Native date pickers (Ida/Vuelta) show the BROWSER's date format (dd/mm/aaaa in a Spanish browser, mm/dd/yyyy in an English one);
   everything we print ourselves is always dd/mm/aaaa.
 - No rate limiting. No real payment or real insurer. Prices are provisional.

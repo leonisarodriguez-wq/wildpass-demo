@@ -42,12 +42,11 @@
               <input type="date" id="return" name="return" aria-required="true">
             </div>
           </div>
-          <fieldset class="field ages-field" aria-describedby="ages-hint">
-            <legend>{{t.form.travelers}} <span class="hint" id="ages-hint">· {{t.form.travelersHint}}</span></legend>
-            <div class="ages" id="ages">
-              <span class="age-chip"><input class="age" name="age" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" autocomplete="off" aria-label="{{firstAgeLabel}}" aria-required="true"></span>
-              <button type="button" class="add-age" id="add-age" aria-label="{{t.form.addTravelerLabel}}">{{t.form.addTraveler}}</button>
-            </div>
+          <fieldset class="field ages-field">
+            <legend>{{t.form.travelers}}</legend>
+            <div class="travelers" id="ages">{{{travelerRow}}}</div>
+            <button type="button" class="add-traveler" id="add-age">{{t.form.addTraveler}}</button>
+            <template id="remove-icon">{{{iconRemove}}}</template>
           </fieldset>
           <div class="error" id="quote-error" role="alert" hidden></div>
           <button type="submit" class="primary block" id="quote-submit">{{t.form.submit}}</button>
@@ -82,31 +81,28 @@
         <ul class="plan-cards">
           <li class="plan-card">
             <h3>{{planNames.wild}}</h3>
-            <p>{{t.plans.wildDescription}}</p>
+            <p class="desc">{{t.plans.wildDescription}}</p>
             <p class="from-price">{{price.wild}}<sup aria-hidden="true">*</sup></p>
-            <a class="card-link" href="#quote-form" data-focus-form>{{t.plans.seePrice}}</a>
+            <a class="primary block card-button" href="#quote-form" data-focus-form>{{t.plans.seePrice}}</a>
           </li>
           <li class="plan-card featured">
-            <p class="badge">{{t.plans.wildPlusBadge}}</p>
             <h3>{{planNames.wild_plus}}</h3>
-            <p>{{t.plans.wildPlusDescription}}</p>
+            <p class="badge">{{t.plans.wildPlusBadge}}</p>
+            <p class="desc">{{t.plans.wildPlusDescription}}</p>
             <p class="from-price">{{price.wild_plus}}<sup aria-hidden="true">*</sup></p>
-            <a class="card-link" href="#quote-form" data-focus-form>{{t.plans.seePrice}}</a>
+            <a class="primary block card-button" href="#quote-form" data-focus-form>{{t.plans.seePrice}}</a>
           </li>
           <li class="plan-card">
             <h3>{{t.plans.aiName}}</h3>
-            <p>{{t.plans.aiDescription}}</p>
-            <a class="card-link" href="#ia">{{t.plans.howItWorks}}</a>
+            <p class="desc">{{t.plans.aiDescription}}</p>
+            <a class="secondary block card-button" href="#ia">{{t.plans.howItWorks}}</a>
           </li>
         </ul>
         <p class="from-note"><span aria-hidden="true">* </span>{{t.plans.fromNote}}</p>
       </div>
     </section>
 
-    <!-- 5. Methodology line -->
-    <p class="wrap methodology-line">{{methodologyLine}} <a href="/metodologia">{{t.methodologyLink}}</a></p>
-
-    <!-- 6. FAQ + final CTA -->
+    <!-- 5. FAQ + final CTA -->
     <section class="faq" aria-labelledby="faq-title">
       <div class="wrap narrow">
         <h2 id="faq-title">{{t.faqTitle}}</h2>
@@ -129,12 +125,24 @@
         <div class="progress-bar" id="progress-bar" role="progressbar" aria-valuemin="1" aria-valuemax="4" aria-labelledby="progress-text"><span id="progress-fill"></span></div>
       </div>
 
+      <!-- Trip summary card (steps 1–3), filled in by public/app.js -->
+      <section class="trip-card" id="trip-card" aria-labelledby="trip-card-title" hidden>
+        <div class="trip-card-head">
+          <h2 class="sr-only" id="trip-card-title">{{t.checkout.tripCard.title}}</h2>
+          <button type="button" class="link-button edit-trip" data-go="landing" aria-label="{{t.checkout.tripCard.editLabel}}">{{t.checkout.tripCard.edit}}</button>
+        </div>
+        <dl>
+          <div class="trip-item">{{{iconPin}}}<dt>{{t.checkout.tripCard.destination}}</dt><dd id="trip-destination"></dd></div>
+          <div class="trip-item">{{{iconCalendar}}}<dt>{{t.checkout.tripCard.dates}}</dt><dd id="trip-dates"></dd></div>
+          <div class="trip-item">{{{iconPeople}}}<dt>{{t.checkout.tripCard.travelers}}</dt><dd id="trip-travelers"></dd></div>
+        </dl>
+      </section>
+
       <section class="step" id="step-1" hidden aria-labelledby="step-1-title">
-        <button type="button" class="link-button" data-go="landing">{{t.checkout.changeTrip}}</button>
         <h2 id="step-1-title" tabindex="-1"></h2>
-        <p class="trip-line" id="trip-line"></p>
         <div id="compare"></div>
         <p class="muted" id="step-1-line"></p>
+        <div id="exclusions"></div>
         <div class="error" role="alert" hidden></div>
       </section>
 
@@ -181,7 +189,7 @@
   <footer class="site-footer">
     <div class="wrap">
       <p class="footer-legal">{{t.footerLegal}}</p>
-      <p class="footer-links"><a href="/condiciones">{{t.footerTerms}}</a><a href="/metodologia">{{t.footerMethodology}}</a><span>{{t.footerWebmcp}}</span></p>
+      <p class="footer-links"><a href="/condiciones">{{t.footerTerms}}</a><span>{{t.footerWebmcp}}</span></p>
       <details class="agent">
         <summary>{{t.agentActivity}} · <span id="webmcp-status">WebMCP…</span></summary>
         <pre id="agent-activity">—</pre>

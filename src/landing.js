@@ -1,9 +1,8 @@
-// Server-side rendering of the public pages: landing (public/index.html template), /metodologia and the
-// shared page shell. Texts come from the brand config, numbers from the pricing config and the pricing
+// Server-side rendering of the public pages: landing (public/index.html template) and the shared page shell
+// (terms page). Texts come from the brand config, numbers from the pricing config and the pricing
 // engine, so the copy can never disagree with the product. Pages arrive complete: no text pops in later.
 import { readFileSync } from 'node:fs';
 import { formatEur } from './business.js';
-import { dateEs } from './format.js';
 import { logoHtml } from './logo.js';
 import * as art from './illustrations.js';
 import { quoteCount } from '../config/market-quotes.js';
@@ -60,11 +59,11 @@ function footerHtml(brand) {
   const t = brand.texts;
   return `<footer class="site-footer"><div class="wrap">
     <p class="footer-legal">${escapeHtml(t.footerLegal)}</p>
-    <p class="footer-links"><a href="/condiciones">${escapeHtml(t.footerTerms)}</a><a href="/metodologia">${escapeHtml(t.footerMethodology)}</a><span>${escapeHtml(t.footerWebmcp)}</span></p>
+    <p class="footer-links"><a href="/condiciones">${escapeHtml(t.footerTerms)}</a><span>${escapeHtml(t.footerWebmcp)}</span></p>
   </div></footer>`;
 }
 
-// Shared shell for simple pages (terms, methodology).
+// Shared shell for simple pages (terms).
 export function pageShell({ brand, title, body }) {
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(title)} · ${escapeHtml(brand.name)}</title>${iconLinks}${fontPreloads}<link rel="stylesheet" href="/brand.css"><link rel="stylesheet" href="/style.css"></head>
@@ -72,6 +71,22 @@ export function pageShell({ brand, title, body }) {
 <header class="site-header"><div class="wrap">${logoHtml()}</div></header>
 <main class="page"><div class="wrap"><div class="card-page">${body}</div></div></main>
 ${footerHtml(brand)}</body></html>`;
+}
+
+// Age dropdown options ("Menos de 1 año", "1 año", "2 años"… "85 años"), from the pricing limits.
+export function ageOptions(form, limits, selected) {
+  const options = [];
+  for (let age = limits.minAge; age <= limits.maxAge; age++) {
+    const label = age === 0 ? form.ageZero : age === 1 ? form.ageOne : fill(form.age, { age });
+    options.push(`<option value="${age}"${age === selected ? ' selected' : ''}>${escapeHtml(label)}</option>`);
+  }
+  return options.join('');
+}
+
+// First traveller row of the quote form (public/app.js copies it for travellers 2–8).
+function firstTravelerRow(form, limits) {
+  return `<div class="traveler-row"><label for="age-1">${escapeHtml(fill(form.travelerRow, { n: 1 }))}</label>`
+    + `<select id="age-1" class="age" name="age">${ageOptions(form, limits, form.defaultAge)}</select></div>`;
 }
 
 export function createLanding({ brand, pricing, business, market, countries, templatePath }) {
@@ -89,56 +104,17 @@ export function createLanding({ brand, pricing, business, market, countries, tem
       benefits: t.editorial.benefits.map((b, i) => `<li class="benefit">${[art.globePin, art.mountainRope, art.chatRobotCheck][i]}<h3>${escapeHtml(b.title)}</h3><p>${escapeHtml(fill(b.text, values))}</p></li>`).join(''),
       faq: t.faq.map(f => `<details class="faq-item"><summary>${escapeHtml(f.q)}</summary><p>${escapeHtml(fill(f.a, values))}</p></details>`).join(''),
       heroArt: art.heroLandscape,
+      travelerRow: firstTravelerRow(t.form, pricing.limits),
+      iconPin: art.iconPin, iconCalendar: art.iconCalendar, iconPeople: art.iconPeople, iconRemove: art.iconRemove,
     };
     return render(template, {
       html,
       brand,
       t,
       price: { wild: fill(t.plans.from, { price: formatEur(prices.wild) }), wild_plus: fill(t.plans.from, { price: formatEur(prices.wild_plus) }) },
-      methodologyLine: fill(t.methodologyLine, values),
-      firstAgeLabel: fill(t.form.ageLabel, { n: 1 }),
       planNames: { wild: pricing.plans.wild.name, wild_plus: pricing.plans.wild_plus.name },
     });
   }
 
-  function methodologyHtml() {
-    const m = t.methodology;
-    const letters = market.insurers.map((_, i) => String.fromCharCode(65 + i));
-    const median = xs => { const s = [...xs].sort((a, b) => a - b); const k = s.length >> 1; return s.length % 2 ? s[k] : (s[k - 1] + s[k]) / 2; };
-    const days = (from, to) => Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000) + 1; // inclusive, like the product
-    const byLabel = Object.fromEntries(market.trips.map(trip => [trip.label, trip]));
-    const fmt = n => n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    let borrowed = false;
-
-    const rows = market.trips.flatMap(trip => Object.keys(pricing.plans).map(plan => {
-      const cells = market.insurers.map(insurer => {
-        const own = trip.quotes[insurer]?.[market.comparable[plan][insurer]];
-        if (own !== undefined) return { value: own, mark: '' };
-        const other = byLabel[trip.borrowFrom]?.quotes[insurer]?.[market.comparable[plan][insurer]];
-        if (other !== undefined) { borrowed = true; return { value: other, mark: '*' }; }
-        return null;
-      });
-      const prices = cells.filter(Boolean).map(c => c.value);
-      const ours = business.pricePerTravelerCents(trip.zone, plan, days(trip.from, trip.to), trip.age) / 100;
-      const diff = (ours / median(prices) - 1) * 100;
-      return `<tr><th scope="row">${escapeHtml(trip.label)}<span class="muted"> · ${escapeHtml(fill(m.days, { n: days(trip.from, trip.to) }))}</span></th><td>${escapeHtml(pricing.plans[plan].name)}</td>
-        ${cells.map(c => `<td class="num">${c ? `${fmt(c.value)}${c.mark}` : '—'}</td>`).join('')}
-        <td class="num">${fmt(median(prices))}</td><td class="num strong">${fmt(ours)} <span class="muted">(${diff > 0 ? '+' : '−'}${Math.abs(diff).toFixed(1).replace('.', ',')} %)</span></td></tr>`;
-    })).join('');
-
-    const values2 = { ...values, date: dateEs(market.collectedOn) };
-    const body = `<h1>${escapeHtml(m.title)}</h1>
-      <p>${escapeHtml(fill(m.intro, values2))}</p>
-      <h2>${escapeHtml(m.methodTitle)}</h2><ul>${m.method.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul>
-      <h2>${escapeHtml(m.tableTitle)}</h2>
-      <div class="table-wrap" tabindex="0" role="region" aria-label="${escapeHtml(m.tableTitle)}"><table class="data-table">
-        <thead><tr><th scope="col">${escapeHtml(m.tableTrip)}</th><th scope="col">${escapeHtml(m.tablePlan)}</th>${letters.map(l => `<th scope="col" class="num">${escapeHtml(fill(m.tableInsurer, { letter: l }))}</th>`).join('')}<th scope="col" class="num">${escapeHtml(m.tableMedian)}</th><th scope="col" class="num">${escapeHtml(m.tableOurs)}</th></tr></thead>
-        <tbody>${rows}</tbody></table></div>
-      <p class="muted">${escapeHtml([m.tableNote, borrowed && m.borrowedNote, m.perPersonNote].filter(Boolean).join(' '))}</p>
-      <h2>${escapeHtml(m.assumptionsTitle)}</h2><ul>${m.assumptions.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul>
-      <p><a href="/">${escapeHtml(m.back)}</a></p>`;
-    return pageShell({ brand, title: m.title, body });
-  }
-
-  return { landingHtml, methodologyHtml };
+  return { landingHtml };
 }

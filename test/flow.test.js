@@ -303,7 +303,7 @@ test('broken JSON and unknown endpoints give structured errors', async () => {
 });
 
 test('demo banner is on every page', async () => {
-  for (const path of ['/', '/condiciones', '/metodologia']) {
+  for (const path of ['/', '/condiciones']) {
     const html = await (await fetch(`${base}${path}`)).text();
     assert.ok(html.includes('Demo — no es un seguro real. Ningún pago es real.'), `banner missing on ${path}`);
   }
@@ -315,9 +315,10 @@ test('landing: complete server-rendered page with prices from the pricing engine
   const html = nbsp(await res.text());
   // Every template placeholder was filled (an unknown one would have thrown).
   assert.ok(!/\{\{|\}\}/.test(html), 'leftover template braces');
-  for (const text of ['Travel wild. We’ve got you.', 'Ver mi precio', 'Sin datos personales para ver el precio.',
+  for (const text of ['Travel wild. We’ve got you.', 'Ver mi precio', 'Gratis y sin compromiso: no te pedimos datos personales.',
+    'Viajeros y edad el día de la ida', '+ Añadir viajero', 'Cómo funciona',
     'Tu asistente también puede contratarlo', 'Tú pon la aventura. Nosotros, todo lo demás.', 'Elige cómo quieres viajar',
-    'El favorito de los aventureros', '¿Listo para irte?', 'Hecho con WebMCP']) {
+    'El favorito de los aventureros', '¿Preparado para empezar tu viaje?', 'Hecho con WebMCP']) {
     assert.ok(html.includes(text.replace('’', "'")) || html.includes(text) || html.includes(text.replace('’', '&#39;')), `missing: ${text}`);
   }
   // "Desde X €" = 7 days, Europe, 1 adult, straight from the engine (never hardcoded).
@@ -328,28 +329,24 @@ test('landing: complete server-rendered page with prices from the pricing engine
   const q = await call('get_quote', quoteInput({ destination_country: 'IT', return_date: addDays(DEP, 6), traveler_ages: [35] }));
   assert.equal(q.plans[0].total_price_eur, from.wild);
   assert.equal(q.plans[1].total_price_eur, from.wild_plus);
-  // Quote count in the methodology line is computed from the market data.
+  // The FAQ quote count is computed from the market data; the methodology line and page are gone.
   assert.equal(quoteCount(marketQuotes), 13);
-  assert.ok(html.includes('Precios calibrados con 13 presupuestos reales del mercado.'));
-  // Checkout steps and the numeric age field are in the page; no ID or card fields anywhere.
-  for (const id of ['quote-form', 'step-1', 'step-2', 'step-3', 'step-4', 'total-bar', 'accept-terms']) assert.ok(html.includes(`id="${id}"`), id);
-  assert.ok(html.includes('inputmode="numeric"'));
+  assert.ok(html.includes('Lo calibramos con 13 presupuestos reales de otras aseguradoras.'));
+  assert.ok(!html.includes('/metodologia') && !html.includes('Precios calibrados'));
+  // Traveller ages: a dropdown per traveller, 0–85, "Menos de 1 año" for 0, 30 años selected by default.
+  const options = [...html.matchAll(/<option value="(\d+)"( selected)?>([^<]+)<\/option>/g)];
+  assert.equal(options.length, pricing.limits.maxAge - pricing.limits.minAge + 1);
+  assert.equal(options[0][3], 'Menos de 1 año');
+  assert.equal(options[1][3], '1 año');
+  assert.equal(options.at(-1)[3], '85 años');
+  assert.deepEqual(options.filter(o => o[2]).map(o => o[1]), ['30']);
+  // Checkout steps are in the page; no ID or card fields anywhere.
+  for (const id of ['quote-form', 'trip-card', 'step-1', 'step-2', 'step-3', 'step-4', 'total-bar', 'accept-terms', 'exclusions']) assert.ok(html.includes(`id="${id}"`), id);
   assert.ok(!/dni|tarjeta de cr|card-number|cc-number/i.test(html.replace('Nada de DNI', '').replace('datos de tarjeta', '')));
 });
 
-test('methodology page: 13 market quotes, comparison table, assumptions, live prices', async () => {
-  const res = await fetch(`${base}/metodologia`);
-  assert.equal(res.status, 200);
-  const html = nbsp(await res.text());
-  assert.ok(!/\{\{|\}\}|\{\w+\}/.test(html), 'leftover placeholders');
-  assert.ok(html.includes('13 presupuestos'));
-  assert.ok(html.includes('<table class="data-table">'));
-  assert.equal((html.match(/<tr><th scope="row">/g) ?? []).length, marketQuotes.trips.length * 2);
-  assert.ok(html.includes('Aseguradora A') && !html.includes('Heymondo'), 'competitors are shown anonymised');
-  // Our Italy Wild price (8 days, adult) comes from the engine.
-  const ours = business.pricePerTravelerCents('europe', 'wild', 8, 35) / 100;
-  assert.ok(html.includes(ours.toLocaleString('es-ES', { minimumFractionDigits: 2 })));
-  assert.ok(html.includes('Supuestos'));
+test('the old methodology page is gone (research stays in docs/pricing-research.md)', async () => {
+  assert.equal((await fetch(`${base}/metodologia`)).status, 404);
 });
 
 test('brand: name, claim, colours and self-hosted fonts', async () => {
@@ -387,4 +384,13 @@ test('brand: name, claim, colours and self-hosted fonts', async () => {
     assert.equal(r.status, 200, png);
     assert.equal(r.headers.get('content-type'), 'image/png');
   }
+});
+
+test('brand rule: yellow only on clickable primary buttons', async () => {
+  const css = await (await fetch(`${base}/style.css`)).text();
+  // Every rule that uses the yellow colour must be the .primary button rule.
+  const rules = css.replace(/\/\*[\s\S]*?\*\//g, '').split('}').filter(rule => rule.includes('var(--yellow)') || /#FFC21A/i.test(rule));
+  assert.ok(rules.length >= 1);
+  for (const rule of rules) assert.match(rule.trim(), /^\.primary \{/, `yellow used outside buttons: ${rule.trim().slice(0, 60)}`);
+  assert.ok(!css.includes('--pale-yellow'), 'pale yellow is not used on the site');
 });

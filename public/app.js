@@ -17,6 +17,23 @@ const dateEs = iso => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}
 // Server texts (key conditions) contain YYYY-MM-DD dates: show them the Spanish way.
 const datesEs = text => String(text).replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, '$3/$2/$1');
 const travelersWord = n => (n === 1 ? C.travelerOne : C.travelerMany);
+// "10–17 dic 2026", "30 oct – 12 nov 2026" or "28 dic 2026 – 5 ene 2027" (same style as the PDF).
+const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+function rangeEs(fromIso, toIso) {
+  const [y1, m1, d1] = fromIso.split('-').map(Number);
+  const [y2, m2, d2] = toIso.split('-').map(Number);
+  if (y1 === y2 && m1 === m2) return `${d1}–${d2} ${MONTHS[m2 - 1]} ${y2}`;
+  if (y1 === y2) return `${d1} ${MONTHS[m1 - 1]} – ${d2} ${MONTHS[m2 - 1]} ${y2}`;
+  return `${d1} ${MONTHS[m1 - 1]} ${y1} – ${d2} ${MONTHS[m2 - 1]} ${y2}`;
+}
+// "35 años", "34 y 31 años", "40, 38 y 5 años", "menos de 1 año".
+function agesText(ages) {
+  const tc = C.tripCard;
+  if (ages.length === 1 && ages[0] === 0) return tc.lessThanOneYear;
+  if (ages.length === 1 && ages[0] === 1) return T.form.ageOne;
+  const list = ages.length > 1 ? `${ages.slice(0, -1).join(', ')} ${tc.and} ${ages.at(-1)}` : String(ages[0]);
+  return fill(tc.ages, { ages: list });
+}
 
 function el(tag, props = {}, ...children) {
   const node = document.createElement(tag);
@@ -80,6 +97,8 @@ function render(step, { push = true, focus = true } = {}) {
   const inCheckout = step !== 'landing';
   $('#landing').hidden = inCheckout;
   $('#checkout').hidden = !inCheckout;
+  $('#trip-card').hidden = !inCheckout || step === '4';
+  if (inCheckout && step !== '4') renderTripCard();
   for (const s of STEPS) $(`#step-${s}`).hidden = s !== step;
   if (push) history.pushState({ step }, '', inCheckout ? `#paso-${step}` : location.pathname);
   if (inCheckout) {
@@ -120,38 +139,45 @@ function updateTotalBar() {
     label.textContent = `${C.totalLabel} · ${p.plan_name}`;
     value.textContent = eur(p.total_price_eur);
   } else if (state.quote) {
-    label.textContent = C.totalLabel;
-    value.textContent = fill(C.totalFrom, { price: eur(Math.min(...state.quote.plans.map(p => p.total_price_eur))) });
+    // Step 1, no plan chosen yet: show the price range of the plans.
+    const totals = state.quote.plans.map(p => p.total_price_eur);
+    label.textContent = C.choosePlan;
+    value.textContent = fill(C.priceRange, { min: eur(Math.min(...totals)), max: eur(Math.max(...totals)) });
   }
 }
 
 // ---------- landing: quote form ----------
+// One row per traveller: "Viajero N" + age dropdown (the first row comes from the server; the others copy its options).
 function ageInputs() { return [...document.querySelectorAll('#ages .age')]; }
 
 function relabelAges() {
-  ageInputs().forEach((input, i) => {
-    input.setAttribute('aria-label', fill(T.form.ageLabel, { n: i + 1 }));
-    input.parentElement.querySelector('.remove-age')?.setAttribute('aria-label', fill(T.form.removeTravelerLabel, { n: i + 1 }));
+  [...document.querySelectorAll('#ages .traveler-row')].forEach((row, i) => {
+    const n = i + 1;
+    row.querySelector('label').textContent = fill(T.form.travelerRow, { n });
+    row.querySelector('label').htmlFor = `age-${n}`;
+    row.querySelector('select').id = `age-${n}`;
+    row.querySelector('.remove-age')?.setAttribute('aria-label', fill(T.form.removeTravelerLabel, { n }));
   });
   $('#add-age').hidden = ageInputs().length >= limits.maxTravelers;
 }
 
-function addAge(value = '') {
-  const chip = el('span', { class: 'age-chip' },
-    el('input', { class: 'age', name: 'age', type: 'text', inputmode: 'numeric', pattern: '[0-9]*', maxlength: '2', autocomplete: 'off', value }),
-    el('button', { type: 'button', class: 'remove-age', text: '×', onclick: () => { chip.remove(); relabelAges(); ageInputs().at(-1)?.focus(); } }),
-  );
-  $('#add-age').before(chip);
+function addTraveler() {
+  const first = ageInputs()[0];
+  const select = el('select', { class: 'age', name: 'age' }, [...first.options].map(o => el('option', { value: o.value, text: o.textContent })));
+  select.value = String(T.form.defaultAge);
+  const remove = el('button', { type: 'button', class: 'remove-age', onclick: () => {
+    row.remove();
+    relabelAges();
+    (ageInputs().at(-1) ?? $('#add-age')).focus();
+  } });
+  remove.append($('#remove-icon').content.cloneNode(true));
+  const row = el('div', { class: 'traveler-row' }, el('label'), select, remove);
+  $('#ages').append(row);
   relabelAges();
-  return chip.querySelector('input');
+  return select;
 }
 
-function digitsOnly(e) {
-  if (e.target.classList.contains('age')) e.target.value = e.target.value.replace(/\D/g, '').slice(0, 2);
-}
-
-$('#ages').addEventListener('input', digitsOnly);
-$('#add-age').addEventListener('click', () => addAge().focus());
+$('#add-age').addEventListener('click', () => addTraveler().focus());
 $('#departure').addEventListener('change', () => {
   const dep = $('#departure').value;
   if (!dep) return;
@@ -167,8 +193,6 @@ $('#quote-form').addEventListener('submit', async e => {
   if (!$('#destination').value) return showError(form, E.missingDestination, $('#destination'));
   if (!$('#departure').value) return showError(form, E.missingDates, $('#departure'));
   if (!$('#return').value) return showError(form, E.missingDates, $('#return'));
-  const emptyAge = ages.find(a => a.value === '');
-  if (emptyAge) return showError(form, E.missingAge, emptyAge);
 
   await busy($('#quote-submit'), T.form.loading, async () => {
     const result = await callApi('get_quote', {
@@ -205,14 +229,22 @@ for (const link of document.querySelectorAll('[data-focus-form]')) {
   });
 }
 
+// ---------- trip summary card (steps 1–3) ----------
+function renderTripCard() {
+  const trip = state.quote.trip;
+  const n = trip.traveler_ages.length;
+  $('#trip-destination').textContent = trip.destination_name;
+  $('#trip-dates').textContent = `${rangeEs(trip.departure_date, trip.return_date)} · ${fill(C.tripCard.days, { days: trip.days })}`;
+  $('#trip-travelers').textContent = `${n} ${travelersWord(n)} · ${agesText(trip.traveler_ages)}`;
+}
+
 // ---------- step 1: compare plans ----------
+// Two separate plan cards; CSS subgrid keeps each coverage row at the same height in both cards.
 function renderStep1() {
   const q = state.quote;
   const n = q.trip.traveler_ages.length;
-  const [wild, plus] = q.plans;
   const cmp = C.compare;
   $('#step-1-title').textContent = fill(C.step1Title, { destination: q.trip.destination_name });
-  $('#trip-line').textContent = fill(C.tripLine, { from: dateEs(q.trip.departure_date), to: dateEs(q.trip.return_date), days: q.trip.days, n, travelersWord: travelersWord(n) });
   $('#step-1-line').textContent = fill(C.step1Line, { n, travelersWord: travelersWord(n) });
 
   const money = v => (v > 0 ? eur(v) : cmp.notIncluded);
@@ -223,29 +255,30 @@ function renderStep1() {
     [cmp.cancellation, p => (p.cancellation_included ? `${eur(p.coverage_limits_eur.cancellation_per_traveler_eur)} ${cmp.perTraveler}` : cmp.notIncluded)],
     [cmp.excess, p => eur(p.excess_per_medical_claim_eur)],
     [cmp.adventure, p => (p.adventure_sports_included ? fill(cmp.adventureYes, { rescue: eur(p.search_and_rescue_eur) }) : cmp.adventureNo)],
-    [cmp.exclusions, p => p.exclusions.filter(x => !q.exclusions_all_plans.includes(x)).join(' '), 'small'],
   ];
-  const colClass = p => (p.plan === 'wild_plus' ? 'featured-col' : '');
-  const chooseRow = () => el('tr', { class: 'choose' }, [wild, plus].map(p => el('td', { class: colClass(p) },
-    el('button', { type: 'button', class: 'primary', text: fill(C.choose, { plan: p.plan_name }), onclick: e => choosePlan(p.plan, e.currentTarget) }))));
 
-  $('#compare').replaceChildren(el('table', { class: 'compare' },
-    el('caption', { class: 'sr-only', text: `${cmp.feature}: ${wild.plan_name} / ${plus.plan_name}` }),
-    el('colgroup', {}, el('col'), el('col')),
-    el('thead', {}, el('tr', {}, [wild, plus].map(p => el('th', { scope: 'col', id: `col-${p.plan}`, class: colClass(p) },
-      el('span', { class: 'plan-name', text: p.plan_name }),
-      el('span', { class: 'plan-price', text: eur(p.total_price_eur) }),
-      el('span', { class: 'sr-only', text: cmp.price }))))),
-    el('tbody', {},
-      chooseRow(),
-      features.flatMap(([label, value, size], i) => [
-        el('tr', { class: 'feature' }, el('th', { colspan: '2', scope: 'colgroup', id: `f-${i}`, text: label })),
-        el('tr', { class: 'values' }, [wild, plus].map(p => el('td', { class: [colClass(p), size].filter(Boolean).join(' '), headers: `col-${p.plan} f-${i}`, text: value(p) }))),
-      ]),
-      el('tr', { class: 'feature' }, el('th', { colspan: '2', scope: 'colgroup', text: cmp.commonExclusions })),
-      el('tr', { class: 'common' }, el('td', { colspan: '2' }, el('ul', {}, q.exclusions_all_plans.map(x => el('li', { text: x }))))),
-      chooseRow(),
-    ),
+  $('#compare').replaceChildren(el('div', { class: 'plan-compare' }, q.plans.map(p => {
+    const featured = p.plan === 'wild_plus';
+    const nameId = `plan-${p.plan}-name`;
+    // Rows: name, price, one per coverage, button (the CSS subgrid needs the count).
+    return el('article', { class: featured ? 'plan-option featured' : 'plan-option', 'aria-labelledby': nameId, style: `grid-row: span ${features.length + 3}` },
+      featured && el('p', { class: 'badge', text: T.plans.wildPlusBadge }),
+      el('h3', { id: nameId, text: p.plan_name }),
+      el('p', { class: 'plan-price' }, el('span', { class: 'sr-only', text: `${cmp.price}: ` }), eur(p.total_price_eur)),
+      el('dl', { style: `grid-row: span ${features.length}` }, features.map(([label, value]) => el('div', { class: 'feature' }, el('dt', { text: label }), el('dd', { text: value(p) })))),
+      el('button', { type: 'button', class: featured ? 'primary' : 'secondary', text: fill(C.choose, { plan: p.plan_name }), onclick: e => choosePlan(p.plan, e.currentTarget) }),
+    );
+  })));
+
+  // Exclusions, closed by default: common ones, then each plan's own (Wild: adventure sports; Wild+: its limits).
+  const common = q.exclusions_all_plans;
+  const groups = [
+    [cmp.bothPlans, common],
+    ...q.plans.map(p => [fill(p.adventure_sports_included ? cmp.limitsOf : cmp.onlyIn, { plan: p.plan_name }), p.exclusions.filter(x => !common.includes(x))]),
+  ].filter(([, list]) => list.length);
+  $('#exclusions').replaceChildren(el('details', { class: 'exclusions' },
+    el('summary', { text: cmp.exclusionsToggle }),
+    groups.map(([title, list]) => el('div', { class: 'exclusion-group' }, el('h3', { text: title }), el('ul', {}, list.map(x => el('li', { text: x }))))),
   ));
 }
 

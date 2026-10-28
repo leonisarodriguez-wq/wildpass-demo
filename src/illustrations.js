@@ -59,3 +59,11 @@ export const heroLandscape = `<svg class="hero-art" xmlns="http://www.w3.org/200
   <path d="M0 160 140 70l70 50 120-90 150 130h20L620 60l110 80 90-60 170 80 60-30 150 70z" fill="${T}" opacity=".35"/>
   <path d="M0 160 220 96l90 40 160-82 170 106 140-70 160 70 120-40 140 40z" fill="${T}"/>
 </svg>`;
+
+// ---------- small line icons (24 px, colour from CSS `currentColor`) ----------
+const icon = body => `<svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
+
+export const iconPin = icon('<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>');
+export const iconCalendar = icon('<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>');
+export const iconPeople = icon('<circle cx="9" cy="8" r="3.2"/><path d="M3 19.5c.6-3.4 3-5.5 6-5.5s5.4 2.1 6 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16.5 14.1c2.3.3 4 2 4.5 4.9"/>');
+export const iconRemove = icon('<circle cx="12" cy="12" r="9"/><path d="M8 12h8"/>');
