@@ -1,0 +1,26 @@
+# Downloaded code libraries (can always be re-downloaded)
+node_modules/
+
+# Secrets (passwords, API keys)
+.env
+.env.*
+!.env.example
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Generated PDFs
+*.pdf
+
+# Logs and system junk
+npm-debug.log*
+*.log
+.DS_Store
+
+# App data (database, issued policy PDFs)
+data/

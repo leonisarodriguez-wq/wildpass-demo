@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seguro de viaje</title>
+  <link rel="stylesheet" href="/brand.css">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="banner" id="demo-banner">Demo — no es un seguro real</div>
+  <main>
+    <h1><span id="brand-name"></span> · <span data-t="heading"></span></h1>
+    <p data-t="intro"></p>
+
+    <!-- Step 1: quote -->
+    <section id="step-quote">
+      <h2 data-t="quoteTitle"></h2>
+      <form id="quote-form" novalidate>
+        <label><span data-t="origin"></span> <select id="origin" required></select></label>
+        <label><span data-t="destination"></span> <select id="destination" required><option value="">—</option></select></label>
+        <label><span data-t="departureDate"></span> <input type="date" id="departure" required></label>
+        <label><span data-t="returnDate"></span> <input type="date" id="return" required></label>
+        <fieldset>
+          <legend data-t="travelerAges"></legend>
+          <div id="ages"></div>
+          <button type="button" id="add-age" data-t="addTraveler"></button>
+        </fieldset>
+        <div class="error" hidden></div>
+        <button type="submit" class="primary" data-t="getQuote"></button>
+      </form>
+    </section>
+
+    <!-- Step 2: plans -->
+    <section id="step-plans" hidden>
+      <h2 data-t="plansTitle"></h2>
+      <p id="trip-line"></p>
+      <div id="plans" class="plans"></div>
+      <h3 data-t="exclusionsTitle"></h3>
+      <ul id="exclusions"></ul>
+      <div class="error" hidden></div>
+      <button type="button" class="back" data-back="step-quote" data-t="back"></button>
+    </section>
+
+    <!-- Step 3: traveller details -->
+    <section id="step-details" hidden>
+      <h2 data-t="detailsTitle"></h2>
+      <form id="details-form" novalidate>
+        <fieldset>
+          <legend data-t="policyholder"></legend>
+          <label><span data-t="fullName"></span> <input id="ph-name" autocomplete="name" required></label>
+          <label><span data-t="email"></span> <input id="ph-email" type="email" autocomplete="email" required></label>
+        </fieldset>
+        <div id="travelers"></div>
+        <p class="note" data-t="noIdNote"></p>
+        <div class="error" hidden></div>
+        <button type="button" class="back" data-back="step-plans" data-t="back"></button>
+        <button type="submit" class="primary" data-t="continue"></button>
+      </form>
+    </section>
+
+    <!-- Step 4: review + simulated payment -->
+    <section id="step-review" hidden>
+      <h2 data-t="reviewTitle"></h2>
+      <div id="review"></div>
+      <p><a id="terms-link" href="/condiciones" target="_blank" rel="noopener" data-t="termsLink"></a></p>
+      <label class="check"><input type="checkbox" id="accept-terms"> <span data-t="acceptTerms"></span></label>
+      <p class="note" data-t="simulatedPaymentNote"></p>
+      <div class="error" hidden></div>
+      <button type="button" class="back" data-back="step-details" data-t="back"></button>
+      <button type="button" class="primary" id="pay"></button>
+    </section>
+
+    <!-- Step 5: confirmation -->
+    <section id="step-done" hidden>
+      <h2 data-t="doneTitle"></h2>
+      <p><span data-t="policyNumber"></span>: <strong id="policy-number"></strong></p>
+      <p><a id="pdf-link" target="_blank" rel="noopener" data-t="downloadPdf"></a></p>
+      <p><span data-t="emailStatus"></span>: <span id="email-status"></span></p>
+      <button type="button" id="start-over" data-t="startOver"></button>
+    </section>
+
+    <details class="agent">
+      <summary id="webmcp-status">WebMCP…</summary>
+      <pre id="agent-activity">—</pre>
+    </details>
+  </main>
+  <script type="module" src="/app.js"></script>
+  <script type="module" src="/webmcp.js"></script>
+</body>
+</html>
