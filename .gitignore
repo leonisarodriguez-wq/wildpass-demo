@@ -24,3 +24,4 @@ npm-debug.log*
 
 # App data (database, issued policy PDFs)
 data/
+previews/
