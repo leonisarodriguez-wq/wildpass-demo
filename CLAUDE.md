@@ -114,6 +114,9 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
   and in Chrome: native, polyfill, navigator-only). Chrome 156 and the polyfill natively expose only `document.modelContext`.
   If a browser ever exposes two DIFFERENT objects, only `document.modelContext` gets the tools (never twice).
   Polyfill `executeTool(toolFromGetTools, input)` takes the tool entry (with its origin), not the tool name.
+- Tool definitions live ONLY in `public/webmcp-tools.js` (pure module): `webmcp.js` registers them in the browser, and `src/landing.js`
+  builds the landing's "Para desarrolladores" list from the same definitions (each tool's `es` line; confirm_payment's `rulesEs` per
+  safety field; both stripped before registering). A test fails if a tool or a safety field has no Spanish line.
 - Tools: get_quote, select_plan, set_traveler_details, review_order, confirm_payment, get_policy. Strict schemas (`additionalProperties: false`), readOnlyHint on read-only tools.
   The plan enum is built from the pricing config, so it always matches the server.
 - Tools register a moment after page load (they wait for /api/config); an agent listing tools instantly may see none yet.
@@ -134,6 +137,10 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 - `npm test` → automated tests (Node's built-in test runner, temporary database, port chosen automatically: safe while the service runs).
 - The test browser (chrome-devtools MCP) is only started by Claude Code when testing; it uses a pipe, not a network port.
 - Supply-chain rule: only install package versions at least 2 weeks old; pin exact versions.
+- Git: PUBLIC repo https://github.com/leonisarodriguez-wq/wildpass-demo (`origin`, HTTPS, `gh auth setup-git` credentials).
+  Commit identity = GitHub noreply `349275578+leonisarodriguez-wq@users.noreply.github.com` (history rewritten on 28 Oct 2026 to hide the
+  personal email; original history backed up in `~/travel-demo-history-backup.bundle`, never pushed). Before every push: no secrets,
+  no personal email, no `.env`/`data/`/PDFs/`previews/` (all git-ignored). Test fixtures use example.com addresses only.
 
 ## Not done yet / known gaps
 - iOS gives date inputs a built-in minimum width (the Ida/Vuelta boxes overlapped on an iPhone): fixed with `appearance: none;
