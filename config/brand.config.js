@@ -68,6 +68,13 @@ export default {
       pending: 'Enviando…',
       sent: 'Enviado',
       failed: 'No se pudo enviar',
+      accepted: 'Aceptado por el servicio de correo',
+      deferred: 'Entrega retrasada, se reintentará',
+      delivered: 'Entregado',
+      opened: 'Abierto',
+      bounced: 'Rebotado (no se pudo entregar)',
+      blocked: 'Bloqueado',
+      marked_as_spam: 'Marcado como spam',
     },
     startOver: 'Nuevo presupuesto',
 

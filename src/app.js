@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { openDb } from './db.js';
 import { createBusiness, fail, formatEur } from './business.js';
 import { buildPolicyPdf } from './pdf.js';
-import { createEmailSender } from './email.js';
+import { createEmailService } from './email.js';
 import { COUNTRY_CODES } from '../config/countries.js';
 import brand from '../config/brand.config.js';
 import pricing from '../config/pricing.config.js';
@@ -22,11 +22,12 @@ const STATUS_BY_CODE = {
 
 const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
-export function createApp({ dataDir = join(ROOT, 'data'), env = process.env } = {}) {
+// fetchImpl is only replaced in tests, to simulate Brevo without sending real emails.
+export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fetchImpl = fetch, now } = {}) {
   const pdfDir = join(dataDir, 'policies');
   mkdirSync(pdfDir, { recursive: true });
   const db = openDb(join(dataDir, 'travel.db'));
-  const business = createBusiness({ db, pricing, brand, pdfDir, buildPdf: buildPolicyPdf, sendEmail: createEmailSender({ env, brand }) });
+  const business = createBusiness({ db, pricing, brand, pdfDir, buildPdf: buildPolicyPdf, email: createEmailService({ env, brand, fetchImpl }), ...(now && { now }) });
 
   const app = express();
   app.set('trust proxy', 'loopback'); // cloudflared runs on this machine and sets X-Forwarded-Proto

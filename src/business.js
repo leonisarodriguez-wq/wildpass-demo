@@ -81,7 +81,9 @@ function cleanEmail(value) {
 
 // ---------- main factory ----------
 
-export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, sendEmail, now = () => new Date() }) {
+const DELIVERY_RECHECK_MS = 60_000; // ask Brevo at most once a minute per policy
+
+export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, now = () => new Date() }) {
   const L = pricing.limits;
 
   const zoneOf = code => {
@@ -450,7 +452,7 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, sendEmail
       .run(status, errorText, now().toISOString(), policy_number);
     let sending;
     try {
-      sending = sendEmail({ to: policyholder, policy_number, pdfBuffer, pdf_url });
+      sending = email.send({ to: policyholder, policy_number, pdfBuffer, pdf_url });
     } catch (err) {
       setStatus('failed', String(err.message).slice(0, 300));
       return 'failed';
@@ -460,13 +462,55 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, sendEmail
       return 'not_configured';
     }
     sending.done
-      .then(() => setStatus('sent'))
+      .then(({ messageId }) => {
+        setStatus('sent');
+        db.prepare('UPDATE policies SET email_message_id = ? WHERE policy_number = ?').run(messageId, policy_number);
+      })
       .catch(err => setStatus('failed', String(err.message).slice(0, 300)));
     return 'pending';
   }
 
+  // Combines our own send status with what Brevo says happened to the message afterwards.
+  async function emailDelivery(policy) {
+    const local = {
+      status: policy.email_status, // not_configured | pending | failed | sent
+      status_at: policy.email_updated_at,
+      source: 'local',
+      error: policy.email_status === 'failed' ? policy.email_error : undefined,
+    };
+    if (policy.email_status !== 'sent' || !policy.email_message_id) return local;
+
+    let cached = policy.email_delivery_json ? JSON.parse(policy.email_delivery_json) : null;
+    let checkedAt = policy.email_checked_at;
+    let check_error;
+    if (!checkedAt || now() - new Date(checkedAt) >= DELIVERY_RECHECK_MS) {
+      try {
+        const fresh = await email.getDeliveryStatus(policy.email_message_id);
+        checkedAt = now().toISOString();
+        if (fresh) cached = fresh;
+        db.prepare('UPDATE policies SET email_delivery_json = ?, email_checked_at = ? WHERE policy_number = ?')
+          .run(cached ? JSON.stringify(cached) : null, checkedAt, policy.policy_number);
+      } catch {
+        check_error = 'Could not reach Brevo to check delivery; showing the last known status.';
+      }
+    }
+    if (!cached) {
+      // Brevo accepted the email but has not reported any events yet.
+      return { ...local, last_checked_at: checkedAt ?? undefined, note: 'Brevo accepted the email; no delivery events reported yet.', check_error };
+    }
+    return {
+      status: cached.status, // accepted | deferred | delivered | opened | bounced | blocked | marked_as_spam
+      status_at: cached.at,
+      brevo_event: cached.event,
+      reason: cached.reason ?? undefined,
+      source: 'brevo_events',
+      last_checked_at: checkedAt,
+      check_error,
+    };
+  }
+
   // ---------- 6. get_policy ----------
-  function getPolicy(input, ctx = {}) {
+  async function getPolicy(input, ctx = {}) {
     const shapeError = checkShape(input, ['policy_number', 'email'], 'get_policy');
     if (shapeError) return shapeError;
     const number = typeof input.policy_number === 'string' ? input.policy_number.trim().toUpperCase() : '';
@@ -489,7 +533,7 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, sendEmail
       issued_at: policy.issued_at,
       details: orderSummary(order, quote),
       pdf_url: `${ctx.baseUrl ?? ''}/poliza/${policy.pdf_token}.pdf`,
-      email_delivery: { status: policy.email_status, updated_at: policy.email_updated_at, error: policy.email_error ?? undefined },
+      email_delivery: await emailDelivery(policy),
       disclaimer: brand.demoBanner,
     };
   }

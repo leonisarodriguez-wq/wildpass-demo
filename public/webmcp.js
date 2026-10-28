@@ -139,7 +139,7 @@ function buildTools(limits) {
     {
       name: 'get_policy',
       title: 'Look up a policy',
-      description: 'Look up an issued policy: status, coverage period, policy details, PDF link and email delivery status. Needs the policy number AND the policyholder\'s email.',
+      description: 'Look up an issued policy: status, coverage period, policy details, PDF link and email delivery status. Needs the policy number AND the policyholder\'s email. email_delivery.status is one of: not_configured, pending, failed (our send was refused), sent (accepted, no delivery events yet), accepted, deferred, delivered, opened, bounced, blocked, marked_as_spam — with status_at as the time of that event.',
       inputSchema: {
         type: 'object',
         additionalProperties: false,

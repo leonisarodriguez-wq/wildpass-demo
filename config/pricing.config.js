@@ -1,27 +1,28 @@
 // ALL prices, coverage limits, exclusions and validation limits live here.
-// PROVISIONAL values: to be calibrated later against real competitor quotes.
+// Calibrated on 28 Oct 2026 against real competitor quotes: see docs/pricing-research.md.
 // Money amounts are in euros.
 
 export default {
   currency: 'EUR',
 
   // Base price per adult (age factor 1.0) for a 7-day trip, by zone and plan.
-  // Longer/shorter trips are scaled by (days / 7) ^ lengthExponent.
+  // Longer/shorter trips are scaled by (days / 7) ^ lengthExponent (days counted inclusively).
   // An exponent below 1 makes the cost per day go down for longer trips.
+  // WARNING: calibrated only on 8-15 day trips; long trips are probably underpriced (see docs).
   baseDays: 7,
-  lengthExponent: 0.7,
+  lengthExponent: 0.28,
   basePrice7Days: {
-    europe: { esencial: 18.0, premium: 35.0 },
-    rest_of_world: { esencial: 32.0, premium: 58.0 },
-    usa_canada_japan: { esencial: 35.06, premium: 77.906 }, // ≈45 € / ≈100 € for 10 days
+    europe: { esencial: 21.19, premium: 30.83 }, // 8 days → 22 € / 32 €
+    rest_of_world: { esencial: 48.46, premium: 68.73 }, // 11 days → 55 € / 78 €; 15 days → 60 € / 85 €
+    usa_canada_japan: { esencial: 50.22, premium: 70.49 }, // 11 days → 57 € / 80 €
   },
 
   // Age (at departure) → price multiplier. Ages outside these bands are not insurable.
   ageFactors: [
-    { minAge: 0, maxAge: 17, factor: 0.7 },
+    { minAge: 0, maxAge: 17, factor: 0.7 }, // assumption, no market evidence
     { minAge: 18, maxAge: 64, factor: 1.0 },
-    { minAge: 65, maxAge: 74, factor: 1.6 },
-    { minAge: 75, maxAge: 85, factor: 2.2 },
+    { minAge: 65, maxAge: 74, factor: 1.65 }, // market evidence: Intermundial ×1.65 at 68
+    { minAge: 75, maxAge: 85, factor: 2.2 }, // assumption, no market evidence
   ],
 
   limits: {

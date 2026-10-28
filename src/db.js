@@ -48,5 +48,15 @@ export function openDb(file) {
       email_updated_at TEXT
     );
   `);
+
+  // Added later: Brevo delivery tracking. ALTER keeps existing databases and their data.
+  const existing = new Set(db.prepare('PRAGMA table_info(policies)').all().map(c => c.name));
+  for (const [column, type] of [
+    ['email_message_id', 'TEXT'],          // Brevo messageId, used to look up delivery events
+    ['email_delivery_json', 'TEXT'],       // last summarised Brevo status { status, event, at, reason }
+    ['email_checked_at', 'TEXT'],          // when we last asked Brevo
+  ]) {
+    if (!existing.has(column)) db.exec(`ALTER TABLE policies ADD COLUMN ${column} ${type}`);
+  }
   return db;
 }

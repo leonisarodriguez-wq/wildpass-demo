@@ -16,9 +16,12 @@ The owner is not a programmer: explain things simply, report test results honest
 - Website texts in Spanish. Server error messages in Spanish too (shown to users). Tool descriptions in English (read by AI agents).
 - `.env` holds secrets (BREVO_API_KEY, SENDER_EMAIL). Never put secrets in code or Git. `.env.example` has placeholders only.
 
-## Product rules (provisional — prices to be calibrated against real competitor quotes)
+## Product rules
 - Plans: Esencial, Premium (limits in pricing config).
 - Price per traveller = base for 7 days (by zone + plan) × (days/7)^exponent (exponent < 1, so cost per day falls on longer trips) × age factor; rounded to cents per traveller. Total = sum.
+- Prices calibrated 28 Oct 2026 against Heymondo / IATI / Intermundial quotes: see `docs/pricing-research.md` (data, method, comparison, warnings).
+  Targets are checked by `test/pricing-targets.test.js` (±5%). Competitor "7 days" (10–17 Dec) = 8 days in our inclusive count, so targets are tested on the same date ranges.
+  Known gap: no data for trips over 15 days — long trips are probably underpriced. 0–17 and 75–85 age factors are assumptions.
 - Zones: Europe / Rest of world / USA-Canada-Japan. For the medical limit, USA-Canada-Japan counts as "rest of world".
 - Trip days are counted inclusively (departure and return days both count).
 - Validation: origin must be Spain (ES) for now; destination ≠ origin; departure strictly after today (Europe/Madrid); return after departure; max 90 days; 1–8 travellers; ages 0–85; valid email.
@@ -34,6 +37,9 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 - Policy number: `BRAND-<year>-XXXXXX`. PDF via unguessable link `/poliza/<random token>.pdf`.
 - get_policy requires policy_number AND the policyholder email (decision: policy numbers are short and guessable; the email stops strangers reading personal data).
 - Email via Brevo HTTP API; missing key → email_status "not_configured", never crash. Email is sent after payment and never blocks it.
+- Delivery status: we store Brevo's messageId; get_policy asks Brevo's events API (`/v3/smtp/statistics/events?messageId=`) at most once a minute per policy
+  and reports accepted / deferred / delivered / opened / bounced / blocked / marked_as_spam with Brevo's timestamp; "sent" if Brevo has no events yet.
+  Brevo is faked in tests (`fetchImpl`), so tests never send real emails. The API key must never appear in responses, logs or Git.
 
 ## WebMCP
 - Spec: https://webmachinelearning.github.io/webmcp (draft 27 Oct 2026). API is `document.modelContext.registerTool({name, title, description, inputSchema, annotations, execute})`.

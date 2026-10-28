@@ -62,25 +62,14 @@ async function orderReadyToReview(plan = 'esencial') {
   return o.order_id;
 }
 
-// ---------- pricing ----------
-test('prices match the provisional targets', async () => {
-  const price = async (dest, days, plan) => {
-    const q = await call('get_quote', quoteInput({ destination_country: dest, return_date: addDays(DEP, days - 1), traveler_ages: [40] }));
-    assert.equal(q.ok, true, q.message);
-    return q.plans.find(p => p.plan === plan).total_price_eur;
-  };
-  assert.equal(await price('FR', 7, 'esencial'), 18);
-  assert.equal(await price('FR', 7, 'premium'), 35);
-  assert.equal(await price('TH', 7, 'esencial'), 32);
-  assert.equal(await price('TH', 7, 'premium'), 58);
-  assert.equal(await price('US', 10, 'esencial'), 45);
-  assert.equal(await price('US', 10, 'premium'), 100);
-});
-
+// ---------- pricing (market targets are checked in pricing-targets.test.js) ----------
 test('age factors and per-day decrease', async () => {
   const q = await call('get_quote', quoteInput({ traveler_ages: [10, 40, 70, 80] }));
-  const per = q.plans[0].price_per_traveler.map(t => t.price_eur);
-  assert.deepEqual(per, [31.5, 45, 72.01, 99.01]); // age factor applied before rounding to cents
+  const [child, adult, senior, older] = q.plans[0].price_per_traveler.map(t => t.price_eur);
+  // Age factor is applied before rounding to cents, so allow up to 2 cents of difference.
+  for (const [price, factor] of [[child, 0.7], [senior, 1.65], [older, 2.2]]) {
+    assert.ok(Math.abs(price - adult * factor) <= 0.02, `${price} is not ${factor} × ${adult}`);
+  }
   const short = await call('get_quote', quoteInput({ destination_country: 'FR', return_date: addDays(DEP, 6), traveler_ages: [40] }));
   const long = await call('get_quote', quoteInput({ destination_country: 'FR', return_date: addDays(DEP, 59), traveler_ages: [40] }));
   assert.ok(long.plans[0].total_price_eur / 60 < short.plans[0].total_price_eur / 7);
@@ -98,7 +87,8 @@ test('quote contains coverage, excess and exclusions for both plans', async () =
   assert.equal(esencial.cancellation_included, false);
   assert.equal(premium.cancellation_included, true);
   assert.ok(q.exclusions.length >= 5);
-  assert.equal(esencial.total_price_eur, 90);
+  const perPerson = esencial.price_per_traveler.map(t => t.price_eur);
+  assert.equal(esencial.total_price_eur, Math.round(perPerson.reduce((a, b) => a + b) * 100) / 100);
 });
 
 // ---------- full flow ----------
@@ -106,11 +96,12 @@ test('full purchase flow issues a policy with a downloadable PDF', async () => {
   const orderId = await orderReadyToReview('premium');
   const review = await call('review_order', { order_id: orderId });
   assert.equal(review.ok, true);
-  assert.equal(review.total_eur, 200);
+  assert.ok(review.total_eur > 0);
   assert.ok(review.review_token.length >= 30);
   assert.match(review.terms_url, /\/condiciones$/);
+  const total = review.total_eur;
 
-  const paid = await call('confirm_payment', { order_id: orderId, review_token: review.review_token, accept_terms: true, confirmed_total_eur: 200, user_confirmed: true });
+  const paid = await call('confirm_payment', { order_id: orderId, review_token: review.review_token, accept_terms: true, confirmed_total_eur: total, user_confirmed: true });
   assert.equal(paid.ok, true, paid.message);
   assert.match(paid.policy_number, /^BRAND-\d{4}-[A-Z2-9]{6}$/);
   assert.equal(paid.email_status, 'not_configured');
@@ -132,7 +123,7 @@ test('full purchase flow issues a policy with a downloadable PDF', async () => {
 
   await expectError('get_policy', { policy_number: paid.policy_number, email: 'someone@else.com' }, 'POLICY_NOT_FOUND');
   await expectError('get_policy', { policy_number: 'BRAND-2026-ZZZZZZ', email: 'ana.prueba@example.com' }, 'POLICY_NOT_FOUND');
-  const again = await expectError('confirm_payment', { order_id: orderId, review_token: review.review_token, accept_terms: true, confirmed_total_eur: 200, user_confirmed: true }, 'ALREADY_PAID');
+  const again = await expectError('confirm_payment', { order_id: orderId, review_token: review.review_token, accept_terms: true, confirmed_total_eur: total, user_confirmed: true }, 'ALREADY_PAID');
   assert.equal(again.policy_number, paid.policy_number);
 });
 
@@ -194,7 +185,8 @@ test('traveller details refusals: wrong ages, count, email, birth date, extra fi
 // ---------- payment refusals ----------
 test('payment refusals: no review, bad token, terms, confirmation, total mismatch', async () => {
   const orderId = await orderReadyToReview();
-  const pay = over => ({ order_id: orderId, accept_terms: true, confirmed_total_eur: 90, user_confirmed: true, ...over });
+  let total = 0;
+  const pay = over => ({ order_id: orderId, accept_terms: true, confirmed_total_eur: total, user_confirmed: true, ...over });
 
   await expectError('confirm_payment', pay({ review_token: 'anything' }), 'NOT_REVIEWED'); // paying without review
   await expectError('review_order', { order_id: 'missing' }, 'ORDER_NOT_FOUND');
@@ -202,15 +194,16 @@ test('payment refusals: no review, bad token, terms, confirmation, total mismatc
   const first = await call('review_order', { order_id: orderId });
   const review = await call('review_order', { order_id: orderId }); // replaces the first token
   const token = review.review_token;
+  total = review.total_eur;
   await expectError('confirm_payment', pay({ review_token: first.review_token }), 'INVALID_REVIEW_TOKEN');
   await expectError('confirm_payment', pay({ review_token: 'wrong-token' }), 'INVALID_REVIEW_TOKEN');
   await expectError('confirm_payment', pay({ review_token: token, accept_terms: false }), 'TERMS_NOT_ACCEPTED');
   await expectError('confirm_payment', pay({ review_token: token, accept_terms: 'true' }), 'TERMS_NOT_ACCEPTED');
   await expectError('confirm_payment', pay({ review_token: token, user_confirmed: false }), 'USER_CONFIRMATION_REQUIRED');
-  const mismatch = await expectError('confirm_payment', pay({ review_token: token, confirmed_total_eur: 89.99 }), 'TOTAL_MISMATCH');
-  assert.equal(mismatch.reviewed_total_eur, 90);
-  await expectError('confirm_payment', pay({ review_token: token, confirmed_total_eur: 90.004 }), 'TOTAL_MISMATCH');
-  await expectError('confirm_payment', pay({ review_token: token, confirmed_total_eur: '90' }), 'TOTAL_MISMATCH');
+  const mismatch = await expectError('confirm_payment', pay({ review_token: token, confirmed_total_eur: Math.round((total - 0.01) * 100) / 100 }), 'TOTAL_MISMATCH');
+  assert.equal(mismatch.reviewed_total_eur, total);
+  await expectError('confirm_payment', pay({ review_token: token, confirmed_total_eur: total + 0.004 }), 'TOTAL_MISMATCH');
+  await expectError('confirm_payment', pay({ review_token: token, confirmed_total_eur: String(total) }), 'TOTAL_MISMATCH');
   await expectError('confirm_payment', { ...pay({ review_token: token }), card_number: '4111' }, 'UNKNOWN_FIELD');
 
   // Changing details after review cancels the token.
