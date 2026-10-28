@@ -39,6 +39,8 @@ async function register() {
         return result;
       },
     })));
+    // One line for developers: which WebMCP this browser uses (native or the MCP-B polyfill) and under which names.
+    console.info(`[Wildpass] WebMCP: ${source} · ${Object.entries(names).map(([n, how]) => `${n}: ${how}`).join(' · ')}`);
     window.__webmcpSource = source;
     window.__webmcpNames = names;
     if (statusEl) statusEl.textContent = `WebMCP: ${source}`;

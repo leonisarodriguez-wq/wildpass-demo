@@ -135,6 +135,9 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
   so they are reachable via BOTH `document.modelContext` and `navigator.modelContext` (tested in `test/webmcp-context.test.js`
   and in Chrome: native, polyfill, navigator-only). Chrome 156 and the polyfill natively expose only `document.modelContext`.
   If a browser ever exposes two DIFFERENT objects, only `document.modelContext` gets the tools (never twice).
+  The page logs one console.info line: `[Wildpass] WebMCP: <provider> · document.modelContext: … · navigator.modelContext: …`.
+  Polyfill path tested end to end (28 Oct 2026): Chrome WITHOUT the WebMCP flag → polyfill loaded, both names list the same 6 tools,
+  full purchase via `getTools()` + `executeTool(entry, input)` on the public address (Stripe test mode, policy emailed).
   Polyfill `executeTool(toolFromGetTools, input)` takes the tool entry (with its origin), not the tool name.
 - Tool definitions live ONLY in `public/webmcp-tools.js` (pure module): `webmcp.js` registers them in the browser, and `src/landing.js`
   builds the landing's "Para desarrolladores" list from the same definitions (each tool's `es` line; confirm_payment's `rulesEs` per
