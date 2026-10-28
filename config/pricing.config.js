@@ -16,9 +16,11 @@ export default {
     usa_canada_japan: { wild: 50.22, wild_plus: 70.49 }, // 11 days → 57 € / 80 €
   },
 
-  // From day 15 the per-day discount stops: each extra day costs the average of what
-  // days 10–14 each add to the price. ASSUMPTION without market data (see docs).
-  longTrip: { fromDay: 15, averageOfDays: [10, 14] },
+  // Long trips — ASSUMPTION without market data (see docs). Counted like competitors
+  // (their "day 15" = our day 16, their 10–14-day trips = our 11–15): from our day 16 the
+  // per-day discount stops, and each extra day costs the average price PER DAY of an
+  // 11–15-day trip (our count). Keeps the 15-day Thailand target untouched.
+  longTrip: { fromDay: 16, averagePerDayOfTrips: [11, 15] },
 
   // Age (at departure) → price multiplier. Ages outside these bands are not insurable.
   // We price age risk instead of refusing seniors.

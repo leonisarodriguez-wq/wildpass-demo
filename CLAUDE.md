@@ -18,11 +18,16 @@ The owner is not a programmer: explain things simply, report test results honest
   The email sender NAME comes from the brand config ("Seguros Wildpass (demo)"), not from `.env`.
 
 ## Brand
-- Name "Seguros Wildpass". Logo: "wildpass" (lowercase, bold) with small "seguros de viaje" underneath.
-- Claim "Travel wild. We've got you." + Spanish support line "Viaja salvaje. Nosotros te cubrimos."
-- Colours: night blue #0E1B2C, signal yellow #FFC629 (buttons, with night-blue text), cream #F7F3EA, stone grey #5B6573,
-  warning red #D7263D ONLY for the demo banner and errors.
-- WCAG AA: never red TEXT on cream (4.48:1, fails) and never yellow text on cream (1.4:1). Error boxes use night text with a red border.
+- Name "Seguros Wildpass". Logo: symbol (mountain with the sun behind it) left of "wildpass" (lowercase, Space Grotesk Bold), small "seguros de viaje" below.
+  Symbol geometry in `brand.symbol` (viewBox 0 0 56 56; sun circle 36/18/r10 yellow; mountain polygon turquoise on light, white on turquoise/dark).
+  `src/logo.js` builds the SVG (site header, terms page, `/favicon.svg` = symbol in a rounded turquoise square); `src/pdf.js` draws the same shapes.
+  PNGs `public/favicon-32.png`, `public/apple-touch-icon.png`, `public/brand/logo-symbol-email.png` were rendered from the SVG with headless Chrome:
+  re-render them if the symbol or colours change. Emails use the PNG (Gmail blocks SVG), loaded from the same address as the PDF link.
+- Claim "Travel wild. We've got you." + hero subtitle (`texts.heroSubtitle`) + Spanish line "Viaja salvaje. Nosotros te cubrimos."
+- Colours (`brand.colors`, exposed as CSS variables in /brand.css): sky #E3F4FB page background; white cards; night #0B1F3A main text; secondary #3C5368;
+  turquoise #0E7C86 for highlighted sections (white text) and the logo mountain; turquoiseText #0B6770 for small turquoise text on light backgrounds;
+  yellow #FFC21A primary buttons (bold night text, large, NO border, NO shadow) and the sun; red #D7263D ONLY for the demo banner (white text) and error borders.
+- WCAG AA: never yellow or white text on the light background; #0E7C86 as small text on sky fails (4.38) → use #0B6770. Error boxes: night text on white with a red border.
 - Fonts: Space Grotesk (headings), Inter (text), self-hosted from `@fontsource` via `/fonts/` (no Google requests). The PDF uses the same fonts.
 
 ## Product rules
@@ -31,7 +36,8 @@ The owner is not a programmer: explain things simply, report test results honest
   Wild excludes adventure sports. Professional sports and extreme activities (e.g. base jumping) are excluded in both.
 - Exclusions: common list (`exclusions`) + each plan's `extraExclusions`. API: per-plan `exclusions`, and `exclusions_all_plans` on the quote.
 - Price per traveller = base for 7 days (by zone + plan) × length multiplier × age factor; rounded to cents per traveller. Total = sum.
-  Length multiplier: (days/7)^0.28 up to day 14; from day 15 each extra day adds the average of what days 10–14 add (ASSUMPTION, no market data).
+  Length multiplier: (days/7)^0.28 up to day 15; from our day 16 (= competitors' day 15) each extra day costs the average price PER DAY
+  of our 11–15-day trips (= competitors' 10–14) (ASSUMPTION, no market data; `longTrip` in pricing config). 90-day Rest-of-world Wild ≈ 395 €.
 - Prices calibrated 28 Oct 2026 against Heymondo / IATI / Intermundial: see `docs/pricing-research.md`. Targets checked by `test/pricing-targets.test.js` (±5%).
   Competitor "7 days" (10–17 Dec) = 8 days in our inclusive count (decision: keep inclusive counting), so targets are tested on the same date ranges.
 - Age factors: 0–17 0.7 (assumption), 18–64 1.0, 65–74 1.65 (Intermundial evidence), 75–85 2.2 (assumption). We price age risk instead of refusing seniors.
@@ -47,6 +53,8 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 - Changing traveller details or calling review_order again invalidates the previous review_token.
 - Agents must show the summary to the user and get explicit confirmation BEFORE confirm_payment (stated in the tool description).
 - Errors are never bare throws: every API/tool result is `{ ok: true, ... }` or `{ ok: false, error_code, message, how_to_fix }`.
+- review_order freezes the summary the customer sees (`orders.review_snapshot_json`); payment copies it into `policies.snapshot_json`.
+  PDF, email and get_policy use that snapshot, never the current config, so later config changes never alter a sold policy.
 - Policy number: `WILD-<year>-XXXXXX` (older test policies keep `BRAND-…`). PDF via unguessable link `/poliza/<random token>.pdf`.
 - get_policy requires policy_number AND the policyholder email (decision: policy numbers are short and guessable; the email stops strangers reading personal data).
 - Email via Brevo HTTP API; missing key → email_status "not_configured", never crash. Email is sent after payment and never blocks it.
@@ -70,4 +78,5 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 
 ## Not done yet / known gaps
 - Full landing design. No rate limiting. No real payment or real insurer. Prices are provisional.
-- Issued policies show the CURRENT plan coverage from config (prices are snapshotted per quote, coverage is not).
+- Policies issued before the snapshot feature have no snapshot and show the current config (`coverage_source: "current_config_legacy_policy"`).
+- The email logo PNG is loaded from the site address in the PDF link; with a Quick Tunnel that address changes, so logos in OLD emails stop showing (text and PDF attachment are unaffected).

@@ -1,13 +1,14 @@
 // Express app: one JSON endpoint per action. The website and the WebMCP tools both call these,
 // sending the same input the tool receives. All rules live in business.js.
 import express from 'express';
-import { mkdirSync, createReadStream } from 'node:fs';
+import { mkdirSync, createReadStream, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openDb } from './db.js';
 import { createBusiness, fail, formatEur } from './business.js';
 import { buildPolicyPdf } from './pdf.js';
 import { createEmailService } from './email.js';
+import { logoHtml, faviconSvg } from './logo.js';
 import { COUNTRY_CODES } from '../config/countries.js';
 import brand from '../config/brand.config.js';
 import pricing from '../config/pricing.config.js';
@@ -84,7 +85,7 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
       face(brand.fonts.text, 'inter-latin-400-normal', 400),
       face(brand.fonts.text, 'inter-latin-600-normal', 600),
       face(brand.fonts.text, 'inter-latin-700-normal', 700),
-      `:root{--night:${c.night};--yellow:${c.yellow};--cream:${c.cream};--stone:${c.stone};--red:${c.red};--white:${c.white};` +
+      `:root{${Object.entries(c).map(([name, hex]) => `--${name.replace(/[A-Z]/g, m => `-${m.toLowerCase()}`)}:${hex}`).join(';')};` +
       `--font-headings:"${brand.fonts.headings}",system-ui,sans-serif;--font-text:"${brand.fonts.text}",system-ui,sans-serif}`,
     ].join('\n'));
   });
@@ -104,7 +105,13 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
   });
 
   const header = () => `<div class="banner">${escapeHtml(brand.demoBanner)}</div>
-    <header class="site-header"><a class="logo" href="/"><span class="wordmark">${escapeHtml(brand.logo.wordmark)}</span><span class="tagline">${escapeHtml(brand.logo.tagline)}</span></a></header>`;
+    <header class="site-header">${logoHtml()}</header>`;
+  const iconLinks = '<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png">';
+
+  // Home page: public/index.html with the logo (built from the brand config) filled in.
+  const indexHtml = readFileSync(join(ROOT, 'public', 'index.html'), 'utf8').replace('<!--logo-->', logoHtml());
+  app.get(['/', '/index.html'], (req, res) => res.type('html').send(indexHtml));
+  app.get('/favicon.svg', (req, res) => res.type('image/svg+xml').set('Cache-Control', 'public, max-age=86400').send(faviconSvg()));
 
   app.get('/condiciones', (req, res) => {
     const plans = Object.values(pricing.plans).map(p => `
@@ -114,8 +121,8 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
       <h3>${escapeHtml(brand.texts.planExclusionsTitle)} (solo ${escapeHtml(p.name)})</h3>
       <ul>${p.extraExclusions.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>`).join('');
     res.type('html').send(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-      <title>${escapeHtml(brand.texts.termsTitle)} · ${escapeHtml(brand.name)}</title><link rel="stylesheet" href="/brand.css"><link rel="stylesheet" href="/style.css"></head>
-      <body>${header()}<main>
+      <title>${escapeHtml(brand.texts.termsTitle)} · ${escapeHtml(brand.name)}</title>${iconLinks}<link rel="stylesheet" href="/brand.css"><link rel="stylesheet" href="/style.css"></head>
+      <body>${header()}<main class="card-page">
       <h1>${escapeHtml(brand.texts.termsTitle)}</h1><p>${escapeHtml(brand.texts.termsIntro)}</p>
       <p>Solo viajes que salen de España, de hasta ${pricing.limits.maxTripDays} días, de ${pricing.limits.minTravelers} a ${pricing.limits.maxTravelers} viajeros de ${pricing.limits.minAge} a ${pricing.limits.maxAge} años.</p>
       ${plans}<h2>${escapeHtml(brand.texts.exclusionsTitle)}</h2><ul>${pricing.exclusions.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>

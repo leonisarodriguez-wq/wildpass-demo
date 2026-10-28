@@ -55,9 +55,14 @@ export function openDb(file) {
     ['email_message_id', 'TEXT'],          // Brevo messageId, used to look up delivery events
     ['email_delivery_json', 'TEXT'],       // last summarised Brevo status { status, event, at, reason }
     ['email_checked_at', 'TEXT'],          // when we last asked Brevo
+    ['snapshot_json', 'TEXT'],             // what was sold: trip, plan limits, excess, exclusions, prices
   ]) {
     if (!existing.has(column)) db.exec(`ALTER TABLE policies ADD COLUMN ${column} ${type}`);
   }
+
+  // The exact summary the customer reviewed and accepted; becomes the policy snapshot on payment.
+  const orderColumns = new Set(db.prepare('PRAGMA table_info(orders)').all().map(c => c.name));
+  if (!orderColumns.has('review_snapshot_json')) db.exec('ALTER TABLE orders ADD COLUMN review_snapshot_json TEXT');
 
   // Plans were renamed (esencial → wild, premium → wild_plus). Safe to run every start.
   const RENAMED = { esencial: 'wild', premium: 'wild_plus' };

@@ -8,16 +8,26 @@ export default {
   policyPrefix: 'WILD', // policy numbers look like WILD-2026-XXXXXX
   emailSenderName: 'Seguros Wildpass (demo)',
 
-  // WCAG AA checked (normal text needs 4.5:1): night on cream 15.7, night on yellow 11.0,
-  // stone on cream 5.3, white on red 5.0. Red TEXT on cream is only 4.48 (fails), and
-  // yellow on cream is 1.4 (fails): never use those two combinations for text.
+  // WCAG AA checked (normal text needs 4.5:1): night on sky 14.6, night on white 16.5,
+  // secondary on sky 7.1, white on turquoise 4.95, turquoiseText on sky 5.8 / on white 6.6,
+  // night on yellow 10.2, white on red 5.0. Turquoise #0E7C86 as SMALL text on sky is only 4.38
+  // (fails): use turquoiseText for that. NEVER yellow or white text on the light background.
   colors: {
-    night: '#0E1B2C', // main text, header
-    yellow: '#FFC629', // buttons (with night text), accents on night
-    cream: '#F7F3EA', // page background
-    stone: '#5B6573', // secondary text
-    red: '#D7263D', // ONLY the demo banner and errors
-    white: '#FFFFFF',
+    sky: '#E3F4FB', // page background
+    white: '#FFFFFF', // cards; text on turquoise and red
+    night: '#0B1F3A', // main text
+    secondary: '#3C5368', // secondary text
+    turquoise: '#0E7C86', // highlighted sections (white text on it) and the logo mountain
+    turquoiseText: '#0B6770', // small turquoise text on light backgrounds
+    yellow: '#FFC21A', // primary buttons (bold night text, no border, no shadow) and the logo sun
+    red: '#D7263D', // ONLY the demo banner (white text) and error borders
+  },
+  // Logo symbol (a mountain with the sun behind it), drawn by src/logo.js and src/pdf.js.
+  // Mountain is turquoise on light backgrounds and white on turquoise or dark ones.
+  symbol: {
+    viewBox: '0 0 56 56',
+    sun: { cx: 36, cy: 18, r: 10 },
+    mountain: '4,48 22,18 31,32 38,24 52,48',
   },
   // Self-hosted from @fontsource (no requests to Google).
   fonts: { headings: 'Space Grotesk', text: 'Inter' },
@@ -28,6 +38,7 @@ export default {
   texts: {
     pageTitle: 'Seguros Wildpass · Seguro de viaje (demo)',
     heading: 'Seguro de viaje',
+    heroSubtitle: 'Seguro de viaje con deportes de aventura, sin letra pequeña y con la póliza en tu email en 2 minutos.',
     intro: 'Calcula tu precio en segundos. Solo para viajes que salen de España.',
 
     // Step 1: quote

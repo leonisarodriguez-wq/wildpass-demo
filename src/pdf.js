@@ -13,7 +13,7 @@ const FONTS = {
 export function buildPolicyPdf({ policy_number, issued_at, summary, brand, pricing }) {
   return new Promise((resolve, reject) => {
     const c = brand.colors;
-    const doc = new PDFDocument({ size: 'A4', margin: 50, info: { Title: `${brand.texts.certificateTitle} ${policy_number}`, Author: brand.name } });
+    const doc = new PDFDocument({ size: 'A4', margins: { top: 50, bottom: 40, left: 50, right: 50 }, info: { Title: `${brand.texts.certificateTitle} ${policy_number}`, Author: brand.name } });
     const chunks = [];
     doc.on('data', chunk => chunks.push(chunk));
     doc.on('end', () => resolve(Buffer.concat(chunks)));
@@ -23,16 +23,16 @@ export function buildPolicyPdf({ policy_number, issued_at, summary, brand, prici
     const text = () => doc.font('text').fontSize(10).fillColor(c.night);
     const disclaimerBox = () => {
       const y = doc.y;
-      doc.rect(50, y, 495, 44).fill(c.red);
-      doc.fillColor(c.white).font('heading').fontSize(20).text(brand.pdfDisclaimer, 50, y + 11, { width: 495, align: 'center' });
+      doc.rect(50, y, 495, 38).fill(c.red);
+      doc.fillColor(c.white).font('heading').fontSize(20).text(brand.pdfDisclaimer, 50, y + 8, { width: 495, align: 'center' });
       text();
-      doc.y = y + 56;
+      doc.y = y + 48;
       doc.x = 50;
     };
     const heading = label => {
-      doc.moveDown(0.6).font('heading').fontSize(13).fillColor(c.night).text(label);
+      doc.moveDown(0.45).font('heading').fontSize(13).fillColor(c.night).text(label);
       const y = doc.y + 1;
-      doc.moveTo(50, y).lineTo(90, y).lineWidth(2).strokeColor(c.yellow).stroke();
+      doc.moveTo(50, y).lineTo(90, y).lineWidth(2).strokeColor(c.turquoise).stroke();
       text().moveDown(0.35);
     };
     const line = (label, value) => {
@@ -41,13 +41,22 @@ export function buildPolicyPdf({ policy_number, issued_at, summary, brand, prici
 
     const { trip, plan, policyholder, travelers, total_eur, exclusions } = summary;
 
-    // Logo bar
-    doc.rect(50, 50, 495, 56).fill(c.night);
-    doc.fillColor(c.cream).font('heading').fontSize(26).text(brand.logo.wordmark, 66, 58, { lineBreak: false });
-    doc.fillColor(c.yellow).font('text').fontSize(9).text(brand.logo.tagline, 67, 89, { lineBreak: false });
-    doc.fillColor(c.cream).font('text').fontSize(9).text(brand.claim, 300, 74, { width: 230, align: 'right' });
+    // Logo: the symbol (same shapes as the website SVG), then "wildpass" and the tagline.
+    const sym = brand.symbol;
+    const size = 46;
+    const k = size / 56; // the symbol is drawn on a 56 × 56 grid
+    doc.save().translate(50, 46).scale(k);
+    doc.circle(sym.sun.cx, sym.sun.cy, sym.sun.r).fill(c.yellow);
+    doc.polygon(...sym.mountain.split(' ').map(pt => pt.split(',').map(Number))).fill(c.turquoise);
+    doc.restore();
+    doc.fillColor(c.night).font('heading').fontSize(26).text(brand.logo.wordmark, 102, 48, { lineBreak: false });
+    doc.fillColor(c.turquoiseText).font('bold').fontSize(9).text(brand.logo.tagline, 103, 78, { lineBreak: false });
+
+    // Turquoise band with the claim in white.
+    doc.rect(50, 100, 495, 26).fill(c.turquoise);
+    doc.fillColor(c.white).font('heading').fontSize(12).text(brand.claim, 62, 107, { width: 471, lineBreak: false });
     doc.x = 50;
-    doc.y = 118;
+    doc.y = 136;
 
     disclaimerBox();
     doc.font('heading').fontSize(18).fillColor(c.night).text(brand.texts.certificateTitle);
@@ -76,11 +85,11 @@ export function buildPolicyPdf({ policy_number, issued_at, summary, brand, prici
     heading('Exclusiones');
     exclusions.forEach(e => doc.text(`• ${e}`));
 
-    // Closing banner + footnote need about 80pt; only start a new page if they really don't fit.
+    // Closing banner + footnote need about 72pt; only start a new page if they really don't fit.
     doc.moveDown(0.6);
-    if (doc.y + 80 > doc.page.height - doc.page.margins.bottom) doc.addPage();
+    if (doc.y + 72 > doc.page.height - doc.page.margins.bottom) doc.addPage();
     disclaimerBox();
-    doc.fontSize(8).fillColor(c.stone).text(`Documento de demostración generado por ${brand.name}. No tiene validez como contrato de seguro y no ofrece ninguna cobertura. Moneda: ${pricing.currency}.`);
+    doc.fontSize(8).fillColor(c.secondary).text(`Documento de demostración generado por ${brand.name}. No tiene validez como contrato de seguro y no ofrece ninguna cobertura. Moneda: ${pricing.currency}.`);
     doc.end();
   });
 }

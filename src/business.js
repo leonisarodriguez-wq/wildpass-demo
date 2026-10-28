@@ -94,14 +94,16 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, no
 
   const ageFactor = age => pricing.ageFactors.find(b => age >= b.minAge && age <= b.maxAge)?.factor ?? null;
 
-  // Trip-length multiplier: a falling per-day cost up to longTrip.fromDay - 1, then a flat
-  // cost per extra day equal to the average of what the days in longTrip.averageOfDays add.
+  // Trip-length multiplier: a falling per-day cost up to longTrip.fromDay - 1, then each
+  // extra day costs the average price PER DAY of the trip lengths in averagePerDayOfTrips.
   const curve = days => Math.pow(days / pricing.baseDays, pricing.lengthExponent);
   function lengthMultiplier(days) {
-    const { fromDay, averageOfDays: [first, last] } = pricing.longTrip;
+    const { fromDay, averagePerDayOfTrips: [first, last] } = pricing.longTrip;
     const lastCurveDay = fromDay - 1;
     if (days <= lastCurveDay) return curve(days);
-    const perExtraDay = (curve(last) - curve(first - 1)) / (last - first + 1);
+    let sumPerDay = 0;
+    for (let d = first; d <= last; d++) sumPerDay += curve(d) / d;
+    const perExtraDay = sumPerDay / (last - first + 1);
     return curve(lastCurveDay) + (days - lastCurveDay) * perExtraDay;
   }
 
@@ -320,7 +322,7 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, no
     }
 
     // Saving new details always cancels any previous review_token.
-    db.prepare(`UPDATE orders SET policyholder_json = ?, travelers_json = ?, status = 'details_set', review_token_hash = NULL, review_total_cents = NULL, updated_at = ? WHERE id = ?`)
+    db.prepare(`UPDATE orders SET policyholder_json = ?, travelers_json = ?, status = 'details_set', review_token_hash = NULL, review_total_cents = NULL, review_snapshot_json = NULL, updated_at = ? WHERE id = ?`)
       .run(JSON.stringify({ full_name: phName, email }), JSON.stringify(travelers), now().toISOString(), order.id);
     return { ok: true, order_id: order.id, status: 'details_set', next_step: 'Call review_order to get the full summary and a review_token.' };
   }
@@ -352,14 +354,16 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, no
     if (depError) return depError;
 
     const token = randomBytes(24).toString('base64url');
-    db.prepare(`UPDATE orders SET status = 'reviewed', review_token_hash = ?, review_total_cents = total_cents, updated_at = ? WHERE id = ?`)
-      .run(sha256(token), now().toISOString(), order.id);
+    // Freeze exactly what the customer sees now; the policy will be issued with this snapshot.
+    const reviewed = orderSummary(order, quote);
+    db.prepare(`UPDATE orders SET status = 'reviewed', review_token_hash = ?, review_total_cents = total_cents, review_snapshot_json = ?, updated_at = ? WHERE id = ?`)
+      .run(sha256(token), JSON.stringify(reviewed), now().toISOString(), order.id);
 
     const plan = pricing.plans[order.plan];
     return {
       ok: true,
       order_id: order.id,
-      summary: orderSummary(order, quote),
+      summary: reviewed,
       total_eur: toEur(order.total_cents),
       currency: pricing.currency,
       key_conditions: [
@@ -388,7 +392,7 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, no
     const { order, quote, error } = loadOrder(input.order_id);
     if (error) return error;
 
-    if (order.status !== 'reviewed' || !order.review_token_hash) {
+    if (order.status !== 'reviewed' || !order.review_token_hash || !order.review_snapshot_json) {
       return fail('NOT_REVIEWED', 'El pedido no se ha revisado (o cambió después de revisarlo).', 'Llama a review_order, enseña el resumen al usuario y usa el review_token nuevo.');
     }
     const given = typeof input.review_token === 'string' ? sha256(input.review_token) : '';
@@ -418,7 +422,8 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, no
     } while (db.prepare('SELECT 1 FROM policies WHERE policy_number = ?').get(policy_number));
     const pdf_token = randomBytes(32).toString('base64url');
     const policyholder = JSON.parse(order.policyholder_json);
-    const summary = orderSummary(order, quote);
+    // The policy keeps exactly what the customer reviewed and accepted, never later config changes.
+    const summary = JSON.parse(order.review_snapshot_json);
 
     const pdfBuffer = await buildPdf({ policy_number, issued_at: issuedAt.toISOString(), summary, brand, pricing });
     const pdfPath = join(pdfDir, `${pdf_token}.pdf`);
@@ -432,8 +437,8 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, no
           db.exec('ROLLBACK');
           return false;
         }
-        db.prepare(`INSERT INTO policies (policy_number, order_id, issued_at, pdf_token, email_status) VALUES (?, ?, ?, ?, 'pending')`)
-          .run(policy_number, order.id, issuedAt.toISOString(), pdf_token);
+        db.prepare(`INSERT INTO policies (policy_number, order_id, issued_at, pdf_token, email_status, snapshot_json) VALUES (?, ?, ?, ?, 'pending', ?)`)
+          .run(policy_number, order.id, issuedAt.toISOString(), pdf_token, order.review_snapshot_json);
         db.prepare(`UPDATE orders SET status = 'paid', review_token_hash = NULL, updated_at = ? WHERE id = ?`)
           .run(issuedAt.toISOString(), order.id);
         db.exec('COMMIT');
@@ -550,7 +555,10 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, no
       status: coverage_period === 'ended' ? 'expired' : 'active',
       coverage_period,
       issued_at: policy.issued_at,
-      details: orderSummary(order, quote),
+      // Always the snapshot saved when the policy was sold. Only test policies issued before
+      // snapshots existed fall back to the current config, and say so.
+      details: policy.snapshot_json ? JSON.parse(policy.snapshot_json) : orderSummary(order, quote),
+      coverage_source: policy.snapshot_json ? 'snapshot_at_sale' : 'current_config_legacy_policy',
       pdf_url: `${ctx.baseUrl ?? ''}/poliza/${policy.pdf_token}.pdf`,
       email_delivery: await emailDelivery(policy),
       disclaimer: brand.demoBanner,

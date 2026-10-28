@@ -43,8 +43,8 @@ Observations from the data:
 | Rest of world "14 days" | 10–24 Dec | 15 days |
 
 **Formula.** Price per traveller = base price for 7 days (by zone and plan) × length multiplier × age factor, rounded to cents.
-- **Up to 14 days:** length multiplier = (days ÷ 7)^0.28. The exponent 0.28 comes from the targets themselves (Rest of world goes from 55 → 60 and 78 → 85 between 11 and 15 days, giving 0.281 and 0.277).
-- **From day 15 (assumption, see §5):** the per-day discount stops. Each extra day costs the same: the **average of what days 10, 11, 12, 13 and 14 each add** to the price.
+- **Up to 15 days (our count):** length multiplier = (days ÷ 7)^0.28. The exponent 0.28 comes from the targets themselves (Rest of world goes from 55 → 60 and 78 → 85 between 11 and 15 days, giving 0.281 and 0.277).
+- **From our day 16 (assumption, see §5):** the per-day discount stops. Each extra day costs the same: the **average price PER DAY of an 11-, 12-, 13-, 14- and 15-day trip** (our count). Counted like competitors, that is "from day 15, each extra day costs the average price per day of a 10–14-day trip", because their "14 days" is our 15.
 
 ## 3. Calibrated values
 
@@ -84,20 +84,23 @@ All adult targets are now **below the median**, and all are met within ±5% (in 
 
 **Long trips (no market comparison available):**
 
-| Zone | 14 days | 15 days | 30 days | 60 days | 90 days | Each day after 14 |
+| Zone | 15 days | 16 days | 30 days | 60 days | 90 days | Each day after 15 |
 |---|---|---|---|---|---|---|
-| Europe, Wild / Wild+ | 25.73 / 34.51 | 26.33 / 35.31 | 35.31 / 47.36 | 53.27 / 71.45 | 71.24 / 95.54 | ≈0.60 / ≈0.80 |
-| Rest of world, Wild / Wild+ | 58.84 / 83.45 | 60.21 / 85.39 | 80.75 / 114.53 | 121.83 / 172.79 | 162.91 / 231.06 | ≈1.37 / ≈1.94 |
-| USA/Can/Jap, Wild / Wild+ | 60.98 / 85.59 | 62.40 / 87.58 | 83.68 / 117.46 | 126.26 / 177.22 | 168.83 / 236.98 | ≈1.42 / ≈1.99 |
+| Europe, Wild / Wild+ | 26.23 / 35.18 | 28.18 / 37.80 | 55.52 / 74.47 | 114.11 / 153.05 | 172.70 / 231.63 | ≈1.95 / ≈2.62 |
+| Rest of world, Wild / Wild+ | 59.99 / 85.08 | 64.45 / 91.41 | 126.98 / 180.10 | 260.97 / 370.13 | 394.96 / 560.16 | ≈4.47 / ≈6.33 |
+| USA/Can/Jap, Wild / Wild+ | 62.17 / 87.26 | 66.79 / 93.75 | 131.59 / 184.71 | 270.45 / 379.61 | 409.30 / 574.50 | ≈4.63 / ≈6.50 |
 
-Before this change, a 90-day Rest-of-world Wild trip cost about €99; now it costs about €163.
+(Prices for one adult. The 15-day column is unchanged, so the Thailand target of 60 € / 85 € still holds.)
+
+History: the first rule (each extra day adds the average of what days 10–14 *add*) gave about €163 for 90 days in Rest of world Wild; the agreed rule gives about **€395**. The literal "from our day 15, average of 10–14-day trips" reading would give about €419, but it also changed the 15-day price by +6% and broke the Thailand target, so we count days like competitors instead (decision, 28 Oct 2026).
 
 ## 5. Decisions, assumptions and open questions
 
 1. **Inclusive day counting kept** (decision). 10–17 Dec = 8 days.
 2. **Seniors: we price age risk instead of refusing seniors.** Heymondo and IATI quote the same price for a 68-year-old as for a 35-year-old, but they restrict which plans older travellers can buy (and may ask health questions later). We prefer to **accept travellers up to 85 on both plans and charge for the higher risk**, using Intermundial's ×1.65, the only age surcharge visible in the market. That makes us more expensive than the median for seniors (+53–56%), but we don't turn them away. Our 65–74 price is +4.6% (Wild) / +7.1% (Wild+) above Intermundial's.
-3. **Long trips — ASSUMPTION WITHOUT MARKET DATA.** All quotes were for 8–15 day trips. From day 15, we stop the per-day discount: each extra day costs the average of what days 10–14 add. We read "the average daily rate of days 10–14" as *the average extra cost of days 10–14*. Under the other possible reading (the average price per day of a 10–14-day trip), a 90-day Rest-of-world Wild trip would cost about €419 instead of €163. **Collect real quotes for 30, 60 and 90 days to confirm.**
+3. **Long trips — ASSUMPTION WITHOUT MARKET DATA.** All quotes were for 8–15 day trips (our count). From competitors' day 15 (our day 16), we stop the per-day discount: each extra day costs the **average price per day of a 10–14-day trip** (our 11–15 days). A 90-day Rest-of-world Wild trip costs about **€395**. Set in `longTrip` in `config/pricing.config.js` and checked by `test/pricing-targets.test.js`. **Collect real quotes for 30, 60 and 90 days to confirm.**
 4. **No child (0–17) or 75+ data.** Those factors are assumptions.
 5. **Adventure cover.** Adventure cover inspired by IATI Mochilero (60+ sports, diving to 40 m, trekking to 5,400 m, rescue 15,000 EUR); we set more conservative limits as a new product. **Wild+ covers** trekking up to 4,000 m, scuba diving up to 30 m, skiing/snowboarding on marked slopes, surf, rafting and canyoning, plus search & rescue up to 15,000 €. **Wild excludes adventure sports.** Professional sports and extreme activities (e.g. base jumping) are excluded in both plans. The adventure cover was **not priced separately**: the Wild+ targets already compare with IATI Mochilero, which includes it.
 6. **Same-plan coverage not compared line by line.** Plans were matched by tier and general level, not by checking every limit (medical, baggage, cancellation, excess).
-7. **Single snapshot.** Prices were collected on one day (28 Oct 2026) for December departures; seasonality and promotions are not captured.
+7. **Single snapshot of the market.** Prices were collected on one day (28 Oct 2026) for December departures; seasonality and promotions are not captured.
+8. **Changing prices or coverage later does not change sold policies.** When a policy is issued we save a copy of what was sold (trip, plan limits, excess, exclusions, prices) inside the policy. The PDF, the email and `get_policy` use that copy, never the current config (`coverage_source: "snapshot_at_sale"`). New quotes use the new values. Tested in `test/flow.test.js`.

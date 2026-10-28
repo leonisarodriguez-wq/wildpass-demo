@@ -181,8 +181,6 @@ async function init() {
   document.title = T.pageTitle;
   $('#brand-name').textContent = config.brand.name;
   $('#demo-banner').textContent = config.brand.demoBanner;
-  $('#logo-wordmark').textContent = config.brand.logo.wordmark;
-  $('#logo-tagline').textContent = config.brand.logo.tagline;
   $('#claim').textContent = config.brand.claim;
   $('#claim-es').textContent = config.brand.claimEs;
   for (const node of document.querySelectorAll('[data-t]')) node.textContent = T[node.dataset.t] ?? node.textContent;

@@ -78,23 +78,27 @@ test('cost per day still falls for longer trips', async () => {
   assert.ok(long.wild[0] / 30 < short.wild[0] / 8);
 });
 
-// Long trips (assumption, no market data): from day 15 each extra day costs the same,
-// equal to the average of what days 10–14 add.
-test('from day 15, every extra day costs the same as the average of days 10-14', async () => {
+// Long trips (assumption, no market data), counted like competitors: their "day 15" is our
+// day 16, and their 10–14-day trips are our 11–15-day trips. From our day 16, each extra day
+// costs the average price PER DAY of an 11–15-day trip.
+test('from day 16 (competitors\' day 15), each extra day costs the average price per day of 11-15-day trips', async () => {
   for (const destination of ['IT', 'TH', 'US']) {
-    const price = {};
-    for (const days of [9, 14, 15, 16, 30, 60, 90]) price[days] = (await quote(destination, days, [35])).wild[0];
-    const averageDays10to14 = (price[14] - price[9]) / 5;
-    for (const [from, to] of [[14, 15], [15, 16]]) {
-      assert.ok(Math.abs(price[to] - price[from] - averageDays10to14) <= 0.02, `${destination}: day ${to} adds ${(price[to] - price[from]).toFixed(2)}, expected ${averageDays10to14.toFixed(2)}`);
+    for (const plan of ['wild', 'wild_plus']) {
+      const price = {};
+      for (const days of [11, 12, 13, 14, 15, 16, 17, 30, 60, 90]) price[days] = (await quote(destination, days, [35]))[plan][0];
+      const averagePerDay = [11, 12, 13, 14, 15].reduce((sum, d) => sum + price[d] / d, 0) / 5;
+      for (const [from, to] of [[15, 16], [16, 17]]) {
+        const added = price[to] - price[from];
+        assert.ok(Math.abs(added - averagePerDay) <= 0.02, `${destination} ${plan}: day ${to} adds ${added.toFixed(2)}, expected ${averagePerDay.toFixed(2)}`);
+      }
+      // A straight line from day 16: every 30 extra days add 30 × the same daily price.
+      assert.ok(Math.abs(price[90] - price[60] - 30 * averagePerDay) <= 0.05, `${destination} ${plan}: 60→90 days is not linear`);
+      assert.ok(Math.abs(price[60] - price[30] - 30 * averagePerDay) <= 0.05, `${destination} ${plan}: 30→60 days is not linear`);
     }
-    // Straight line after day 14: 60 → 90 days adds 30 × the same daily amount.
-    assert.ok(Math.abs(price[90] - price[60] - 30 * averageDays10to14) <= 0.05, `${destination}: 60→90 days is not linear`);
-    assert.ok(Math.abs(price[60] - price[30] - 30 * averageDays10to14) <= 0.05, `${destination}: 30→60 days is not linear`);
   }
 });
 
-test('long trips are no longer priced at the old falling curve', async () => {
+test('90-day Rest of world Wild costs about 395 € (agreed long-trip rule)', async () => {
   const p = await quote('TH', 90, [35]);
-  assert.ok(p.wild[0] > 150, `90-day Rest of world Wild is only ${p.wild[0]} €`);
+  assert.ok(p.wild[0] > 380 && p.wild[0] < 410, `90-day Rest of world Wild is ${p.wild[0]} €`);
 });

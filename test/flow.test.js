@@ -6,6 +6,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../src/app.js';
+import pricing from '../config/pricing.config.js';
 
 let server, base, dataDir;
 
@@ -154,6 +155,41 @@ test('full purchase flow issues a policy with a downloadable PDF', async () => {
   assert.equal(again.policy_number, paid.policy_number);
 });
 
+test('a sold policy keeps its original coverage when the config changes later', async () => {
+  const orderId = await orderReadyToReview('wild_plus');
+  const review = await call('review_order', { order_id: orderId });
+  const paid = await call('confirm_payment', { order_id: orderId, review_token: review.review_token, accept_terms: true, confirmed_total_eur: review.total_eur, user_confirmed: true });
+  assert.equal(paid.ok, true, paid.message);
+
+  // Simulate a later change of the plan in config/pricing.config.js (restored afterwards).
+  const plan = pricing.plans.wild_plus;
+  const original = { baggage: plan.coverage.baggage_theft_damage_eur, excess: plan.excess_per_medical_claim_eur, extra: plan.extraExclusions, base: pricing.basePrice7Days.usa_canada_japan.wild_plus };
+  try {
+    plan.coverage.baggage_theft_damage_eur = 1;
+    plan.excess_per_medical_claim_eur = 999;
+    plan.extraExclusions = ['NUEVA EXCLUSIÓN'];
+    pricing.basePrice7Days.usa_canada_japan.wild_plus = 1;
+
+    const policy = await call('get_policy', { policy_number: paid.policy_number, email: 'ana.prueba@example.com' });
+    assert.equal(policy.ok, true, policy.message);
+    assert.equal(policy.coverage_source, 'snapshot_at_sale');
+    assert.deepEqual(policy.details, review.summary);
+    assert.equal(policy.details.plan.coverage_limits_eur.baggage_theft_damage_eur, original.baggage);
+    assert.equal(policy.details.plan.excess_per_medical_claim_eur, original.excess);
+    assert.ok(!policy.details.exclusions.includes('NUEVA EXCLUSIÓN'));
+    assert.equal(policy.details.total_eur, review.total_eur);
+
+    // New quotes do see the change, proving the config really changed.
+    const q = await call('get_quote', quoteInput());
+    assert.equal(q.plans[1].excess_per_medical_claim_eur, 999);
+  } finally {
+    plan.coverage.baggage_theft_damage_eur = original.baggage;
+    plan.excess_per_medical_claim_eur = original.excess;
+    plan.extraExclusions = original.extra;
+    pricing.basePrice7Days.usa_canada_japan.wild_plus = original.base;
+  }
+});
+
 test('a wrong PDF link returns 404', async () => {
   assert.equal((await fetch(`${base}/poliza/${'A'.repeat(43)}.pdf`)).status, 404);
   assert.equal((await fetch(`${base}/poliza/../../package.json`)).status, 404);
@@ -279,7 +315,7 @@ test('brand: name, claim, colours and self-hosted fonts', async () => {
   assert.deepEqual(config.plans, { wild: 'Wild', wild_plus: 'Wild+' });
 
   const css = await (await fetch(`${base}/brand.css`)).text();
-  for (const colour of ['#0E1B2C', '#FFC629', '#F7F3EA', '#5B6573', '#D7263D']) assert.ok(css.includes(colour), `${colour} missing`);
+  for (const colour of ['#E3F4FB', '#FFFFFF', '#0B1F3A', '#3C5368', '#0E7C86', '#0B6770', '#FFC21A', '#D7263D']) assert.ok(css.includes(colour), `${colour} missing`);
   assert.ok(css.includes('Space Grotesk') && css.includes('Inter'));
   const font = await fetch(`${base}/fonts/inter-latin-400-normal.woff2`);
   assert.equal(font.status, 200);
@@ -287,4 +323,22 @@ test('brand: name, claim, colours and self-hosted fonts', async () => {
 
   const terms = nbsp(await (await fetch(`${base}/condiciones`)).text());
   assert.ok(terms.includes('wildpass') && terms.includes('Wild+') && terms.includes('15.000 €'));
+
+  // Logo: sun + mountain inline SVG on the home page and the terms page; favicons served.
+  const home = await (await fetch(`${base}/`)).text();
+  for (const html of [home, terms]) {
+    assert.ok(html.includes('<circle cx="36" cy="18" r="10" fill="#FFC21A"/>'), 'sun missing');
+    assert.ok(html.includes('<polygon points="4,48 22,18 31,32 38,24 52,48" fill="#0E7C86"/>'), 'mountain missing');
+    assert.ok(html.includes('href="/favicon.svg"'), 'favicon link missing');
+  }
+  assert.ok(home.includes('<!--logo-->') === false);
+  assert.ok((await (await fetch(`${base}/api/config`)).json()).brand.texts.heroSubtitle.startsWith('Seguro de viaje con deportes de aventura'));
+  const favicon = await fetch(`${base}/favicon.svg`);
+  assert.equal(favicon.headers.get('content-type'), 'image/svg+xml; charset=utf-8');
+  assert.ok((await favicon.text()).includes('rx="12"'));
+  for (const png of ['/favicon-32.png', '/apple-touch-icon.png', '/brand/logo-symbol-email.png']) {
+    const r = await fetch(`${base}${png}`);
+    assert.equal(r.status, 200, png);
+    assert.equal(r.headers.get('content-type'), 'image/png');
+  }
 });

@@ -7,24 +7,34 @@ const BREVO = 'https://api.brevo.com/v3';
 const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
 // Email body with inline styles (email clients ignore stylesheets). Same colour rules as the website.
+// Gmail and others block SVG, so the logo symbol is a PNG served by this site (same address as the PDF).
 function emailHtml({ brand, name, policy_number, pdf_url }) {
   const c = brand.colors;
   const font = 'Inter, Arial, Helvetica, sans-serif';
+  const heading = "'Space Grotesk', Arial, Helvetica, sans-serif";
+  const logoUrl = new URL('/brand/logo-symbol-email.png', pdf_url).href;
   return `
-  <div style="background:${c.cream};padding:0;margin:0;font-family:${font};color:${c.night}">
+  <div style="background:${c.sky};padding:0 0 24px;margin:0;font-family:${font};color:${c.night}">
     <div style="background:${c.red};color:${c.white};padding:10px;font-weight:bold;text-align:center">${escapeHtml(brand.demoBanner)}</div>
-    <div style="background:${c.night};padding:16px 20px">
-      <div style="font-size:26px;font-weight:bold;color:${c.cream};line-height:1">${escapeHtml(brand.logo.wordmark)}</div>
-      <div style="font-size:12px;color:${c.yellow};margin-top:4px">${escapeHtml(brand.logo.tagline)}</div>
-    </div>
-    <div style="padding:20px">
-      <p style="font-size:18px;font-weight:bold;margin:0 0 4px">${escapeHtml(brand.claim)}</p>
-      <p style="color:${c.stone};margin:0 0 16px">${escapeHtml(brand.claimEs)}</p>
-      <p>${escapeHtml(brand.texts.emailGreeting)} ${escapeHtml(name)}:</p>
-      <p>Tu número de póliza de demostración es <strong>${escapeHtml(policy_number)}</strong>.</p>
-      <p>Adjuntamos el certificado en PDF. También puedes descargarlo aquí:</p>
-      <p><a href="${escapeHtml(pdf_url)}" style="display:inline-block;background:${c.yellow};color:${c.night};font-weight:bold;padding:10px 16px;border-radius:6px;text-decoration:none">${escapeHtml(brand.texts.downloadPdf)}</a></p>
-      <p><strong>${escapeHtml(brand.demoBanner)}.</strong> No se ha cobrado nada.</p>
+    <div style="max-width:600px;margin:0 auto">
+      <table role="presentation" cellpadding="0" cellspacing="0" style="background:${c.white};width:100%;border-collapse:collapse"><tr>
+        <td style="padding:14px 8px 14px 20px;width:48px"><img src="${escapeHtml(logoUrl)}" width="48" height="48" alt="" style="display:block;border:0"></td>
+        <td style="padding:14px 20px 14px 0">
+          <div style="font-family:${heading};font-size:26px;font-weight:bold;color:${c.night};line-height:1">${escapeHtml(brand.logo.wordmark)}</div>
+          <div style="font-size:12px;font-weight:600;color:${c.turquoiseText};margin-top:4px">${escapeHtml(brand.logo.tagline)}</div>
+        </td>
+      </tr></table>
+      <div style="background:${c.turquoise};color:${c.white};padding:20px">
+        <p style="font-family:${heading};font-size:22px;font-weight:bold;margin:0 0 6px;color:${c.white}">${escapeHtml(brand.claim)}</p>
+        <p style="margin:0;color:${c.white}">${escapeHtml(brand.texts.heroSubtitle)}</p>
+      </div>
+      <div style="background:${c.white};padding:20px">
+        <p style="margin-top:0">${escapeHtml(brand.texts.emailGreeting)} ${escapeHtml(name)}:</p>
+        <p>Tu número de póliza de demostración es <strong>${escapeHtml(policy_number)}</strong>.</p>
+        <p>Adjuntamos el certificado en PDF. También puedes descargarlo aquí:</p>
+        <p style="margin:20px 0"><a href="${escapeHtml(pdf_url)}" style="display:inline-block;background:${c.yellow};color:${c.night};font-weight:bold;font-size:17px;padding:14px 28px;border-radius:12px;border:0;text-decoration:none">${escapeHtml(brand.texts.downloadPdf)}</a></p>
+        <p style="color:${c.secondary};margin-bottom:0"><strong style="color:${c.night}">${escapeHtml(brand.demoBanner)}.</strong> No se ha cobrado nada.</p>
+      </div>
     </div>
   </div>`;
 }
