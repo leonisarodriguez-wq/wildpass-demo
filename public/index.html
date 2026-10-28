@@ -35,11 +35,11 @@
           <div class="field-row">
             <div class="field">
               <label for="departure">{{t.form.departure}}</label>
-              <input type="date" id="departure" name="departure" aria-required="true">
+              <input type="date" id="departure" name="departure" lang="es" aria-required="true">
             </div>
             <div class="field">
               <label for="return">{{t.form.return}}</label>
-              <input type="date" id="return" name="return" aria-required="true">
+              <input type="date" id="return" name="return" lang="es" aria-required="true">
             </div>
           </div>
           <fieldset class="field ages-field">
@@ -62,6 +62,19 @@
         <h2 id="ai-title">{{t.ai.title}}</h2>
         <p class="ai-text">{{t.ai.text}}</p>
         <ol class="ai-steps">{{{aiSteps}}}</ol>
+        <div class="ai-extra">
+          <figure class="prompt-card">
+            <figcaption class="prompt-label">{{t.ai.promptLabel}}</figcaption>
+            <blockquote class="prompt-text" id="example-prompt">{{t.ai.examplePrompt}}</blockquote>
+            <button type="button" class="secondary copy-prompt" id="copy-prompt" aria-label="{{t.ai.copyLabel}}">{{t.ai.copy}}</button>
+            <span class="sr-only" role="status" id="copy-status"></span>
+          </figure>
+          <p class="ai-note">{{t.ai.compatNote}}</p>
+          <details class="dev-tools">
+            <summary>{{t.ai.devTitle}}</summary>
+            <div class="dev-tools-body">{{{devTools}}}</div>
+          </details>
+        </div>
       </div>
     </section>
 
@@ -180,6 +193,15 @@
       <section class="step" id="step-4" hidden aria-labelledby="step-4-title">
         <h2 id="step-4-title" tabindex="-1">{{t.checkout.step4Title}}</h2>
         <p class="policy-number"><span>{{t.checkout.policyNumber}}</span> <strong id="policy-number"></strong></p>
+        <section class="trip-card done-trip" aria-labelledby="done-trip-title">
+          <h3 class="sr-only" id="done-trip-title">{{t.checkout.tripCard.title}}</h3>
+          <dl>
+            <div class="trip-item">{{{iconPin}}}<dt>{{t.checkout.tripCard.destination}}</dt><dd id="done-destination"></dd></div>
+            <div class="trip-item">{{{iconCalendar}}}<dt>{{t.checkout.tripCard.dates}}</dt><dd id="done-dates"></dd></div>
+            <div class="trip-item">{{{iconPeople}}}<dt>{{t.checkout.tripCard.travelers}}</dt><dd id="done-travelers"></dd></div>
+            <div class="trip-item">{{{iconShield}}}<dt>{{t.checkout.tripCard.plan}}</dt><dd id="done-plan"></dd></div>
+          </dl>
+        </section>
         <a class="primary button-link block" id="pdf-link" target="_blank" rel="noopener">{{t.checkout.download}}</a>
         <p id="email-line"></p>
         <p class="form-note" id="payment-line"></p>

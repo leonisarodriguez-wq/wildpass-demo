@@ -66,4 +66,5 @@ const icon = body => `<svg class="icon" xmlns="http://www.w3.org/2000/svg" viewB
 export const iconPin = icon('<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>');
 export const iconCalendar = icon('<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>');
 export const iconPeople = icon('<circle cx="9" cy="8" r="3.2"/><path d="M3 19.5c.6-3.4 3-5.5 6-5.5s5.4 2.1 6 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16.5 14.1c2.3.3 4 2 4.5 4.9"/>');
+export const iconShield = icon('<path d="M12 3l7 3v5.5c0 4.4-3 8-7 9.5-4-1.5-7-5.1-7-9.5V6z"/><path d="M8.8 12.2l2.2 2.2 4.3-4.6"/>');
 export const iconRemove = icon('<circle cx="12" cy="12" r="9"/><path d="M8 12h8"/>');

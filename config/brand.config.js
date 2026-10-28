@@ -73,6 +73,14 @@ export default {
       title: 'Tu asistente también puede contratarlo',
       text: 'Wildpass es un seguro de viaje preparado para agentes de IA. Pídeselo a tu asistente: él cotiza, te enseña el resumen y solo paga cuando tú confirmas.',
       steps: ['Pide', 'Revisa', 'Confirma'],
+      promptLabel: 'Prueba a pedirle esto:',
+      examplePrompt: 'Búscame un seguro de viaje para 2 personas de 35 y 38 años, de España a Tailandia, del 10 al 24 de diciembre, y enséñame el resumen antes de pagar.',
+      copy: 'Copiar',
+      copied: '¡Copiado!',
+      copyLabel: 'Copiar el ejemplo',
+      compatNote: 'Funciona con asistentes y navegadores compatibles con WebMCP, un estándar nuevo que se está incorporando a Chrome.',
+      devTitle: 'Para desarrolladores',
+      devIntro: 'Esta página ofrece {count} herramientas WebMCP a los asistentes de IA:',
     },
 
     // Landing: editorial headline + benefits
@@ -133,6 +141,7 @@ export default {
         and: 'y',
         edit: 'Editar',
         editLabel: 'Editar el viaje',
+        plan: 'Plan',
       },
       back: '← Volver',
       tripLine: '{from} – {to} · {days} días · {n} {travelersWord}',
@@ -200,7 +209,7 @@ export default {
       totalPaidStripeLabel: 'Pagado (prueba Stripe)',
       editDetails: '← Editar datos',
 
-      step4Title: '¡Listo! Ya puedes irte salvaje',
+      step4Title: '¡Todo listo para empezar tu aventura!',
       policyNumber: 'Nº de póliza',
       download: 'Descargar mi póliza',
       emailSent: 'Te hemos enviado la póliza a {email}. Si no la ves, mira en Spam.',

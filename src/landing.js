@@ -1,6 +1,7 @@
 // Server-side rendering of the public pages: landing (public/index.html template) and the shared page shell
 // (terms page). Texts come from the brand config, numbers from the pricing config and the pricing
 // engine, so the copy can never disagree with the product. Pages arrive complete: no text pops in later.
+import { buildTools } from '../public/webmcp-tools.js';
 import { readFileSync } from 'node:fs';
 import { formatEur } from './business.js';
 import { logoHtml } from './logo.js';
@@ -89,7 +90,19 @@ function firstTravelerRow(form, limits) {
     + `<select id="age-1" class="age" name="age">${ageOptions(form, limits, form.defaultAge)}</select></div>`;
 }
 
-export function createLanding({ brand, pricing, business, market, countries, templatePath }) {
+// "Para desarrolladores": built from the REAL WebMCP tool definitions (public/webmcp-tools.js), never typed in.
+export function devToolsHtml({ brand, pricing, payments }) {
+  const tools = buildTools({ limits: pricing.limits, plans: Object.fromEntries(Object.entries(pricing.plans).map(([id, p]) => [id, p.name])), brand, payments });
+  const items = tools.map(tool => {
+    const rules = tool.rulesEs ? (tool.inputSchema.required ?? []).filter(f => tool.rulesEs[f]) : [];
+    return `<li><code>${escapeHtml(tool.name)}</code> ${escapeHtml(tool.es)}`
+      + (rules.length ? `<ul class="dev-rules">${rules.map(f => `<li><code>${escapeHtml(f)}</code>: ${escapeHtml(tool.rulesEs[f])}</li>`).join('')}</ul>` : '')
+      + '</li>';
+  }).join('');
+  return `<p>${escapeHtml(fill(brand.texts.ai.devIntro, { count: tools.length }))}</p><ul class="dev-tool-list">${items}</ul>`;
+}
+
+export function createLanding({ brand, pricing, business, market, countries, templatePath, payments = { provider: 'simulated' } }) {
   const template = readFileSync(templatePath, 'utf8');
   const t = brand.texts;
   const values = copyValues(pricing, market);
@@ -105,7 +118,8 @@ export function createLanding({ brand, pricing, business, market, countries, tem
       faq: t.faq.map(f => `<details class="faq-item"><summary>${escapeHtml(f.q)}</summary><p>${escapeHtml(fill(f.a, values))}</p></details>`).join(''),
       heroArt: art.heroLandscape,
       travelerRow: firstTravelerRow(t.form, pricing.limits),
-      iconPin: art.iconPin, iconCalendar: art.iconCalendar, iconPeople: art.iconPeople, iconRemove: art.iconRemove,
+      iconPin: art.iconPin, iconCalendar: art.iconCalendar, iconPeople: art.iconPeople, iconRemove: art.iconRemove, iconShield: art.iconShield,
+      devTools: devToolsHtml({ brand, pricing, payments }),
     };
     return render(template, {
       html,

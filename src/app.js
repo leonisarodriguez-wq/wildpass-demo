@@ -37,7 +37,8 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
 
   const regionNames = new Intl.DisplayNames(['es'], { type: 'region' });
   const countries = COUNTRY_CODES.map(code => ({ code, name: regionNames.of(code) ?? code })).sort((a, b) => a.name.localeCompare(b.name, 'es'));
-  const landing = createLanding({ brand, pricing, business, market: marketQuotes, countries, templatePath: join(ROOT, 'public', 'index.html') });
+  const landing = createLanding({ brand, pricing, business, market: marketQuotes, countries, templatePath: join(ROOT, 'public', 'index.html'),
+    payments: { provider: stripe.enabled ? 'stripe_test' : 'simulated' } });
 
   const app = express();
   app.set('trust proxy', 'loopback'); // cloudflared runs on this machine and sets X-Forwarded-Proto
@@ -49,7 +50,8 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
     ...(stripe.enabled ? [
       "script-src 'self' https://js.stripe.com https://*.js.stripe.com",
       'frame-src https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com',
-      "connect-src 'self' https://api.stripe.com",
+      // fonts.googleapis.com: Stripe.js fetches the Inter stylesheet (cssSrc) for its card frame from this page.
+      "connect-src 'self' https://api.stripe.com https://fonts.googleapis.com",
     ] : []),
     "img-src 'self' data:", "object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'",
   ].join('; ');

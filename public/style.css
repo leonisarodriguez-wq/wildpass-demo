@@ -59,8 +59,11 @@ input[aria-invalid="true"], select[aria-invalid="true"] { border: 2px solid var(
 .field-row .field { min-width: 0; }
 /* Date boxes: iOS gives date inputs a built-in minimum width that ignores width: 100%, so the two boxes overlapped.
    appearance: none + min-width: 0 makes them obey the grid column. Very narrow phones get one box per line. */
-.field-row input { min-width: 0; max-width: 100%; padding: 0 10px; -webkit-appearance: none; appearance: none; text-align: left; }
-.field-row input::-webkit-date-and-time-value { text-align: left; margin: 0; }
+.field-row input { min-width: 0; max-width: 100%; -webkit-appearance: none; appearance: none; text-align: left; }
+/* Same height and left padding as the other fields. iPhone Safari draws the date text in an inner box that sits at the
+   top: a line-height equal to the inner height (48 px − 2 × 1.5 px border) centres it vertically in every browser. */
+.field-row input[type="date"] { line-height: 45px; padding-top: 0; padding-bottom: 0; }
+.field-row input::-webkit-date-and-time-value { text-align: left; margin: 0; line-height: 45px; min-height: 45px; }
 @media (max-width: 359px) { .field-row { grid-template-columns: minmax(0, 1fr); gap: 0; } }
 fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .check { display: flex; gap: 12px; align-items: flex-start; font-weight: 600; font-size: 1rem; margin: 16px 0; cursor: pointer; }
@@ -98,6 +101,22 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .ai-step svg { width: 80px; height: 80px; }
 .ai-step-num { position: absolute; top: -4px; left: calc(50% - 46px); width: 28px; height: 28px; border-radius: 50%; background: var(--night); color: var(--white); font-weight: 700; font-size: 0.9rem; line-height: 28px; }
 .ai-step-label { font-family: var(--font-headings); font-weight: 700; font-size: 1.15rem; }
+/* Example prompt (light card), compatibility note and the developers' tool list (built from the real WebMCP tools). */
+.ai-extra { margin-top: 32px; }
+.prompt-card { margin: 0; background: var(--white); color: var(--night); border-radius: 16px; padding: 16px; }
+.prompt-card :focus-visible { outline-color: var(--night); }
+.prompt-label { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--secondary); }
+.prompt-text { margin: 6px 0 14px; font-size: 1.05rem; line-height: 1.45; quotes: "“" "”"; }
+.prompt-text::before { content: open-quote; } .prompt-text::after { content: close-quote; }
+.copy-prompt { min-height: 44px; padding: 8px 20px; font-size: 1rem; }
+.ai-note { font-size: 0.95rem; margin: 16px 0 0; max-width: 40rem; }
+.dev-tools { margin-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.45); }
+.dev-tools summary { cursor: pointer; font-weight: 700; padding: 14px 0; min-height: 44px; }
+.dev-tools-body { font-size: 0.95rem; padding-bottom: 8px; }
+.dev-tools-body p { margin: 0 0 8px; }
+.dev-tool-list { margin: 0; padding-left: 1.2rem; display: grid; gap: 8px; }
+.dev-rules { margin: 6px 0 0; padding-left: 1.2rem; display: grid; gap: 4px; }
+.dev-tools code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em; font-weight: 700; overflow-wrap: anywhere; }
 
 /* ---------- 3. editorial + benefits ---------- */
 .editorial { background: var(--white); padding: 56px 0; text-align: center; }
@@ -230,6 +249,8 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .summary .total-row strong { font-family: var(--font-headings); font-size: 1.4rem; }
 
 .policy-number { background: var(--white); border-radius: 16px; padding: 16px; font-size: 1rem; }
+.done-trip { margin: 16px 0 0; }
+.done-trip .trip-item { padding-right: 0; }
 .policy-number strong { display: block; font-family: var(--font-headings); font-size: 1.7rem; letter-spacing: 0.02em; }
 #step-4 .primary { margin: 14px 0; }
 
@@ -250,6 +271,8 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
   .trip-card dl { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
   .trip-item { padding-right: 0; }
   .edit-trip { top: 50%; transform: translateY(-50%); }
+  .trip-card.done-trip { padding: 14px 18px; }
+  .done-trip dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .plan-option { padding: 24px 16px 16px; }
   .plan-option.featured { padding: 23px 15px 15px; }
 }
@@ -268,7 +291,14 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
   .quote-card { padding: 24px; }
   .hero-art { height: 140px; margin-top: 8px; }
   .ai { padding: 72px 0; }
-  .ai .wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+  .ai .wrap { display: grid; grid-template-columns: 1fr 1fr; column-gap: 48px; align-items: center;
+    grid-template-areas: "title steps" "text steps" "extra extra"; }
+  .ai h2 { grid-area: title; align-self: end; }
+  .ai-text { grid-area: text; align-self: start; }
+  .ai-steps { grid-area: steps; }
+  .ai-extra { grid-area: extra; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr; column-gap: 48px; align-items: start; }
+  .ai-extra .prompt-card { grid-row: span 2; }
+  .ai-note { margin-top: 0; }
   .ai-steps { margin: 0; }
   .editorial, .plans-band { padding: 80px 0; }
   .final-cta { padding: 72px 0; }

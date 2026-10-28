@@ -88,7 +88,7 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
   - The policy is issued ONLY after Stripe reports `succeeded`. Stripe unreachable → PAYMENT_PROVIDER_UNAVAILABLE (503), no policy, no fallback mid-payment.
     Declines → PAYMENT_DECLINED (402); friendly Spanish texts per decline code in `brand.texts.errors.card`.
   - `policies.payment_ref` = pi_…; the snapshot gets `payment: { provider, ref, text }`; get_policy, PDF and email show "Pago de prueba Stripe · ref. pi_…".
-  - CSP adds only what Stripe needs, and only when Stripe is on: script-src js.stripe.com (+ *.js.stripe.com), frame-src js.stripe.com / hooks.stripe.com, connect-src api.stripe.com.
+  - CSP adds only what Stripe needs, and only when Stripe is on: script-src js.stripe.com (+ *.js.stripe.com), frame-src js.stripe.com / hooks.stripe.com, connect-src api.stripe.com + fonts.googleapis.com (Stripe.js fetches the Inter cssSrc for its frame).
     Never use `setAttribute('style', …)` / style="" in generated HTML (CSP blocks it): `el()` sets `style` through CSSOM.
   - Tests: `test/stripe.test.js` mocks Stripe (`stripeFetch`). Test cards: 4242 4242 4242 4242 (ok), 4000 0000 0000 9995 (insufficient funds).
   - Stripe test payments: dashboard.stripe.com/test/payments (metadata order_id links a payment to our order).
@@ -143,6 +143,5 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 - No rate limiting. No real payment (Stripe test mode only) or real insurer. Prices are provisional.
 - No Stripe webhook: if the browser closes after Stripe succeeded but before finish_card_payment, no policy is issued yet; paying that
   order again (review → Pagar, or confirm_payment) finds the succeeded PaymentIntent and issues the policy without charging again.
-- Stripe's own frame uses a system font (our self-hosted fonts aren't passed into it).
 - Policies issued before the snapshot feature have no snapshot and show the current config (`coverage_source: "current_config_legacy_policy"`).
 - Emails sent before 28 Oct 2026 (afternoon) load their logo from an old tunnel address, so it no longer shows in them.

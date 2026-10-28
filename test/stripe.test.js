@@ -142,7 +142,7 @@ test('site settings: publishable key only, never the secret; CSP allows Stripe a
   assert.ok(!html.includes(SK) && !JSON.stringify(config).includes(SK));
   assert.ok(html.includes('Usa la tarjeta 4242 4242 4242 4242, cualquier fecha futura y cualquier CVC. No se cobra nada.'));
   assert.equal(page.headers.get('content-security-policy'),
-    "default-src 'self'; script-src 'self' https://js.stripe.com https://*.js.stripe.com; frame-src https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com; connect-src 'self' https://api.stripe.com; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
+    "default-src 'self'; script-src 'self' https://js.stripe.com https://*.js.stripe.com; frame-src https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com; connect-src 'self' https://api.stripe.com https://fonts.googleapis.com; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
 });
 
 // ---------- AI agent: confirm_payment with pm_card_visa ----------

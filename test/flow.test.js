@@ -398,3 +398,34 @@ test('brand rule: yellow only on clickable primary buttons', async () => {
   for (const rule of rules) assert.match(rule.trim(), /^\.primary \{/, `yellow used outside buttons: ${rule.trim().slice(0, 60)}`);
   assert.ok(!css.includes('--pale-yellow'), 'pale yellow is not used on the site');
 });
+
+test('AI block: example prompt, honest note and a developers list generated from the REAL WebMCP tools', async () => {
+  const { buildTools } = await import('../public/webmcp-tools.js');
+  const html = await (await fetch(`${base}/`)).text();
+  assert.ok(html.includes('Búscame un seguro de viaje para 2 personas de 35 y 38 años, de España a Tailandia, del 10 al 24 de diciembre, y enséñame el resumen antes de pagar.'));
+  assert.ok(html.includes('id="copy-prompt"'));
+  assert.ok(html.includes('Funciona con asistentes y navegadores compatibles con WebMCP, un estándar nuevo que se está incorporando a Chrome.'));
+  assert.match(html, /<details class="dev-tools">\s*<summary>Para desarrolladores<\/summary>/); // closed by default (no "open")
+
+  const plans = Object.fromEntries(Object.entries(pricing.plans).map(([id, p]) => [id, p.name]));
+  for (const payments of [{ provider: 'simulated' }, { provider: 'stripe_test' }]) {
+    const tools = buildTools({ limits: pricing.limits, plans, brand: { name: 'Seguros Wildpass' }, payments });
+    assert.deepEqual(tools.map(t => t.name), ['get_quote', 'select_plan', 'set_traveler_details', 'review_order', 'confirm_payment', 'get_policy']);
+    for (const t of tools) assert.ok(t.es?.length > 10, `${t.name} has no Spanish line`);
+    // Every safety field of confirm_payment (all required fields except order_id) has a plain Spanish rule.
+    const pay = tools.find(t => t.name === 'confirm_payment');
+    for (const field of pay.inputSchema.required.filter(f => f !== 'order_id')) assert.ok(pay.rulesEs[field], `no Spanish rule for ${field}`);
+  }
+  const tools = buildTools({ limits: pricing.limits, plans, brand: { name: 'Seguros Wildpass' }, payments: { provider: 'simulated' } });
+  assert.ok(html.includes(`Esta página ofrece ${tools.length} herramientas WebMCP`));
+  for (const t of tools) assert.ok(html.includes(`<li><code>${t.name}</code> ${t.es.replace(/[<>&]/g, '')}`), `${t.name} missing from the list`);
+  for (const field of ['review_token', 'accept_terms', 'user_confirmed', 'confirmed_total_eur']) assert.ok(html.includes(`<li><code>${field}</code>:`), field);
+});
+
+test('checkout copy: Spanish dates, new success title and the trip summary on the success step', async () => {
+  const html = await (await fetch(`${base}/`)).text();
+  assert.equal((html.match(/type="date"[^>]*lang="es"/g) ?? []).length, 2);
+  assert.ok(html.includes('¡Todo listo para empezar tu aventura!'));
+  assert.ok(!html.includes('Ya puedes irte salvaje'));
+  for (const id of ['done-destination', 'done-dates', 'done-travelers', 'done-plan']) assert.ok(html.includes(`id="${id}"`), id);
+});

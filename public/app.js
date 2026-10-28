@@ -232,13 +232,23 @@ for (const link of document.querySelectorAll('[data-focus-form]')) {
   });
 }
 
-// ---------- trip summary card (steps 1–3) ----------
-function renderTripCard() {
-  const trip = state.quote.trip;
+// ---------- trip summary card (steps 1–3; the same card, plus the plan, on the success step) ----------
+function tripLines(trip) {
   const n = trip.traveler_ages.length;
-  $('#trip-destination').textContent = trip.destination_name;
-  $('#trip-dates').textContent = `${rangeEs(trip.departure_date, trip.return_date)} · ${fill(C.tripCard.days, { days: trip.days })}`;
-  $('#trip-travelers').textContent = `${n} ${travelersWord(n)} · ${agesText(trip.traveler_ages)}`;
+  return {
+    destination: trip.destination_name,
+    dates: `${rangeEs(trip.departure_date, trip.return_date)} · ${fill(C.tripCard.days, { days: trip.days })}`,
+    travelers: `${n} ${travelersWord(n)} · ${agesText(trip.traveler_ages)}`,
+  };
+}
+function renderTripCard() {
+  const lines = tripLines(state.quote.trip);
+  for (const key of ['destination', 'dates', 'travelers']) $(`#trip-${key}`).textContent = lines[key];
+}
+function renderDoneTrip() {
+  const lines = tripLines(state.review.summary.trip);
+  for (const key of ['destination', 'dates', 'travelers']) $(`#done-${key}`).textContent = lines[key];
+  $('#done-plan').textContent = state.review.summary.plan.plan_name;
 }
 
 // ---------- step 1: compare plans ----------
@@ -413,16 +423,25 @@ function loadScript(src) {
   });
 }
 
-// Brand colours for the Stripe card form (read from brand.css).
+// Stripe Appearance API: our font and colours inside Stripe's card frame (brand.css values).
+// Inter comes from Google Fonts INSIDE Stripe's frame (cssSrc); our own pages still never call Google.
+// gridRowSpacing leaves room under each field so a (two-line) error message never overlaps the next label.
+const STRIPE_FONTS = [{ cssSrc: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap' }];
 function stripeAppearance() {
   const v = name => getComputedStyle(document.documentElement).getPropertyValue(`--${name}`).trim();
   return {
     theme: 'stripe',
-    variables: { colorPrimary: v('turquoise'), colorText: v('night'), colorTextSecondary: v('secondary'), colorDanger: v('red'), colorBackground: v('white'), borderRadius: '10px', fontFamily: 'Inter, system-ui, sans-serif', spacingUnit: '4px' },
+    variables: {
+      fontFamily: 'Inter, system-ui, sans-serif', fontSizeBase: '16px',
+      colorText: v('night'), colorTextSecondary: v('secondary'), colorPrimary: v('turquoise'), colorDanger: v('red'), colorBackground: v('white'),
+      borderRadius: '10px', gridRowSpacing: '20px', gridColumnSpacing: '12px',
+    },
     rules: {
-      '.Input': { border: `1.5px solid ${v('secondary')}`, boxShadow: 'none' },
-      '.Input:focus': { borderColor: v('night'), boxShadow: `0 0 0 2px ${v('turquoise')}` },
-      '.Label': { fontWeight: '600', color: v('night') },
+      '.Label': { fontWeight: '700', color: v('night'), marginBottom: '6px' },
+      '.Input': { border: `1.5px solid ${v('border')}`, boxShadow: 'none', padding: '12px' },
+      '.Input:focus': { borderColor: v('turquoise'), boxShadow: `0 0 0 1px ${v('turquoise')}` },
+      '.Input--invalid': { borderColor: v('red'), boxShadow: `0 0 0 1px ${v('red')}`, color: v('night') },
+      '.Error': { color: v('red'), fontSize: '14px', lineHeight: '1.4', marginTop: '6px' },
     },
   };
 }
@@ -433,7 +452,7 @@ async function mountCard(totalEur) {
   try {
     if (!window.Stripe) await loadScript('https://js.stripe.com/v3/');
     card.stripe ??= window.Stripe(payments.publishable_key, { locale: 'es' });
-    const elements = card.stripe.elements({ mode: 'payment', amount: Math.round(totalEur * 100), currency: 'eur', allowedPaymentMethodTypes: ['card'], appearance: stripeAppearance() });
+    const elements = card.stripe.elements({ mode: 'payment', amount: Math.round(totalEur * 100), currency: 'eur', allowedPaymentMethodTypes: ['card'], appearance: stripeAppearance(), fonts: STRIPE_FONTS });
     $('#payment-element').replaceChildren();
     elements.create('payment', { layout: 'tabs', wallets: { applePay: 'never', googlePay: 'never', link: 'never' } }).mount('#payment-element');
     card.elements = elements;
@@ -484,11 +503,28 @@ $('#pay').addEventListener('click', async e => {
       ? C.emailNotConfigured
       : fill(C.emailSent, { email: state.review.summary.policyholder.email });
     $('#payment-line').textContent = result.payment_text ?? '';
+    renderDoneTrip();
     // The review and order can't be reused after payment: going back starts a new quote.
     history.replaceState({ step: 'landing' }, '', location.pathname);
     render('4');
   });
   syncPay();
+});
+
+// ---------- AI block: copy the example prompt ----------
+$('#copy-prompt').addEventListener('click', async e => {
+  const button = e.currentTarget;
+  const text = $('#example-prompt').textContent.trim();
+  let copied = false;
+  try { await navigator.clipboard.writeText(text); copied = true; } catch {
+    // Older browsers / no permission: select the text so the person can copy it by hand.
+    getSelection().selectAllChildren($('#example-prompt'));
+  }
+  if (!copied) return;
+  button.textContent = T.ai.copied;
+  $('#copy-status').textContent = T.ai.copied;
+  clearTimeout(button.reset);
+  button.reset = setTimeout(() => { button.textContent = T.ai.copy; $('#copy-status').textContent = ''; }, 2000);
 });
 
 // ---------- navigation ----------
