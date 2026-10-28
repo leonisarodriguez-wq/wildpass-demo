@@ -7,7 +7,7 @@
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 48px; }
 html:has(#checkout:not([hidden])) { scroll-padding-bottom: 88px; } /* keeps focused fields clear of the fixed total bar */
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, ::before, ::after { transition: none !important; animation: none !important; } }
 body { margin: 0; font-family: var(--font-text); font-size: 16px; line-height: 1.5; color: var(--night); background: var(--sky); }
 h1, h2, h3 { font-family: var(--font-headings); font-weight: 700; line-height: 1.15; letter-spacing: -0.01em; margin: 0 0 12px; }
 p { margin: 0 0 12px; }
@@ -49,7 +49,7 @@ button { font: inherit; cursor: pointer; }
 .field { margin: 0 0 8px; }
 label, legend { display: block; font-weight: 700; font-size: 0.9rem; margin-bottom: 4px; }
 input:not([type="checkbox"]), select {
-  display: block; width: 100%; height: 48px; padding: 0 12px; border: 1.5px solid var(--secondary); border-radius: 10px;
+  display: block; width: 100%; height: 48px; padding: 0 12px; border: 1.5px solid var(--field-border); border-radius: 10px;
   background: var(--white); color: var(--night); font: inherit; font-size: 16px; /* 16 px stops iOS zooming in */ }
 select { appearance: none; padding-right: 36px;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%230B1F3A' stroke-width='2.2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
@@ -73,11 +73,57 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .error { background: var(--white); border: 2px solid var(--red); border-left-width: 8px; color: var(--night); font-weight: 600; padding: 10px 12px; margin: 10px 0; border-radius: 10px; }
 
 /* ---------- 1. hero + quote form ---------- */
-.hero { position: relative; overflow: hidden; padding: 10px 0 0; }
+.hero { position: relative; overflow: hidden; padding: 10px 0 32px; }
 .hero h1 { font-size: clamp(1.75rem, 7.6vw, 3.6rem); letter-spacing: -0.02em; margin-bottom: 8px; }
 .hero-sub { font-size: 0.95rem; line-height: 1.45; color: var(--secondary); margin-bottom: 10px; }
-.hero-grid { position: relative; z-index: 1; }
-.quote-card { background: var(--white); border-radius: 16px; padding: 14px; }
+/* Phone: copy, then a landscape band (with the route strip in its sky), then the pass card overlapping the band. */
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "copy" "scene" "form"; }
+.hero-copy { grid-area: copy; position: relative; z-index: 1; }
+.quote-card { grid-area: form; position: relative; z-index: 1; background: var(--white); border-radius: 16px; padding: 14px; }
+
+/* Layered landscape behind the hero: 3 parallax layers (public/landing-fx.js moves them on scroll), one <g> per scene,
+   cross-faded when a destination is picked. Absolutely placed, so it never moves the page (no layout shift). */
+.hero-scene { grid-area: scene; position: relative; height: 200px; margin: 0 -16px -40px; overflow: hidden; pointer-events: none; }
+.hero-scene .layer { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.hero-scene .layer-far, .hero-scene .layer-mid { will-change: transform; }
+.hero-scene .scene { opacity: 0; transition: opacity 0.7s ease; }
+.hero-scene .scene.is-active { opacity: 1; }
+.sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+/* The sun rises once on load; headline, form and route slide in gently (all off with reduced motion). */
+.hero-scene .sun { transform-box: fill-box; animation: sunrise 1.2s 0.1s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@keyframes sunrise { from { transform: translateY(160%); } }
+.hero-copy, .quote-card, .route { animation: rise-in 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.quote-card { animation-delay: 0.15s; }
+.route { animation-delay: 0.3s; }
+@keyframes rise-in { from { opacity: 0; transform: translateY(16px); } }
+
+/* The form as a "travel pass": a stub on top, a dashed tear line and two half-circle notches cut at its ends. */
+.pass { --pass-pad: 14px; --notch-y: calc(var(--pass-pad) + 29px);
+  -webkit-mask: radial-gradient(circle 9px at 0 var(--notch-y), #0000 8.5px, #000 9px) left / 51% 100% no-repeat,
+                radial-gradient(circle 9px at 100% var(--notch-y), #0000 8.5px, #000 9px) right / 51% 100% no-repeat;
+          mask: radial-gradient(circle 9px at 0 var(--notch-y), #0000 8.5px, #000 9px) left / 51% 100% no-repeat,
+                radial-gradient(circle 9px at 100% var(--notch-y), #0000 8.5px, #000 9px) right / 51% 100% no-repeat; }
+.pass-head { display: flex; justify-content: space-between; gap: 12px; margin: 0 calc(-1 * var(--pass-pad)) 12px; padding: 0 var(--pass-pad) 10px;
+  border-bottom: 2px dashed var(--border); font-family: var(--font-headings); font-size: 0.75rem; line-height: 18px; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--turquoise-text); }
+
+/* Live "Desde X € · plan Wild" under the button: its line is always reserved, digits roll like an odometer. */
+.price-preview { min-height: 1.5em; margin: 8px 0 0; text-align: center; font-family: var(--font-headings); font-weight: 700; font-size: 1.05rem; line-height: 1.5; color: var(--turquoise-text); }
+.odo { display: inline-block; height: 1.5em; overflow: hidden; vertical-align: bottom; }
+.odo-strip { display: flex; flex-direction: column; transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.odo-strip span { height: 1.5em; }
+
+/* Route strip: Spain → destination on a dotted texture, the flight path draws itself and a little plane flies it. */
+.route { grid-area: scene; align-self: start; position: relative; z-index: 1; display: flex; align-items: center; gap: 8px; margin-top: 6px; padding: 4px 12px; border-radius: 14px;
+  background: rgb(255 255 255 / 0.85); font-weight: 700; font-size: 0.85rem; color: var(--night); }
+.route-map { flex: 1; min-width: 0; height: 48px; }
+.route-from, .route-to { flex: none; max-width: 32%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.route-to { color: var(--secondary); }
+.route.has-dest .route-to { color: var(--night); }
+#route-mask { transition: stroke-dashoffset 1.6s cubic-bezier(0.4, 0, 0.2, 1); }
+.route.has-dest #route-mask { stroke-dashoffset: 0; }
+.route-plane, .route-end { opacity: 0; transition: opacity 0.3s; }
+.route.has-dest .route-plane, .route.has-dest .route-end { opacity: 1; }
 .ages-field { margin-bottom: 6px; }
 .ages-field legend { margin-bottom: 4px; }
 .travelers { display: grid; gap: 8px; }
@@ -90,17 +136,47 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .add-traveler { min-height: 44px; margin-top: 0; padding: 0 4px; border: 0; background: none; color: var(--turquoise-text); font-weight: 700; }
 .add-traveler:hover { text-decoration: underline; }
 .form-note { font-size: 0.85rem; line-height: 1.35; color: var(--secondary); text-align: center; margin: 6px 0 0; }
-.hero-art { display: block; width: 100%; height: 72px; margin-top: 20px; }
 
 /* ---------- 2. AI block ---------- */
 .ai { background: var(--turquoise); color: var(--white); padding: 48px 0; }
 .ai h2 { font-size: clamp(1.6rem, 6vw, 2.4rem); color: var(--white); }
 .ai-text { font-size: 1.05rem; max-width: 40rem; }
-.ai-steps { list-style: none; padding: 0; margin: 28px 0 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; text-align: center; }
-.ai-step { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.ai-step svg { width: 80px; height: 80px; }
-.ai-step-num { position: absolute; top: -4px; left: calc(50% - 46px); width: 28px; height: 28px; border-radius: 50%; background: var(--night); color: var(--white); font-weight: 700; font-size: 0.9rem; line-height: 28px; }
-.ai-step-label { font-family: var(--font-headings); font-weight: 700; font-size: 1.15rem; }
+.showcase { margin: 28px 0 0; }
+.showcase-label { display: inline-block; margin-bottom: 10px; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.showcase-grid { display: grid; grid-template-columns: minmax(0, 1fr); background: var(--white); color: var(--night); border-radius: 18px; overflow: hidden; }
+/* Example chat. Every bubble is in the page from the start (final state); while playing, unplayed ones are only
+   invisible, so nothing below ever moves. Typed text = visible part + transparent rest. */
+.chat { list-style: none; margin: 0; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.bubble { position: relative; max-width: 88%; padding: 10px 14px; border-radius: 16px; font-size: 0.95rem; line-height: 1.4;
+  transition: opacity 0.35s, transform 0.35s; }
+.bubble-user { align-self: flex-end; background: var(--turquoise); color: var(--white); border-bottom-right-radius: 4px; }
+.bubble-assistant { align-self: flex-start; background: var(--sky); border-bottom-left-radius: 4px; }
+.bubble-done { align-self: center; background: var(--mint); color: var(--turquoise-text); font-weight: 700; border-radius: 999px; }
+.is-playing .bubble:not(.is-shown) { opacity: 0; transform: translateY(8px); }
+.bubble .rest { color: transparent; }
+.bubble.is-typing .typed::after { content: ''; display: inline-block; width: 2px; height: 1.05em; margin-right: -2px; vertical-align: text-bottom; background: currentColor; animation: blink 0.9s steps(1) infinite; }
+.bubble.is-thinking .bubble-text { color: transparent; }
+.bubble.is-thinking::after { content: '•••'; position: absolute; left: 14px; top: 10px; letter-spacing: 0.2em; color: var(--secondary); animation: blink 0.9s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+/* The real WebMCP tools as a timeline, lighting up in sync with the chat. */
+.tools { padding: 16px; border-top: 2px dashed var(--border); }
+.tools-title { margin: 0 0 10px; font-size: 0.85rem; font-weight: 700; color: var(--secondary); }
+.tool-list { list-style: none; margin: 0; padding: 0; }
+.tool { position: relative; padding: 0 0 12px 30px; transition: opacity 0.3s; }
+.tool::before { content: ''; position: absolute; left: 0; top: 2px; width: 18px; height: 18px; box-sizing: border-box; border-radius: 50%; border: 2px solid var(--turquoise); background: var(--turquoise); transition: background 0.3s; }
+.tool::after { content: ''; position: absolute; left: 8px; top: 22px; bottom: 0; width: 2px; background: var(--border); }
+.tool:last-child::after { display: none; }
+.tool code { display: block; font-size: 0.9rem; font-weight: 700; }
+.tool-label { display: block; font-size: 0.85rem; color: var(--secondary); }
+.is-playing .tool:not(.is-on) { opacity: 0.4; }
+.is-playing .tool:not(.is-on)::before { background: var(--white); }
+.tool-checks { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; }
+.tool-checks li { position: relative; padding-left: 24px; font-size: 0.85rem; font-weight: 600; transition: opacity 0.3s; }
+.tool-checks li::before { content: '✓'; position: absolute; left: 0; top: 0; width: 18px; height: 18px; border-radius: 5px; background: var(--mint); color: var(--turquoise-text); font-size: 0.75rem; line-height: 18px; text-align: center; font-weight: 700; }
+.is-playing .tool-checks li:not(.is-on) { opacity: 0.4; }
+.is-playing .tool-checks li:not(.is-on)::before { content: ''; }
+.showcase-replay { margin-top: 12px; }
+.showcase-replay[hidden] { display: none; }
 /* Example prompt (light card), compatibility note and the developers' tool list (built from the real WebMCP tools). */
 .ai-extra { margin-top: 32px; }
 .prompt-card { margin: 0; background: var(--white); color: var(--night); border-radius: 16px; padding: 16px; }
@@ -264,8 +340,10 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
   .benefits { grid-template-columns: repeat(3, 1fr); gap: 28px; }
   .plan-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
   .plan-card { padding: 24px 16px 18px; }
-  .ai-step svg { width: 96px; height: 96px; }
-  .ai-step-num { left: calc(50% - 54px); }
+  .showcase-grid { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); }
+  .tools { border-top: 0; border-left: 2px dashed var(--border); padding: 20px; }
+  .chat { padding: 20px; }
+  .bubble { max-width: 78%; }
   .card-page { padding: 12px 32px 28px; }
   .trip-card { padding: 14px 96px 14px 18px; }
   .trip-card dl { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
@@ -285,21 +363,19 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
   .logo svg { width: 44px; height: 44px; }
   .logo .wordmark { font-size: 1.9rem; }
   .logo .tagline { font-size: 0.8rem; }
-  .hero { padding-top: 56px; }
-  .hero-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 56px; align-items: center; }
+  .hero { padding: 56px 0 120px; }
+  .hero-grid { grid-template-columns: 1.1fr 0.9fr; grid-template-rows: auto 1fr; grid-template-areas: "copy form" "route form"; column-gap: 56px; align-items: start; }
+  .hero-copy { align-self: end; }
+  .route { grid-area: route; align-self: start; max-width: 30rem; margin-top: 18px; }
+  /* Desktop: the landscape fills the bottom of the whole hero, behind the copy and the card. */
+  .hero-scene { position: absolute; left: 0; right: 0; bottom: 0; height: 380px; margin: 0; }
   .hero-sub { font-size: 1.2rem; max-width: 30rem; }
   .quote-card { padding: 24px; }
-  .hero-art { height: 140px; margin-top: 8px; }
+  .pass { --pass-pad: 24px; }
   .ai { padding: 72px 0; }
-  .ai .wrap { display: grid; grid-template-columns: 1fr 1fr; column-gap: 48px; align-items: center;
-    grid-template-areas: "title steps" "text steps" "extra extra"; }
-  .ai h2 { grid-area: title; align-self: end; }
-  .ai-text { grid-area: text; align-self: start; }
-  .ai-steps { grid-area: steps; }
   .ai-extra { grid-area: extra; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr; column-gap: 48px; align-items: start; }
   .ai-extra .prompt-card { grid-row: span 2; }
   .ai-note { margin-top: 0; }
-  .ai-steps { margin: 0; }
   .editorial, .plans-band { padding: 80px 0; }
   .final-cta { padding: 72px 0; }
 }

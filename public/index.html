@@ -13,6 +13,7 @@
 </head>
 <!-- Template filled in by the server (src/landing.js): double braces = escaped text, triple braces = built HTML. -->
 <body>
+  {{{sceneSprite}}}
   <div class="banner" id="demo-banner">{{brand.siteBanner}}</div>
   <header class="site-header"><div class="wrap">{{{logo}}}</div></header>
 
@@ -20,11 +21,18 @@
     <!-- 1. Hero + quote form -->
     <section class="hero" aria-labelledby="hero-title">
       <div class="wrap hero-grid">
+        {{{heroScene}}}
         <div class="hero-copy">
           <h1 id="hero-title">{{brand.claim}}</h1>
           <p class="hero-sub">{{t.heroSubtitle}}</p>
         </div>
-        <form id="quote-form" class="quote-card" novalidate>
+        <div class="route" id="route" aria-hidden="true">
+          <span class="route-from">{{t.form.routeFrom}}</span>
+          {{{routeStrip}}}
+          <span class="route-to" id="route-to">{{t.form.routeTo}}</span>
+        </div>
+        <form id="quote-form" class="quote-card pass" novalidate>
+          <p class="pass-head" aria-hidden="true"><span>{{t.form.passLabel}}</span><span>{{brand.name}}</span></p>
           <div class="field">
             <label for="destination">{{t.form.destination}}</label>
             <select id="destination" name="destination" aria-required="true">
@@ -50,10 +58,10 @@
           </fieldset>
           <div class="error" id="quote-error" role="alert" hidden></div>
           <button type="submit" class="primary block" id="quote-submit">{{t.form.submit}}</button>
+          <p class="price-preview" id="price-preview" aria-live="polite"></p>
           <p class="form-note">{{t.form.note}}</p>
         </form>
       </div>
-      {{{heroArt}}}
     </section>
 
     <!-- 2. AI block -->
@@ -61,7 +69,7 @@
       <div class="wrap">
         <h2 id="ai-title">{{t.ai.title}}</h2>
         <p class="ai-text">{{t.ai.text}}</p>
-        <ol class="ai-steps">{{{aiSteps}}}</ol>
+        {{{showcase}}}
         <div class="ai-extra">
           <figure class="prompt-card">
             <figcaption class="prompt-label">{{t.ai.promptLabel}}</figcaption>
@@ -226,6 +234,7 @@
   </footer>
 
   <script type="module" src="/app.js"></script>
+  <script type="module" src="/landing-fx.js"></script>
   <script type="module" src="/webmcp.js"></script>
 </body>
 </html>

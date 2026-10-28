@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs';
 import { formatEur } from './business.js';
 import { logoHtml } from './logo.js';
 import * as art from './illustrations.js';
+import { heroScene, routeStrip, sceneFor, sceneSprite } from './scenes.js';
 import { quoteCount } from '../config/market-quotes.js';
 
 export const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -92,7 +93,7 @@ function firstTravelerRow(form, limits) {
 
 // "Para desarrolladores": built from the REAL WebMCP tool definitions (public/webmcp-tools.js), never typed in.
 export function devToolsHtml({ brand, pricing, payments }) {
-  const tools = buildTools({ limits: pricing.limits, plans: Object.fromEntries(Object.entries(pricing.plans).map(([id, p]) => [id, p.name])), brand, payments });
+  const tools = realTools({ brand, pricing, payments });
   const items = tools.map(tool => {
     const rules = tool.rulesEs ? (tool.inputSchema.required ?? []).filter(f => tool.rulesEs[f]) : [];
     return `<li><code>${escapeHtml(tool.name)}</code> ${escapeHtml(tool.es)}`
@@ -100,6 +101,47 @@ export function devToolsHtml({ brand, pricing, payments }) {
       + '</li>';
   }).join('');
   return `<p>${escapeHtml(fill(brand.texts.ai.devIntro, { count: tools.length }))}</p><ul class="dev-tool-list">${items}</ul>`;
+}
+
+// The real WebMCP tools in their real order (from public/webmcp-tools.js), so the landing can never list a fake one.
+function realTools({ brand, pricing, payments }) {
+  return buildTools({ limits: pricing.limits, plans: Object.fromEntries(Object.entries(pricing.plans).map(([id, p]) => [id, p.name])), brand, payments });
+}
+
+// "Tu asistente también puede contratarlo": an animated example chat (left) + the real tools lighting up (right).
+// Fully server-rendered in its FINAL state (readable without JS and with reduced motion); public/landing-fx.js only
+// hides and replays it. The price is computed by the pricing engine for the example trip in the brand config.
+export function showcaseHtml({ brand, pricing, business, payments }) {
+  const a = brand.texts.ai;
+  const ex = a.example;
+  const zone = Object.entries(pricing.zones).find(([, codes]) => codes.includes(ex.destination))?.[0] ?? 'rest_of_world';
+  const totalCents = ex.ages.reduce((sum, age) => sum + business.pricePerTravelerCents(zone, ex.plan, ex.days, age), 0);
+  const values = { price: formatEur(totalCents / 100), plan: pricing.plans[ex.plan].name };
+  const tools = realTools({ brand, pricing, payments });
+  const names = tools.map(tool => tool.name);
+  for (const line of a.chat) for (const name of line.tools ?? []) if (!names.includes(name)) throw new Error(`Showcase: unknown tool ${name}`);
+  const pay = tools.find(tool => tool.name === 'confirm_payment');
+  const checks = Object.keys(a.checks);
+  for (const field of checks) if (!pay.inputSchema.required.includes(field)) throw new Error(`Showcase: ${field} is not a confirm_payment rule`);
+
+  const chat = a.chat.map((line, i) => {
+    const who = line.who === 'done' ? '' : `<span class="sr-only">${escapeHtml(a.speakers[line.who])}: </span>`;
+    return `<li class="bubble bubble-${line.who}" data-i="${i}"${line.tools ? ` data-tools="${line.tools.join(' ')}"` : ''}>${who}<span class="bubble-text">${escapeHtml(fill(line.text, values))}</span></li>`;
+  }).join('');
+  const timeline = tools.map(tool => {
+    if (!a.toolLabels[tool.name]) throw new Error(`Showcase: no label for tool ${tool.name}`);
+    const sub = tool.name === 'confirm_payment'
+      ? `<ul class="tool-checks">${checks.map(f => `<li data-check="${f}">${escapeHtml(a.checks[f])}</li>`).join('')}</ul>` : '';
+    return `<li class="tool" data-tool="${tool.name}"><code>${escapeHtml(tool.name)}</code><span class="tool-label">${escapeHtml(a.toolLabels[tool.name])}</span>${sub}</li>`;
+  }).join('');
+  return `<figure class="showcase" id="showcase">
+    <figcaption class="showcase-label">${escapeHtml(a.showcaseLabel)}</figcaption>
+    <div class="showcase-grid">
+      <ol class="chat">${chat}</ol>
+      <div class="tools"><p class="tools-title">${escapeHtml(a.toolsTitle)}</p><ol class="tool-list">${timeline}</ol></div>
+    </div>
+    <button type="button" class="secondary showcase-replay" id="showcase-replay" hidden>${escapeHtml(a.replay)}</button>
+  </figure>`;
 }
 
 export function createLanding({ brand, pricing, business, market, countries, templatePath, payments = { provider: 'simulated' } }) {
@@ -112,11 +154,12 @@ export function createLanding({ brand, pricing, business, market, countries, tem
     const html = {
       iconLinks, fontPreloads,
       logo: logoHtml(),
-      countryOptions: countries.filter(c => c.code !== 'ES').map(c => `<option value="${c.code}">${escapeHtml(c.name)}</option>`).join(''),
-      aiSteps: t.ai.steps.map((label, i) => `<li class="ai-step">${[art.stepAsk, art.stepReview, art.stepConfirm][i]}<span class="ai-step-num">${i + 1}</span><span class="ai-step-label">${escapeHtml(label)}</span></li>`).join(''),
+      // data-scene picks the hero illustration for that destination (src/scenes.js).
+      countryOptions: countries.filter(c => c.code !== 'ES').map(c => `<option value="${c.code}" data-scene="${sceneFor(c.code, pricing)}">${escapeHtml(c.name)}</option>`).join(''),
+      showcase: showcaseHtml({ brand, pricing, business, payments }),
+      sceneSprite, heroScene, routeStrip,
       benefits: t.editorial.benefits.map((b, i) => `<li class="benefit">${[art.globePin, art.mountainRope, art.chatRobotCheck][i]}<h3>${escapeHtml(b.title)}</h3><p>${escapeHtml(fill(b.text, values))}</p></li>`).join(''),
       faq: t.faq.map(f => `<details class="faq-item"><summary>${escapeHtml(f.q)}</summary><p>${escapeHtml(fill(f.a, values))}</p></details>`).join(''),
-      heroArt: art.heroLandscape,
       travelerRow: firstTravelerRow(t.form, pricing.limits),
       iconPin: art.iconPin, iconCalendar: art.iconCalendar, iconPeople: art.iconPeople, iconRemove: art.iconRemove, iconShield: art.iconShield,
       devTools: devToolsHtml({ brand, pricing, payments }),

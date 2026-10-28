@@ -24,7 +24,8 @@ export default {
     turquoiseText: '#0B6770', // small turquoise text on light backgrounds
     yellow: '#FFC21A', // primary buttons (bold night text, no border, no shadow) and the logo sun
     red: '#D7263D', // ONLY the demo banner (white text) and error borders
-    border: '#C9DCE6', // thin lines and box borders (PDF, email)
+    border: '#C9DCE6', // thin decorative lines and card borders (PDF, email, cards) — NOT form fields
+    fieldBorder: '#6F94A7', // input/select borders: 3.25:1 against white (WCAG 1.4.11 asks ≥ 3:1)
     paleYellow: '#FFF6D6', // highlighted cells (total price, excess), with night text
     mint: '#D6F0EE', // soft turquoise band on the landing (night or turquoiseText text only)
   },
@@ -66,13 +67,16 @@ export default {
       submit: 'Ver mi precio',
       note: 'Gratis y sin compromiso: no te pedimos datos personales.',
       loading: 'Calculando…',
+      passLabel: 'Pase de viaje',
+      pricePreview: 'Desde {price} · plan {plan}', // live, from get_quote (cheapest plan, all travellers)
+      routeFrom: 'España',
+      routeTo: 'Tu destino',
     },
 
     // Landing: AI block
     ai: {
       title: 'Tu asistente también puede contratarlo',
       text: 'Wildpass es un seguro de viaje preparado para agentes de IA. Pídeselo a tu asistente: él cotiza, te enseña el resumen y solo paga cuando tú confirmas.',
-      steps: ['Pide', 'Revisa', 'Confirma'],
       promptLabel: 'Prueba a pedirle esto:',
       examplePrompt: 'Búscame un seguro de viaje para 2 personas de 35 y 38 años, de España a Tailandia, del 10 al 24 de diciembre, y enséñame el resumen antes de pagar.',
       copy: 'Copiar',
@@ -81,6 +85,23 @@ export default {
       compatNote: 'Funciona con asistentes y navegadores compatibles con WebMCP, un estándar nuevo que se está incorporando a Chrome.',
       devTitle: 'Para desarrolladores',
       devIntro: 'Esta página ofrece {count} herramientas WebMCP a los asistentes de IA:',
+      // Animated example (an illustration, not a live chat). {price}/{plan} come from the pricing engine for `example`.
+      showcaseLabel: 'Ilustración de cómo funciona',
+      example: { destination: 'TH', days: 15, ages: [35, 38], plan: 'wild_plus' }, // 10–24 Dec, counted inclusively
+      chat: [
+        { who: 'user', text: 'Necesito un seguro para Tailandia, del 10 al 24 de diciembre, 2 personas de 35 y 38 años.', tools: ['get_quote'] },
+        { who: 'assistant', text: '{plan}: {price} para los dos, con aventura y cancelación. ¿Te enseño el resumen?' },
+        { who: 'user', text: 'Sí, y págalo.', tools: ['select_plan', 'set_traveler_details', 'review_order'] },
+        { who: 'assistant', text: 'He revisado las condiciones contigo. ¿Confirmas el pago de {price}?' },
+        { who: 'user', text: 'Confirmo.', tools: ['confirm_payment', 'get_policy'] },
+        { who: 'done', text: '✓ Póliza enviada a tu email.' },
+      ],
+      speakers: { user: 'Usuario', assistant: 'Asistente' },
+      toolsTitle: 'Herramientas WebMCP que usa',
+      // Short label per real tool (a test fails if a tool has none) and per confirm_payment safety field.
+      toolLabels: { get_quote: 'Calcula el precio', select_plan: 'Elige el plan', set_traveler_details: 'Guarda los viajeros', review_order: 'Prepara el resumen', confirm_payment: 'Paga solo si…', get_policy: 'Entrega la póliza' },
+      checks: { review_token: 'Resumen revisado', accept_terms: 'Condiciones aceptadas', user_confirmed: 'El usuario confirma', confirmed_total_eur: 'Total exacto' },
+      replay: 'Repetir',
     },
 
     // Landing: editorial headline + benefits

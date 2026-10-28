@@ -21,6 +21,12 @@ The owner is not a programmer: explain things simply, report test results honest
 - "Desde X €" on the plan cards = 7 days, Europe, 1 adult, computed by the pricing engine (`fromPrices` in `src/landing.js`), never typed in.
 - No public pricing-methodology page (removed 28 Oct 2026 at the owner's request). The research is in `docs/pricing-research.md`
   (linked from README.md); market quotes in `config/market-quotes.js` (13 quotes, counted by `quoteCount` for the FAQ answer).
+- Landing effects (`public/landing-fx.js`, vanilla, no libraries, nothing but animation): hero with 3 parallax layers and a destination scene
+  (`src/scenes.js`: one `<symbol>` per scene × layer in a hidden sprite, reused with `<use>`; `<option data-scene>` picks it; Europe → old town,
+  unknown → mountains), a stylised Spain → destination flight path (SMIL animateMotion), a live "Desde X € · plan Wild" preview (debounced get_quote,
+  no order), and the AI example chat + the real tools timeline (`showcaseHtml` in landing.js: tool names from webmcp-tools.js, price from the engine
+  for `texts.ai.example`, final state server-rendered). `prefers-reduced-motion` → no animation, final state shown. Form fields use `--field-border`
+  #6F94A7 (3.25:1 on white; #7FA3B5 was asked for but is only 2.69:1); `--border` #C9DCE6 stays for decorative card lines.
 - Illustrations: original inline SVGs in `src/illustrations.js` (night outline + turquoise fill + small yellow accent). No emoji, no stock art,
   no fake reviews/ratings/press logos/invented stats; only promise what the product really does.
 - SQLite via Node's built-in `node:sqlite` (no native npm module). DB file in `data/` (git-ignored). Small migrations run at start in `src/db.js`.

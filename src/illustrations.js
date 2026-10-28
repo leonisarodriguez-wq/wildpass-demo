@@ -33,33 +33,6 @@ export const chatRobotCheck = svg(`
   <circle cx="76" cy="72" r="14" fill="${Y}" stroke="${N}" stroke-width="3"/>
   <path d="m69 72 5 5 9-10" stroke="${N}" stroke-width="3.5"/>`);
 
-// ---------- AI steps (drawn on a white disc, shown on the turquoise section) ----------
-const disc = body => svg(`<circle cx="48" cy="48" r="46" fill="${W}"/>${body}`, 88);
-
-export const stepAsk = disc(`
-  <path d="M22 26h44a6 6 0 0 1 6 6v24a6 6 0 0 1-6 6H44l-12 10V62H22a6 6 0 0 1-6-6V32a6 6 0 0 1 6-6z" fill="${T}" stroke="${N}" stroke-width="3"/>
-  <circle cx="33" cy="44" r="3.5" fill="${W}"/><circle cx="44" cy="44" r="3.5" fill="${W}"/><circle cx="55" cy="44" r="3.5" fill="${W}"/>
-  <path d="M74 16v10M69 21h10" stroke="${Y}" stroke-width="4"/>`);
-
-export const stepReview = disc(`
-  <path d="M26 16h30l12 12v48a4 4 0 0 1-4 4H26a4 4 0 0 1-4-4V20a4 4 0 0 1 4-4z" fill="${W}" stroke="${N}" stroke-width="3"/>
-  <path d="M56 16v12h12" stroke="${N}" stroke-width="3"/>
-  <path d="M30 36h22M30 45h26M30 54h16" stroke="${T}" stroke-width="4"/>
-  <circle cx="60" cy="62" r="11" fill="${Y}" stroke="${N}" stroke-width="3"/>
-  <path d="m68 70 9 9" stroke="${N}" stroke-width="4"/>`);
-
-export const stepConfirm = disc(`
-  <path d="M48 14 74 24v20c0 17-11 29-26 36-15-7-26-19-26-36V24z" fill="${T}" stroke="${N}" stroke-width="3"/>
-  <path d="m36 46 8 8 16-17" stroke="${W}" stroke-width="5"/>
-  <circle cx="74" cy="72" r="7" fill="${Y}" stroke="${N}" stroke-width="2.5"/>`);
-
-// ---------- hero landscape (decorative, wide) ----------
-export const heroLandscape = `<svg class="hero-art" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 160" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
-  <circle cx="930" cy="70" r="38" fill="${Y}"/>
-  <path d="M0 160 140 70l70 50 120-90 150 130h20L620 60l110 80 90-60 170 80 60-30 150 70z" fill="${T}" opacity=".35"/>
-  <path d="M0 160 220 96l90 40 160-82 170 106 140-70 160 70 120-40 140 40z" fill="${T}"/>
-</svg>`;
-
 // ---------- small line icons (24 px, colour from CSS `currentColor`) ----------
 const icon = body => `<svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
 

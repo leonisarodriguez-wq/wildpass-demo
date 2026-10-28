@@ -9,6 +9,9 @@ import { createApp } from '../src/app.js';
 import pricing from '../config/pricing.config.js';
 import marketQuotes, { quoteCount } from '../config/market-quotes.js';
 import { fromPrices } from '../src/landing.js';
+import { buildTools } from '../public/webmcp-tools.js';
+import { sceneFor } from '../src/scenes.js';
+import brand from '../config/brand.config.js';
 
 let server, base, dataDir, business;
 
@@ -347,6 +350,26 @@ test('landing: complete server-rendered page with prices from the pricing engine
   // Checkout steps are in the page; no ID or card fields anywhere.
   for (const id of ['quote-form', 'trip-card', 'step-1', 'step-2', 'step-3', 'step-4', 'total-bar', 'accept-terms', 'exclusions']) assert.ok(html.includes(`id="${id}"`), id);
   assert.ok(!/dni|tarjeta de cr|card-number|cc-number/i.test(html.replace('Nada de DNI', '').replace('datos de tarjeta', '')));
+});
+
+test('landing hero: destination scenes and the AI example use real prices and the real WebMCP tools', async () => {
+  const html = nbsp(await (await fetch(`${base}/`)).text());
+  // Destination → scene (explicit ones first, then any European country → old town, else mountains).
+  for (const [code, scene] of [['TH', 'thailand'], ['JP', 'japan'], ['PE', 'peru'], ['IS', 'iceland'], ['MX', 'mexico'], ['US', 'usa'], ['IT', 'europe'], ['AR', 'mountains']]) {
+    assert.equal(sceneFor(code, pricing), scene, code);
+    assert.ok(html.includes(`value="${code}" data-scene="${scene}"`), `option ${code}`);
+  }
+  for (const id of ['hero-scene', 'route', 'price-preview', 'showcase', 'showcase-replay']) assert.ok(html.includes(`id="${id}"`), id);
+  assert.ok(html.includes('Ilustración de cómo funciona'));
+  // The example price is the engine's total for Wild+ to Thailand, 10–24 Dec (15 days), ages 35 + 38.
+  const q = await call('get_quote', { origin_country: 'ES', destination_country: 'TH', departure_date: '2027-12-10', return_date: '2027-12-24', traveler_ages: [35, 38] });
+  const plus = q.plans.find(p => p.plan === 'wild_plus').total_price_eur.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+  assert.ok(html.includes(`Wild+: ${plus} € para los dos`), `example price ${plus}`);
+  assert.ok(html.includes(`¿Confirmas el pago de ${plus} €?`));
+  // The timeline lists exactly the real tools, in their real order, and confirm_payment's safety checks.
+  const tools = buildTools({ limits: pricing.limits, plans: { wild: 'Wild', wild_plus: 'Wild+' }, brand, payments: { provider: 'simulated' } }).map(t => t.name);
+  assert.deepEqual([...html.matchAll(/data-tool="(\w+)"/g)].map(m => m[1]), tools);
+  assert.deepEqual([...html.matchAll(/data-check="(\w+)"/g)].map(m => m[1]), ['review_token', 'accept_terms', 'user_confirmed', 'confirmed_total_eur']);
 });
 
 test('the old methodology page is gone (research stays in docs/pricing-research.md)', async () => {

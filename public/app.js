@@ -438,7 +438,7 @@ function stripeAppearance() {
     },
     rules: {
       '.Label': { fontWeight: '700', color: v('night'), marginBottom: '6px' },
-      '.Input': { border: `1.5px solid ${v('border')}`, boxShadow: 'none', padding: '12px' },
+      '.Input': { border: `1.5px solid ${v('field-border')}`, boxShadow: 'none', padding: '12px' },
       '.Input:focus': { borderColor: v('turquoise'), boxShadow: `0 0 0 1px ${v('turquoise')}` },
       '.Input--invalid': { borderColor: v('red'), boxShadow: `0 0 0 1px ${v('red')}`, color: v('night') },
       '.Error': { color: v('red'), fontSize: '14px', lineHeight: '1.4', marginTop: '6px' },
