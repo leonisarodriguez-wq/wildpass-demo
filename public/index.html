@@ -240,12 +240,20 @@
     <div class="wrap">
       <p class="footer-legal">{{t.footerLegal}}</p>
       <p class="footer-links"><a href="/condiciones">{{t.footerTerms}}</a><a href="/agentes">{{t.footerAgents}}</a><span>{{t.footerWebmcp}}</span></p>
-      <details class="agent">
-        <summary>{{t.agentActivity}} · <span id="webmcp-status">WebMCP…</span></summary>
-        <pre id="agent-activity">—</pre>
-      </details>
     </div>
   </footer>
+
+  <aside class="agent-pill" id="agent-pill" aria-label="{{t.agentPill.logLabel}}" hidden>
+    <div class="agent-log" id="agent-log" hidden>
+      <p class="agent-log-title">{{t.agentPill.logLabel}}</p>
+      <ol id="agent-steps"></ol>
+    </div>
+    <button type="button" class="agent-toggle" id="agent-toggle" aria-expanded="false" aria-controls="agent-log"
+      data-show="{{t.agentPill.show}}" data-hide="{{t.agentPill.hide}}" title="{{t.agentPill.show}}">
+      <span class="agent-dot" aria-hidden="true"></span><span>{{t.agentPill.label}}</span><span class="agent-count" id="agent-count"></span>
+    </button>
+    <p class="sr-only" role="status" id="agent-status"></p>
+  </aside>
 
   <script type="module" src="/app.js"></script>
   <script type="module" src="/landing-fx.js"></script>

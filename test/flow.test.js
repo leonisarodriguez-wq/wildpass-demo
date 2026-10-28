@@ -468,6 +468,20 @@ test('/agentes: WebMCP explained, example prompt, the real tools and the confirm
   for (const field of ['review_token', 'accept_terms', 'user_confirmed', 'confirmed_total_eur']) assert.ok(html.includes(`<li><code>${field}</code>:`), field);
 });
 
+test('agent activity: a hidden floating pill instead of the technical footer line; provider info only on /agentes', async () => {
+  const html = await (await fetch(`${base}/`)).text();
+  assert.ok(!html.includes('Actividad del asistente de IA en esta página') && !html.includes('id="webmcp-status"') && !html.includes('id="agent-activity"'));
+  assert.ok(!/MCP-B|polyfill|modelContext/.test(html.slice(html.indexOf('<footer'))), 'no technical WebMCP info in the footer');
+  const pill = html.match(/<aside class="agent-pill" id="agent-pill"[^>]*>/)?.[0];
+  assert.ok(pill && pill.includes(' hidden'), 'pill exists and starts hidden');
+  assert.ok(html.includes('Tu asistente está usando Wildpass') && html.includes('aria-expanded="false" aria-controls="agent-log"') && html.includes('role="status" id="agent-status"'));
+  assert.equal((await fetch(`${base}/agent-pill.js`)).status, 200);
+  const steps = brand.texts.agentPill.steps;
+  assert.deepEqual(Object.keys(steps), ['get_quote', 'select_plan', 'set_traveler_details', 'review_order', 'confirm_payment', 'get_policy']);
+  const agents = await (await fetch(`${base}/agentes`)).text();
+  assert.ok(agents.includes('id="webmcp-provider"') && agents.includes('polyfill MCP-B'));
+});
+
 test('destinations: popular first, remote territories gone, "do not travel" countries refused everywhere', async () => {
   const html = nbsp(await (await fetch(`${base}/`)).text());
   const popular = html.slice(html.indexOf('<optgroup label="Destinos populares">'), html.indexOf('</optgroup>'));

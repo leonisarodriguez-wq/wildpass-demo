@@ -143,6 +143,8 @@ export function agentsPageBody({ brand, pricing, payments }) {
     <p class="ai-note">${escapeHtml(t.ai.compatNote)}</p>
     <h2>${escapeHtml(fill(g.toolsTitle, { count: tools.length }))}</h2>
     <p>${escapeHtml(g.where)}</p>
+    <h2>${escapeHtml(g.providerTitle)}</h2>
+    <p id="webmcp-provider" data-native="${escapeHtml(g.providerNative)}" data-polyfill="${escapeHtml(g.providerPolyfill)}">${escapeHtml(g.providerChecking)}</p>
     <ol class="dev-tool-list">${tools.map(tool => `<li><code>${escapeHtml(tool.name)}</code> ${escapeHtml(tool.es)}</li>`).join('')}</ol>
     <h2>${escapeHtml(g.rulesTitle)}</h2>
     <p>${escapeHtml(g.rulesIntro)}</p>

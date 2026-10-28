@@ -29,6 +29,10 @@ The owner is not a programmer: explain things simply, report test results honest
   Landing order: hero + form → benefits → ¿Y si…? → destinations → plans (Wild, Wild+) → AI block (chat only) → FAQ → final CTA → footer.
   Developer material (WebMCP explained, example prompt + Copiar, the tools and confirm_payment's rules, all from webmcp-tools.js) is on
   `/agentes` (`agentsPageBody` in landing.js, `public/agentes.js`), linked ONLY from the footer.
+  `/agentes` also says which WebMCP the visitor's browser has (native or MCP-B polyfill) — that technical info lives ONLY there.
+  Agent activity (public/agent-pill.js, texts `agentPill`): a floating pill "Tu asistente está usando Wildpass", hidden until a WebMCP
+  tool is really called; expands to a timed log of FIXED phrases (never names, emails, ids, tokens or links); hides after 2 min idle.
+  In the checkout it docks as a strip on top of the total bar (and the page gets extra bottom room) so it never covers a button.
 - Destination field: the server renders a `<select id="destination">` ("Destinos populares" optgroup first from `texts.form.popularDestinations`,
   then A–Z); `public/destination-picker.js` hides it and puts an accessible searchable combobox (`#destination-search`) in front. The select stays
   the source of truth (`.value` + `change`). Remote territories (AQ BV HM GS TF IO UM) are not in `config/countries.js`.

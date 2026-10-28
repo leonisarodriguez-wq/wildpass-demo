@@ -5,14 +5,7 @@
 import { callApi, loadConfig } from './api.js';
 import { connectModelContext, registerToolsOnce } from './model-context.js';
 import { buildTools } from './webmcp-tools.js';
-
-const activity = document.getElementById('agent-activity');
-
-function logActivity(tool, input, result) {
-  if (!activity) return;
-  const line = `${new Date().toLocaleTimeString('es-ES')} · ${tool} → ${result.ok ? 'ok' : result.error_code}`;
-  activity.textContent = activity.textContent === '—' ? line : `${activity.textContent}\n${line}`;
-}
+import { showAgentStep } from './agent-pill.js';
 
 function loadScript(src) {
   return new Promise((resolve, reject) => {
@@ -25,7 +18,6 @@ function loadScript(src) {
 }
 
 async function register() {
-  const statusEl = document.getElementById('webmcp-status');
   try {
     const config = await loadConfig();
     // Prefer the browser's own WebMCP; only load the MCP-B polyfill when there is none.
@@ -35,7 +27,7 @@ async function register() {
       ...tool,
       execute: async input => {
         const result = await callApi(tool.name, input ?? {});
-        logActivity(tool.name, input, result);
+        showAgentStep(config.brand.texts.agentPill, config.plans, tool.name, input, result);
         return result;
       },
     })));
@@ -43,9 +35,8 @@ async function register() {
     console.info(`[Wildpass] WebMCP: ${source} · ${Object.entries(names).map(([n, how]) => `${n}: ${how}`).join(' · ')}`);
     window.__webmcpSource = source;
     window.__webmcpNames = names;
-    if (statusEl) statusEl.textContent = `WebMCP: ${source}`;
   } catch (err) {
-    if (statusEl) statusEl.textContent = `WebMCP no disponible: ${err.message}`;
+    console.info(`[Wildpass] WebMCP not available: ${err.message}`);
   }
 }
 

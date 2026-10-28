@@ -205,8 +205,29 @@ export default {
       rulesTitle: 'Reglas de seguridad de confirm_payment',
       rulesIntro: 'El pago se rechaza si falta cualquiera de estas condiciones:',
       where: 'Las herramientas están disponibles en la página principal.',
+      providerTitle: 'WebMCP en tu navegador',
+      providerChecking: 'Comprobando…',
+      providerNative: 'Tu navegador trae WebMCP propio ({name}). La página principal registra las herramientas ahí, y el otro nombre ({other}) apunta al mismo sitio.',
+      providerPolyfill: 'Tu navegador no trae WebMCP. La página principal carga el polyfill MCP-B (@mcp-b/global) y expone las mismas herramientas en document.modelContext y navigator.modelContext (un único objeto).',
     },
-    agentActivity: 'Actividad del asistente de IA en esta página',
+    // Floating pill shown ONLY while an AI assistant calls the WebMCP tools (public/agent-pill.js).
+    // Fixed phrases only: never the data the assistant sends (names, emails, ids, tokens).
+    agentPill: {
+      label: 'Tu asistente está usando Wildpass',
+      show: 'Ver lo que ha hecho tu asistente',
+      hide: 'Ocultar lo que ha hecho tu asistente',
+      logLabel: 'Actividad de tu asistente',
+      steps: {
+        get_quote: 'Ha calculado el precio',
+        select_plan: 'Ha elegido {plan}',
+        set_traveler_details: 'Ha guardado los viajeros',
+        review_order: 'Ha preparado el resumen',
+        confirm_payment: 'Pago confirmado',
+        get_policy: 'Ha consultado la póliza',
+      },
+      sent: 'Póliza enviada',
+      failed: 'Paso pendiente: tu asistente lo está revisando',
+    },
 
     // Checkout
     checkout: {

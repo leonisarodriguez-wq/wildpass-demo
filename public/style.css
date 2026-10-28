@@ -248,9 +248,36 @@ select[hidden] { display: none; } /* the plain <select> once the search box repl
 .site-footer a { color: var(--white); }
 .footer-links { display: flex; flex-wrap: wrap; gap: 4px 20px; align-items: center; }
 .footer-links a, .footer-links span { display: inline-flex; align-items: center; min-height: 44px; }
-.agent { margin-top: 12px; color: var(--border); font-size: 0.85rem; }
-.agent summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; }
-.agent pre { white-space: pre-wrap; margin: 0; }
+/* ---------- "Tu asistente está usando Wildpass": only after a real WebMCP tool call (public/agent-pill.js) ---------- */
+.agent-pill { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 45; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+  max-width: calc(100vw - 32px); animation: slide-up 0.25s ease both; }
+.agent-pill[hidden] { display: none; }
+.agent-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--night);
+  background: var(--night); color: var(--white); font: inherit; font-size: 0.9rem; font-weight: 600; cursor: pointer; box-shadow: 0 6px 20px rgb(11 31 58 / 0.25); }
+.agent-toggle:focus-visible { outline: 3px solid var(--turquoise); outline-offset: 2px; }
+.agent-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--mint); flex: none; }
+.agent-pill.is-active .agent-dot { animation: agent-pulse 1.2s ease-in-out infinite; }
+@keyframes agent-pulse { 50% { opacity: 0.35; transform: scale(0.7); } }
+.agent-count { min-width: 1.5em; padding: 0 6px; border-radius: 999px; background: var(--white); color: var(--night); font-size: 0.75rem; text-align: center; }
+.agent-count:empty { display: none; }
+.agent-log { width: min(320px, calc(100vw - 32px)); max-height: min(50vh, 320px); overflow-y: auto; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--border);
+  background: var(--white); color: var(--night); box-shadow: 0 10px 30px rgb(11 31 58 / 0.2); }
+.agent-log[hidden] { display: none; }
+.agent-log-title { margin: 0 0 8px; font-weight: 700; }
+.agent-log ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 0.9rem; }
+.agent-log time { color: var(--secondary); font-variant-numeric: tabular-nums; margin-right: 4px; }
+/* Checkout: a floating bubble would sit on some button while scrolling, so it docks as a slim strip on top of the
+   total bar (one fixed bottom block), and the page gets matching extra room so every button can scroll clear of it. */
+html:has(#checkout:not([hidden])) .agent-pill { left: 0; right: 0; bottom: var(--total-bar-h, 68px); max-width: none; align-items: stretch; gap: 0; animation: none; }
+html:has(#checkout:not([hidden])) .agent-toggle { justify-content: center; border-radius: 0; min-height: 40px; padding: 6px 16px; box-shadow: none; font-size: 0.85rem; }
+html:has(#checkout:not([hidden])) .agent-log { margin: 0 16px 8px; align-self: flex-end; }
+html:has(#checkout:not([hidden])):has(.agent-pill:not([hidden])) .checkout-wrap { padding-bottom: 160px; }
+html:has(#checkout:not([hidden])):has(.agent-pill:not([hidden])) { scroll-padding-bottom: 130px; }
+html:has(.agent-pill:not([hidden])) .site-footer { padding-bottom: 90px; }
+@media (max-width: 699px) {
+  html:has(.sticky-cta:not([hidden])) .agent-pill { bottom: calc(84px + env(safe-area-inset-bottom)); }
+  html:has(.agent-pill:not([hidden])) .site-footer { padding-bottom: 170px; }
+}
 
 /* ---------- simple pages (terms) ---------- */
 .page { padding: 16px 0 40px; }
