@@ -48,3 +48,59 @@ export async function registerToolsOnce(ctx, tools) {
   for (const tool of tools) await ctx.registerTool(tool);
   return true;
 }
+
+// ---------- executeTool: forgiving about HOW a tool is called, strict about WHAT ----------
+// Agents call tools in different ways. ctx.executeTool(tool, input) accepts:
+//   tool  = the tool name ("get_quote") or any tool object with a name (e.g. an entry from getTools())
+//   input = an object, a JSON string of an object, or nothing ({}).
+// Anything else is answered (never thrown) with { ok:false, error_code:'INVALID_INPUT', message, how_to_fix },
+// the same structured error style as the server. The tools' own rules are still checked by the server.
+
+const invalidInput = (message, how_to_fix) => ({ ok: false, error_code: 'INVALID_INPUT', message, how_to_fix });
+
+// Input → plain object, or an INVALID_INPUT error.
+export function normalizeInput(input) {
+  let value = input ?? {};
+  if (typeof value === 'string') {
+    if (!value.trim()) value = {};
+    else {
+      try { value = JSON.parse(value); } catch {
+        return { error: invalidInput('The input is not valid JSON.', 'Send an object, or a JSON string of an object, e.g. {"quote_id":"…","plan":"wild"}.') };
+      }
+    }
+  }
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return { error: invalidInput('The input must be an object (or a JSON string of an object).', 'Wrap the fields in an object, e.g. {"policy_number":"WILD-2026-…","email":"…"}.') };
+  }
+  return { input: value };
+}
+
+// Tool name or tool object → known tool name, or an INVALID_INPUT error.
+export function normalizeToolName(tool, names) {
+  const name = typeof tool === 'string' ? tool.trim() : typeof tool?.name === 'string' ? tool.name : null;
+  if (!name) return { error: invalidInput('The tool must be a tool name or a tool object with a "name".', `Pass a name such as "${names[0]}", or an entry from getTools().`) };
+  if (!names.includes(name)) return { error: invalidInput(`Unknown tool "${name}".`, `Use one of: ${names.join(', ')}.`) };
+  return { name };
+}
+
+// Installs the forgiving executeTool on ctx. tools = our tools ({ name, execute }).
+// If the provider already has executeTool (MCP-B polyfill), we normalise and hand over to it with the matching
+// getTools() entry, keeping its own answer format (the polyfill answers with a JSON string, so our errors are too).
+// Otherwise (native WebMCP without executeTool) the tool's own execute() runs and answers with an object.
+export function installExecuteTool(ctx, tools) {
+  const own = new Map(tools.map(t => [t.name, t]));
+  const names = [...own.keys()];
+  const original = typeof ctx.executeTool === 'function' ? ctx.executeTool.bind(ctx) : null;
+  const answer = original ? value => JSON.stringify(value) : value => value;
+  async function executeTool(tool, input, options) {
+    const t = normalizeToolName(tool, names);
+    if (t.error) return answer(t.error);
+    const i = normalizeInput(input);
+    if (i.error) return answer(i.error);
+    if (!original) return own.get(t.name).execute(i.input);
+    const entry = (await ctx.getTools?.())?.find(e => e.name === t.name);
+    return entry ? original(entry, i.input, options) : answer(await own.get(t.name).execute(i.input));
+  }
+  Object.defineProperty(ctx, 'executeTool', { value: executeTool, configurable: true, writable: true });
+  return executeTool;
+}

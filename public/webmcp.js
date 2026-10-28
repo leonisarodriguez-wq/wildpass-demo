@@ -3,7 +3,7 @@
 // Each tool just forwards its input to the SAME server endpoint the website uses, and returns the
 // server's structured answer. Tools never throw: errors come back as { ok:false, error_code, message, how_to_fix }.
 import { callApi, loadConfig } from './api.js';
-import { connectModelContext, registerToolsOnce } from './model-context.js';
+import { connectModelContext, installExecuteTool, normalizeInput, registerToolsOnce } from './model-context.js';
 import { buildTools } from './webmcp-tools.js';
 import { showAgentStep } from './agent-pill.js';
 
@@ -23,14 +23,18 @@ async function register() {
     // Prefer the browser's own WebMCP; only load the MCP-B polyfill when there is none.
     const { ctx, source, names } = await connectModelContext({ doc: document, nav: navigator, loadPolyfill: () => loadScript('/vendor/webmcp-polyfill.js') });
     // es / rulesEs are only for the "Para desarrolladores" list on the landing page, not part of the WebMCP tool.
-    await registerToolsOnce(ctx, buildTools(config).map(({ es, rulesEs, ...tool }) => ({
+    const tools = buildTools(config).map(({ es, rulesEs, ...tool }) => ({
       ...tool,
-      execute: async input => {
-        const result = await callApi(tool.name, input ?? {});
+      execute: async raw => {
+        // Object or JSON string; anything else gets a structured INVALID_INPUT answer (never an exception).
+        const { input, error } = normalizeInput(raw);
+        const result = error ?? await callApi(tool.name, input);
         showAgentStep(config.brand.texts.agentPill, config.plans, tool.name, input, result);
         return result;
       },
-    })));
+    }));
+    // executeTool(name or tool object, object or JSON string); only once, like the tools themselves.
+    if (await registerToolsOnce(ctx, tools)) installExecuteTool(ctx, tools);
     // One line for developers: which WebMCP this browser uses (native or the MCP-B polyfill) and under which names.
     console.info(`[Wildpass] WebMCP: ${source} · ${Object.entries(names).map(([n, how]) => `${n}: ${how}`).join(' · ')}`);
     window.__webmcpSource = source;
