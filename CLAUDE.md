@@ -104,7 +104,6 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 ## Not done yet / known gaps
 - Native date pickers (Ida/Vuelta) show the BROWSER's date format (dd/mm/aaaa in a Spanish browser, mm/dd/yyyy in an English one);
   everything we print ourselves is always dd/mm/aaaa.
-- The landing copy "el primer seguro de viaje preparado para agentes de IA" is an owner-requested claim we have not verified.
 - No rate limiting. No real payment or real insurer. Prices are provisional.
 - Policies issued before the snapshot feature have no snapshot and show the current config (`coverage_source: "current_config_legacy_policy"`).
 - Emails sent before 28 Oct 2026 (afternoon) load their logo from an old tunnel address, so it no longer shows in them.

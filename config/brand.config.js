@@ -69,7 +69,7 @@ export default {
     // Landing: AI block
     ai: {
       title: 'Tu asistente también puede contratarlo',
-      text: 'Wildpass es el primer seguro de viaje preparado para agentes de IA. Pídeselo a tu asistente: él cotiza, te enseña el resumen y solo paga cuando tú confirmas.',
+      text: 'Wildpass es un seguro de viaje preparado para agentes de IA. Pídeselo a tu asistente: él cotiza, te enseña el resumen y solo paga cuando tú confirmas.',
       steps: ['Pide', 'Revisa', 'Confirma'],
     },
 
