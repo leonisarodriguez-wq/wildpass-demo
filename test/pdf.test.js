@@ -5,7 +5,8 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../src/app.js';
-import { buildPolicyPdf, dateEs, rangeEs } from '../src/pdf.js';
+import { buildPolicyPdf } from '../src/pdf.js';
+import { dateEs, rangeEs } from '../src/format.js';
 import brand from '../config/brand.config.js';
 
 let server, base, dataDir;

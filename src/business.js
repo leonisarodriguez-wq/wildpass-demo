@@ -455,7 +455,7 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, no
     }
 
     const pdf_url = `${ctx.baseUrl ?? ''}/poliza/${pdf_token}.pdf`;
-    const email_status = await startEmail({ policy_number, policyholder, pdfBuffer, pdf_url });
+    const email_status = await startEmail({ policy_number, policyholder, summary, pdfBuffer, pdf_url });
 
     return {
       ok: true,
@@ -471,12 +471,12 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, no
   }
 
   // Sends the email in the background; payment never waits for it or fails because of it.
-  async function startEmail({ policy_number, policyholder, pdfBuffer, pdf_url }) {
+  async function startEmail({ policy_number, policyholder, summary, pdfBuffer, pdf_url }) {
     const setStatus = (status, errorText = null) => db.prepare('UPDATE policies SET email_status = ?, email_error = ?, email_updated_at = ? WHERE policy_number = ?')
       .run(status, errorText, now().toISOString(), policy_number);
     let sending;
     try {
-      sending = email.send({ to: policyholder, policy_number, pdfBuffer, pdf_url });
+      sending = email.send({ to: policyholder, policy_number, summary, pdfBuffer, pdf_url });
     } catch (err) {
       setStatus('failed', String(err.message).slice(0, 300));
       return 'failed';

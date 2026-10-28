@@ -2,41 +2,104 @@
 // Reads BREVO_API_KEY and SENDER_EMAIL from the environment (.env). Without them: "not_configured".
 // The API key is only ever sent to api.brevo.com in a header; it never appears in results or logs.
 
+import { formatEur } from './business.js';
+import { dateEs } from './format.js';
+
 const BREVO = 'https://api.brevo.com/v3';
 
 const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
-// Email body with inline styles (email clients ignore stylesheets). Same colour rules as the website.
-// Gmail and others block SVG, so the logo symbol is a PNG served by this site (same address as the PDF).
-function emailHtml({ brand, name, policy_number, pdf_url }) {
+// ---------- the policy email (built from the policy snapshot) ----------
+const fill = (template, values) => template.replace(/\{(\w+)\}/g, (_, key) => values[key] ?? '');
+const firstName = fullName => fullName.trim().split(/\s+/)[0];
+
+// The key data shown in both versions of the email.
+function emailData({ brand, policy_number, summary }) {
+  const e = brand.texts.email;
+  const { trip, plan, travelers, policyholder, total_eur } = summary;
+  const values = { name: firstName(policyholder.full_name), destination: trip.destination_name, number: policy_number };
+  return {
+    e,
+    values,
+    rows: [
+      [e.policyNumber, policy_number],
+      [e.plan, plan.plan_name],
+      [e.dates, `${dateEs(trip.departure_date)} – ${dateEs(trip.return_date)} (${trip.days} ${e.days})`],
+      [e.travelers, travelers.map(t => t.full_name).join(', ')],
+      [e.total, `${formatEur(total_eur)} (${e.totalNote})`],
+    ],
+  };
+}
+
+export function emailSubject({ brand, policy_number, summary }) {
+  return fill(brand.texts.email.subject, { number: policy_number, destination: summary.trip.destination_name });
+}
+
+// HTML with inline styles (email clients ignore stylesheets) and table layout (works in Outlook too).
+// Same colour rules as the website. The logo is hosted in our Brevo image gallery (see brand config).
+export function emailHtml({ brand, policy_number, summary, pdf_url }) {
   const c = brand.colors;
+  const { e, values, rows } = emailData({ brand, policy_number, summary });
   const font = 'Inter, Arial, Helvetica, sans-serif';
   const heading = "'Space Grotesk', Arial, Helvetica, sans-serif";
-  const logoUrl = new URL('/brand/logo-symbol-email.png', pdf_url).href;
-  return `
-  <div style="background:${c.sky};padding:0 0 24px;margin:0;font-family:${font};color:${c.night}">
-    <div style="background:${c.red};color:${c.white};padding:10px;font-weight:bold;text-align:center">${escapeHtml(brand.demoBanner)}</div>
-    <div style="max-width:600px;margin:0 auto">
-      <table role="presentation" cellpadding="0" cellspacing="0" style="background:${c.white};width:100%;border-collapse:collapse"><tr>
-        <td style="padding:14px 8px 14px 20px;width:48px"><img src="${escapeHtml(logoUrl)}" width="48" height="48" alt="" style="display:block;border:0"></td>
-        <td style="padding:14px 20px 14px 0">
+  const dataRows = rows.map(([label, value], i) => `
+          <tr><td style="padding:9px 0;color:${c.secondary};font-size:14px;width:120px;vertical-align:top;${i ? `border-top:1px solid ${c.border};` : ''}">${escapeHtml(label)}</td>
+          <td style="padding:9px 0;color:${c.night};font-size:14px;font-weight:bold;text-align:right;${i ? `border-top:1px solid ${c.border};` : ''}">${escapeHtml(value)}</td></tr>`).join('');
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(emailSubject({ brand, policy_number, summary }))}</title></head>
+<body style="margin:0;padding:0;background:${c.sky}">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${c.sky};font-family:${font};color:${c.night}"><tr><td align="center" style="padding:24px 12px">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:${c.white};border-radius:14px;overflow:hidden">
+    <tr><td style="background:${c.red};color:${c.white};font-size:13px;font-weight:bold;text-align:center;padding:9px 16px">${escapeHtml(e.demoLine)}</td></tr>
+    <tr><td style="padding:22px 28px 6px">
+      <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+        <td style="padding-right:10px;vertical-align:middle"><img src="${escapeHtml(brand.emailLogoUrl)}" width="44" height="44" alt="" style="display:block;border:0"></td>
+        <td style="vertical-align:middle">
           <div style="font-family:${heading};font-size:26px;font-weight:bold;color:${c.night};line-height:1">${escapeHtml(brand.logo.wordmark)}</div>
-          <div style="font-size:12px;font-weight:600;color:${c.turquoiseText};margin-top:4px">${escapeHtml(brand.logo.tagline)}</div>
+          <div style="font-size:12px;font-weight:bold;color:${c.turquoiseText};margin-top:4px">${escapeHtml(brand.logo.tagline)}</div>
         </td>
       </tr></table>
-      <div style="background:${c.turquoise};color:${c.white};padding:20px">
-        <p style="font-family:${heading};font-size:22px;font-weight:bold;margin:0 0 6px;color:${c.white}">${escapeHtml(brand.claim)}</p>
-        <p style="margin:0;color:${c.white}">${escapeHtml(brand.texts.heroSubtitle)}</p>
-      </div>
-      <div style="background:${c.white};padding:20px">
-        <p style="margin-top:0">${escapeHtml(brand.texts.emailGreeting)} ${escapeHtml(name)}:</p>
-        <p>Tu número de póliza de demostración es <strong>${escapeHtml(policy_number)}</strong>.</p>
-        <p>Adjuntamos el certificado en PDF. También puedes descargarlo aquí:</p>
-        <p style="margin:20px 0"><a href="${escapeHtml(pdf_url)}" style="display:inline-block;background:${c.yellow};color:${c.night};font-weight:bold;font-size:17px;padding:14px 28px;border-radius:12px;border:0;text-decoration:none">${escapeHtml(brand.texts.downloadPdf)}</a></p>
-        <p style="color:${c.secondary};margin-bottom:0"><strong style="color:${c.night}">${escapeHtml(brand.demoBanner)}.</strong> No se ha cobrado nada.</p>
-      </div>
-    </div>
-  </div>`;
+    </td></tr>
+    <tr><td style="padding:16px 28px 0">
+      <h1 style="font-family:${heading};font-size:24px;line-height:1.25;margin:0 0 10px;color:${c.night}">${escapeHtml(fill(e.headline, values))}</h1>
+      <p style="font-size:15px;line-height:1.5;margin:0 0 8px;color:${c.night}">${escapeHtml(e.intro)}</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">${dataRows}
+      </table>
+    </td></tr>
+    <tr><td align="center" style="padding:24px 28px 6px">
+      <a href="${escapeHtml(pdf_url)}" style="display:inline-block;background:${c.yellow};color:${c.night};font-family:${font};font-size:17px;font-weight:bold;text-decoration:none;padding:15px 34px;border-radius:12px;border:0">${escapeHtml(e.button)}</a>
+      <p style="font-size:13px;color:${c.secondary};margin:10px 0 0">${escapeHtml(e.attachedNote)}</p>
+    </td></tr>
+    <tr><td style="padding:18px 28px 24px">
+      <p style="background:${c.turquoise};color:${c.white};font-size:14px;line-height:1.5;margin:0;padding:14px 16px;border-radius:10px">${escapeHtml(e.emergency)}</p>
+    </td></tr>
+  </table>
+  <p style="max-width:560px;font-size:12px;line-height:1.5;color:${c.secondary};margin:16px auto 0;text-align:center">${escapeHtml(e.footer)}<br>${escapeHtml(brand.claim)}</p>
+</td></tr></table>
+</body></html>`;
+}
+
+// Plain-text version (for email apps that don't show HTML, and better for spam filters).
+export function emailText({ brand, policy_number, summary, pdf_url }) {
+  const { e, values, rows } = emailData({ brand, policy_number, summary });
+  return [
+    `*** ${e.demoLine} ***`,
+    '',
+    fill(e.headline, values),
+    '',
+    e.intro,
+    '',
+    ...rows.map(([label, value]) => `${label}: ${value}`),
+    '',
+    `${e.button}: ${pdf_url}`,
+    e.attachedNote,
+    '',
+    e.emergency,
+    '',
+    '--',
+    `${brand.logo.wordmark} · ${brand.logo.tagline}`,
+    e.footer,
+    brand.claim,
+  ].join('\n');
 }
 
 // Turns Brevo's list of events for one message into one clear status.
@@ -69,15 +132,16 @@ export function createEmailService({ env, brand, fetchImpl = fetch }) {
   const configured = Boolean(env.BREVO_API_KEY && env.SENDER_EMAIL);
   const headers = { 'api-key': env.BREVO_API_KEY, accept: 'application/json' };
 
-  function send({ to, policy_number, pdfBuffer, pdf_url }) {
+  function send({ to, policy_number, summary, pdfBuffer, pdf_url }) {
     if (!configured) return { status: 'not_configured' };
 
     const body = {
       // The sender name comes from the brand config (not .env), so it always matches the brand.
       sender: { email: env.SENDER_EMAIL, name: brand.emailSenderName },
       to: [{ email: to.email, name: to.full_name }],
-      subject: `${brand.texts.emailSubject} ${policy_number} — ${brand.demoBanner}`,
-      htmlContent: emailHtml({ brand, name: to.full_name, policy_number, pdf_url }),
+      subject: emailSubject({ brand, policy_number, summary }),
+      htmlContent: emailHtml({ brand, policy_number, summary, pdf_url }),
+      textContent: emailText({ brand, policy_number, summary, pdf_url }),
       attachment: [{ name: `${policy_number}.pdf`, content: pdfBuffer.toString('base64') }],
     };
 

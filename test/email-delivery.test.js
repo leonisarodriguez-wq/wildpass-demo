@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../src/app.js';
 import { deliveryStatusFromEvents } from '../src/email.js';
+import brand from '../config/brand.config.js';
 
 const FAKE_KEY = 'xkeysib-TEST-SECRET-must-never-leak';
 const MESSAGE_ID = '<202610281200.123456@smtp-relay.mailin.fr>';
@@ -33,7 +34,7 @@ let clockOffsetMs = 0;
 const brevo = { events: [], eventsUp: true, sendOk: true, calls: [] };
 
 function fakeFetch(url, options = {}) {
-  brevo.calls.push({ url: String(url), headers: options.headers });
+  brevo.calls.push({ url: String(url), headers: options.headers, body: options.body });
   const json = (status, body) => Promise.resolve(new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } }));
   if (String(url).endsWith('/v3/smtp/email')) {
     return brevo.sendOk ? json(201, { messageId: MESSAGE_ID }) : json(401, { code: 'unauthorized', message: 'Key not found' });
@@ -129,6 +130,35 @@ test('get_policy follows the real delivery events from Brevo', async () => {
   brevo.events.push({ event: 'opened', date: '2026-10-28T12:05:00+01:00', messageId: MESSAGE_ID });
   clockOffsetMs += 61_000;
   assert.equal((await policyStatus(number)).status, 'opened');
+});
+
+test('the policy email: subject, both versions, Spanish dates, hosted logo, PDF attached', async () => {
+  const before = brevo.calls.length;
+  await buyPolicy();
+  const sent = JSON.parse(brevo.calls.slice(before).find(c => c.url.endsWith('/v3/smtp/email')).body);
+  const policyNumber = sent.attachment[0].name.replace('.pdf', '');
+  assert.match(policyNumber, /^WILD-\d{4}-[A-Z2-9]{6}$/);
+  assert.equal(sent.subject, `Tu póliza Wildpass ${policyNumber} · Francia (demo)`);
+  assert.equal(sent.sender.name, 'Seguros Wildpass (demo)');
+
+  for (const body of [sent.htmlContent, sent.textContent]) {
+    assert.ok(body.includes('¡Listo, Eva! Tu viaje a Francia está cubierto'), 'headline');
+    assert.ok(body.includes('Demo — no es un seguro real'), 'demo line');
+    assert.ok(body.includes('Descargar mi póliza'), 'button text');
+    assert.ok(body.includes(policyNumber) && body.includes('Wild') && body.includes('Eva Prueba'), 'key data');
+    assert.ok(body.includes('(7 días)') && /\d{2}\/\d{2}\/\d{4} – \d{2}\/\d{2}\/\d{4}/.test(body), 'Spanish dates');
+    assert.ok(!/\d{4}-\d{2}-\d{2}/.test(body), 'no YYYY-MM-DD dates');
+    assert.ok(body.includes('¿Una emergencia?') && body.includes('producto ficticio'), 'emergency line and disclaimer');
+    assert.ok(body.includes('/poliza/'), 'PDF link');
+  }
+  // Logo from the Brevo image gallery, never from our own (changing) website address.
+  assert.ok(sent.htmlContent.includes(`<img src="${brand.emailLogoUrl}"`));
+  assert.ok(brand.emailLogoUrl.startsWith('https://img.mailinblue.com/'));
+  assert.ok(!sent.htmlContent.includes('/brand/logo-symbol-email.png'));
+  // Yellow button with night text and no border.
+  assert.match(sent.htmlContent, /background:#FFC21A;color:#0B1F3A;[^"]*border:0/);
+  // The PDF is attached.
+  assert.equal(Buffer.from(sent.attachment[0].content, 'base64').subarray(0, 5).toString(), '%PDF-');
 });
 
 test('a bounced email is reported with its reason', async () => {

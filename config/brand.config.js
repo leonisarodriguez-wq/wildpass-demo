@@ -7,6 +7,9 @@ export default {
   claimEs: 'Viaja salvaje. Nosotros te cubrimos.',
   policyPrefix: 'WILD', // policy numbers look like WILD-2026-XXXXXX
   emailSenderName: 'Seguros Wildpass (demo)',
+  // Logo symbol for emails, hosted in our Brevo image gallery (Gmail blocks SVG, and Brevo does not
+  // support images embedded with CID). A copy of public/brand/logo-symbol-email.png. Re-upload if it changes.
+  emailLogoUrl: 'https://img.mailinblue.com/12605694/images/rnb/original/6ae206fddaa0afba48308b28.png',
 
   // WCAG AA checked (normal text needs 4.5:1): night on sky 14.6, night on white 16.5,
   // secondary on sky 7.1, white on turquoise 4.95, turquoiseText on sky 5.8 / on white 6.6,
@@ -149,7 +152,23 @@ export default {
       footer: 'Seguros Wildpass es un producto ficticio creado para una demostración. Este certificado no tiene validez legal ni ofrece cobertura real.',
       termsLabel: 'Condiciones:',
     },
-    emailSubject: 'Tu póliza Wildpass de demostración',
-    emailGreeting: 'Hola',
+    // Policy email (src/email.js). {name} {destination} {number} are filled in.
+    email: {
+      subject: 'Tu póliza Wildpass {number} · {destination} (demo)',
+      demoLine: 'Demo — no es un seguro real. No se ha cobrado nada.',
+      headline: '¡Listo, {name}! Tu viaje a {destination} está cubierto',
+      intro: 'Te adjuntamos el certificado en PDF. Estos son los datos principales:',
+      policyNumber: 'Nº de póliza',
+      plan: 'Plan',
+      dates: 'Fechas',
+      travelers: 'Viajeros',
+      total: 'Total',
+      totalNote: 'pago simulado',
+      days: 'días',
+      button: 'Descargar mi póliza',
+      attachedNote: 'También va adjunta a este correo.',
+      emergency: '¿Una emergencia? Llama antes de acudir al médico y no adelantes dinero. Asistencia 24\u00a0h en español: [Teléfono de asistencia · demo]. Ten a mano tu nº de póliza.',
+      footer: 'Seguros Wildpass es un producto ficticio creado para una demostración. Este correo y el certificado no tienen validez legal ni ofrecen cobertura real.',
+    },
   },
 };

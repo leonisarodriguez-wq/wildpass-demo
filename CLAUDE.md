@@ -22,7 +22,8 @@ The owner is not a programmer: explain things simply, report test results honest
   Symbol geometry in `brand.symbol` (viewBox 0 0 56 56; sun circle 36/18/r10 yellow; mountain polygon turquoise on light, white on turquoise/dark).
   `src/logo.js` builds the SVG (site header, terms page, `/favicon.svg` = symbol in a rounded turquoise square); `src/pdf.js` draws the same shapes.
   PNGs `public/favicon-32.png`, `public/apple-touch-icon.png`, `public/brand/logo-symbol-email.png` were rendered from the SVG with headless Chrome:
-  re-render them if the symbol or colours change. Emails use the PNG (Gmail blocks SVG), loaded from the same address as the PDF link.
+  re-render them if the symbol or colours change. Emails use that PNG hosted in our Brevo image gallery (`brand.emailLogoUrl`, uploaded with
+  `POST /v3/emailCampaigns/images`): Gmail blocks SVG and Brevo does NOT support CID-embedded images (confirmed by Brevo staff, Oct 2025).
 - Claim "Travel wild. We've got you." + hero subtitle (`texts.heroSubtitle`) + Spanish line "Viaja salvaje. Nosotros te cubrimos."
 - Colours (`brand.colors`, exposed as CSS variables in /brand.css): sky #E3F4FB page background; white cards; night #0B1F3A main text; secondary #3C5368;
   turquoise #0E7C86 for highlighted sections (white text) and the logo mountain; turquoiseText #0B6770 for small turquoise text on light backgrounds;
@@ -60,6 +61,8 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
   Texts in `brand.texts.certificate`. To preview a PDF as PNG: there is no PDF tool on the server; render it with pdf.js in headless Chrome.
 - Policy number: `WILD-<year>-XXXXXX` (older test policies keep `BRAND-…`). PDF via unguessable link `/poliza/<random token>.pdf`.
 - get_policy requires policy_number AND the policyholder email (decision: policy numbers are short and guessable; the email stops strangers reading personal data).
+- Policy email (`src/email.js`): HTML + plain-text versions from the policy snapshot, PDF attached, texts in `brand.texts.email`.
+  Subject "Tu póliza Wildpass {número} · {destino} (demo)". Content checked in `test/email-delivery.test.js` (fake Brevo).
 - Email via Brevo HTTP API; missing key → email_status "not_configured", never crash. Email is sent after payment and never blocks it.
 - Delivery status: we store Brevo's messageId; get_policy asks Brevo's events API (`/v3/smtp/statistics/events?messageId=`) at most once a minute per policy
   and reports accepted / deferred / delivered / opened / bounced / blocked / marked_as_spam with Brevo's timestamp; "sent" if Brevo has no events yet.
@@ -82,4 +85,4 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 ## Not done yet / known gaps
 - Full landing design. No rate limiting. No real payment or real insurer. Prices are provisional.
 - Policies issued before the snapshot feature have no snapshot and show the current config (`coverage_source: "current_config_legacy_policy"`).
-- The email logo PNG is loaded from the site address in the PDF link; with a Quick Tunnel that address changes, so logos in OLD emails stop showing (text and PDF attachment are unaffected).
+- Emails sent before 28 Oct 2026 (afternoon) load their logo from an old tunnel address, so it no longer shows in them.
