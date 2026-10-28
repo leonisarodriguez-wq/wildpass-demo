@@ -1,0 +1,9 @@
+#!/bin/sh
+# Prints the current public address of the Seguros Wildpass demo.
+FILE=/var/lib/wildpass-tunnel/url
+if [ -s "$FILE" ]; then
+  cat "$FILE"
+else
+  echo "No public address yet. Check: systemctl status wildpass-tunnel" >&2
+  exit 1
+fi

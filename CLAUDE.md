@@ -95,10 +95,20 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 - Tools register a moment after page load (they wait for /api/config); an agent listing tools instantly may see none yet.
 - Agent testing: Claude Code MCP server `chrome-devtools` (Google's chrome-devtools-mcp 1.10.1, headless Chrome for Testing 156, `--enable-features=WebMCP`). `@mcp-b/chrome-devtools-mcp` 3.0.0 is broken (empty package) — don't use it.
 
-## Running
-- `npm start` → http://127.0.0.1:3000 (binds to localhost only).
-- `npm test` → automated tests (Node's built-in test runner, temporary database).
-- Public URL for testing: `~/.local/bin/cloudflared tunnel --no-autoupdate --url http://127.0.0.1:3000` (Quick Tunnel, URL changes each start).
+## Running (24/7 as systemd services — files in `deploy/`, installed with `sudo sh deploy/install.sh`)
+- `wildpass-app.service`: `node server.js` as user leonisa_prueba, ONLY on 127.0.0.1:3000, starts at boot, `Restart=always`.
+  Hardened: may only write `data/` (database + policy PDFs). Logs: `journalctl -u wildpass-app`.
+- `wildpass-tunnel.service`: Cloudflare Quick Tunnel (`/usr/local/bin/cloudflared`, a root-owned copy of `~/.local/bin/cloudflared`) → 127.0.0.1:3000.
+  `Restart=always`, starts at boot. Its status page is on 127.0.0.1:20241 (localhost only); `/quicktunnel` there gives the hostname.
+  After start, `wildpass-save-url` saves the address to `/var/lib/wildpass-tunnel/url`; the command **`wildpass-url`** prints it.
+- **The Quick Tunnel address changes whenever the tunnel service restarts** (also after a reboot). So the two services have NO dependency
+  on each other: to deploy app changes run ONLY `sudo systemctl restart wildpass-app` (tunnel and address stay; visitors see a Cloudflare
+  error page for ~1 s). Never restart wildpass-tunnel unless a new address is OK. `install.sh` re-run never restarts a running tunnel.
+- PDF/terms links use the request's public host (cloudflared sends X-Forwarded-Proto; `trust proxy` = loopback). Leave `PUBLIC_BASE_URL` empty.
+- Exposed to the internet: ONLY the website through the tunnel (plus SSH, unchanged). No database, dev tools or browser debugging port.
+  Don't start hand-run copies (`npm start`, cloudflared) next to the services: port 3000/20241 would clash.
+- `npm test` → automated tests (Node's built-in test runner, temporary database, port chosen automatically: safe while the service runs).
+- The test browser (chrome-devtools MCP) is only started by Claude Code when testing; it uses a pipe, not a network port.
 - Supply-chain rule: only install package versions at least 2 weeks old; pin exact versions.
 
 ## Not done yet / known gaps

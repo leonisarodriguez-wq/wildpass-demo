@@ -1,0 +1,34 @@
+# Seguros Wildpass demo website (Node). Listens ONLY on 127.0.0.1:3000; the tunnel service exposes it.
+# Restarting this service never touches wildpass-tunnel.service (no dependency between them on purpose).
+[Unit]
+Description=Seguros Wildpass demo website (127.0.0.1:3000)
+After=network.target
+
+[Service]
+Type=simple
+User=leonisa_prueba
+Group=leonisa_prueba
+WorkingDirectory=/home/leonisa_prueba/travel-demo
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=3000
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=2
+
+# Hardening: the app can only write to its data folder (database + policy PDFs).
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/leonisa_prueba/travel-demo/data
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictSUIDSGID=yes
+LockPersonality=yes
+
+[Install]
+WantedBy=multi-user.target

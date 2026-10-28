@@ -1,0 +1,17 @@
+#!/bin/sh
+# Run by wildpass-tunnel.service after cloudflared starts: asks cloudflared's local status page for the
+# Quick Tunnel address and saves it as https://... in /var/lib/wildpass-tunnel/url.
+FILE=/var/lib/wildpass-tunnel/url
+i=0
+while [ "$i" -lt 60 ]; do
+  host=$(curl -fsS --max-time 2 http://127.0.0.1:20241/quicktunnel 2>/dev/null | sed -n 's/.*"hostname":"\([^"]*\)".*/\1/p')
+  if [ -n "$host" ]; then
+    printf 'https://%s\n' "$host" > "$FILE.tmp" && mv "$FILE.tmp" "$FILE"
+    echo "Public address: https://$host"
+    exit 0
+  fi
+  i=$((i + 1))
+  sleep 1
+done
+echo "Could not read the tunnel address after 60 s" >&2
+exit 1
