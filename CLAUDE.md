@@ -71,6 +71,11 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 ## WebMCP
 - Spec: https://webmachinelearning.github.io/webmcp (draft 27 Oct 2026). API is `document.modelContext.registerTool({name, title, description, inputSchema, annotations, execute})`.
   Fallback `navigator.modelContext` (older API), else load the MCP-B polyfill (`@mcp-b/global`, served at `/vendor/webmcp-polyfill.js`).
+  `public/model-context.js`: tools are registered ONCE on the chosen object, and the missing name is aliased to that same object,
+  so they are reachable via BOTH `document.modelContext` and `navigator.modelContext` (tested in `test/webmcp-context.test.js`
+  and in Chrome: native, polyfill, navigator-only). Chrome 156 and the polyfill natively expose only `document.modelContext`.
+  If a browser ever exposes two DIFFERENT objects, only `document.modelContext` gets the tools (never twice).
+  Polyfill `executeTool(toolFromGetTools, input)` takes the tool entry (with its origin), not the tool name.
 - Tools: get_quote, select_plan, set_traveler_details, review_order, confirm_payment, get_policy. Strict schemas (`additionalProperties: false`), readOnlyHint on read-only tools.
   The plan enum is built from the pricing config, so it always matches the server.
 - Tools register a moment after page load (they wait for /api/config); an agent listing tools instantly may see none yet.

@@ -1,7 +1,9 @@
 // Registers the WebMCP tools (spec draft 27 Oct 2026: document.modelContext.registerTool).
+// They are reachable via BOTH document.modelContext and navigator.modelContext (see model-context.js).
 // Each tool just forwards its input to the SAME server endpoint the website uses, and returns the
 // server's structured answer. Tools never throw: errors come back as { ok:false, error_code, message, how_to_fix }.
 import { callApi, loadConfig } from './api.js';
+import { connectModelContext, registerToolsOnce } from './model-context.js';
 
 const activity = document.getElementById('agent-activity');
 
@@ -19,15 +21,6 @@ function loadScript(src) {
     s.onerror = () => reject(new Error(`Could not load ${src}`));
     document.head.appendChild(s);
   });
-}
-
-// Prefer the browser's own WebMCP; only load the MCP-B polyfill when there is none.
-async function getModelContext() {
-  if (document.modelContext) return { ctx: document.modelContext, source: 'native document.modelContext' };
-  if (navigator.modelContext) return { ctx: navigator.modelContext, source: 'native navigator.modelContext' };
-  await loadScript('/vendor/webmcp-polyfill.js');
-  if (document.modelContext) return { ctx: document.modelContext, source: 'MCP-B polyfill' };
-  throw new Error('WebMCP is not available in this browser.');
 }
 
 const DATE = { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' };
@@ -160,18 +153,18 @@ async function register() {
   const statusEl = document.getElementById('webmcp-status');
   try {
     const config = await loadConfig();
-    const { ctx, source } = await getModelContext();
-    for (const tool of buildTools(config)) {
-      await ctx.registerTool({
-        ...tool,
-        execute: async input => {
-          const result = await callApi(tool.name, input ?? {});
-          logActivity(tool.name, input, result);
-          return result;
-        },
-      });
-    }
+    // Prefer the browser's own WebMCP; only load the MCP-B polyfill when there is none.
+    const { ctx, source, names } = await connectModelContext({ doc: document, nav: navigator, loadPolyfill: () => loadScript('/vendor/webmcp-polyfill.js') });
+    await registerToolsOnce(ctx, buildTools(config).map(tool => ({
+      ...tool,
+      execute: async input => {
+        const result = await callApi(tool.name, input ?? {});
+        logActivity(tool.name, input, result);
+        return result;
+      },
+    })));
     window.__webmcpSource = source;
+    window.__webmcpNames = names;
     if (statusEl) statusEl.textContent = `WebMCP: ${source}`;
   } catch (err) {
     if (statusEl) statusEl.textContent = `WebMCP no disponible: ${err.message}`;
