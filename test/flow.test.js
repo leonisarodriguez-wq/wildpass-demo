@@ -7,12 +7,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../src/app.js';
 import pricing from '../config/pricing.config.js';
+import marketQuotes, { quoteCount } from '../config/market-quotes.js';
+import { fromPrices } from '../src/landing.js';
 
-let server, base, dataDir;
+let server, base, dataDir, business;
 
 before(async () => {
   dataDir = mkdtempSync(join(tmpdir(), 'travel-demo-test-'));
-  const { app } = createApp({ dataDir, env: {} });
+  let app;
+  ({ app, business } = createApp({ dataDir, env: {} }));
   await new Promise(resolve => { server = app.listen(0, '127.0.0.1', resolve); });
   base = `http://127.0.0.1:${server.address().port}`;
 });
@@ -300,10 +303,53 @@ test('broken JSON and unknown endpoints give structured errors', async () => {
 });
 
 test('demo banner is on every page', async () => {
-  for (const path of ['/', '/condiciones']) {
+  for (const path of ['/', '/condiciones', '/metodologia']) {
     const html = await (await fetch(`${base}${path}`)).text();
-    assert.ok(html.includes('Demo — no es un seguro real'), `banner missing on ${path}`);
+    assert.ok(html.includes('Demo — no es un seguro real. Ningún pago es real.'), `banner missing on ${path}`);
   }
+});
+
+test('landing: complete server-rendered page with prices from the pricing engine', async () => {
+  const res = await fetch(`${base}/`);
+  assert.equal(res.status, 200);
+  const html = nbsp(await res.text());
+  // Every template placeholder was filled (an unknown one would have thrown).
+  assert.ok(!/\{\{|\}\}/.test(html), 'leftover template braces');
+  for (const text of ['Travel wild. We’ve got you.', 'Ver mi precio', 'Sin datos personales para ver el precio.',
+    'Tu asistente también puede contratarlo', 'Tú pon la aventura. Nosotros, todo lo demás.', 'Elige cómo quieres viajar',
+    'El favorito de los aventureros', '¿Listo para irte?', 'Hecho con WebMCP']) {
+    assert.ok(html.includes(text.replace('’', "'")) || html.includes(text) || html.includes(text.replace('’', '&#39;')), `missing: ${text}`);
+  }
+  // "Desde X €" = 7 days, Europe, 1 adult, straight from the engine (never hardcoded).
+  const from = fromPrices(business, pricing);
+  const eur = n => `Desde ${n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+  assert.ok(html.includes(eur(from.wild)), `Wild ${eur(from.wild)} missing`);
+  assert.ok(html.includes(eur(from.wild_plus)), `Wild+ ${eur(from.wild_plus)} missing`);
+  const q = await call('get_quote', quoteInput({ destination_country: 'IT', return_date: addDays(DEP, 6), traveler_ages: [35] }));
+  assert.equal(q.plans[0].total_price_eur, from.wild);
+  assert.equal(q.plans[1].total_price_eur, from.wild_plus);
+  // Quote count in the methodology line is computed from the market data.
+  assert.equal(quoteCount(marketQuotes), 13);
+  assert.ok(html.includes('Precios calibrados con 13 presupuestos reales del mercado.'));
+  // Checkout steps and the numeric age field are in the page; no ID or card fields anywhere.
+  for (const id of ['quote-form', 'step-1', 'step-2', 'step-3', 'step-4', 'total-bar', 'accept-terms']) assert.ok(html.includes(`id="${id}"`), id);
+  assert.ok(html.includes('inputmode="numeric"'));
+  assert.ok(!/dni|tarjeta de cr|card-number|cc-number/i.test(html.replace('Nada de DNI', '').replace('datos de tarjeta', '')));
+});
+
+test('methodology page: 13 market quotes, comparison table, assumptions, live prices', async () => {
+  const res = await fetch(`${base}/metodologia`);
+  assert.equal(res.status, 200);
+  const html = nbsp(await res.text());
+  assert.ok(!/\{\{|\}\}|\{\w+\}/.test(html), 'leftover placeholders');
+  assert.ok(html.includes('13 presupuestos'));
+  assert.ok(html.includes('<table class="data-table">'));
+  assert.equal((html.match(/<tr><th scope="row">/g) ?? []).length, marketQuotes.trips.length * 2);
+  assert.ok(html.includes('Aseguradora A') && !html.includes('Heymondo'), 'competitors are shown anonymised');
+  // Our Italy Wild price (8 days, adult) comes from the engine.
+  const ours = business.pricePerTravelerCents('europe', 'wild', 8, 35) / 100;
+  assert.ok(html.includes(ours.toLocaleString('es-ES', { minimumFractionDigits: 2 })));
+  assert.ok(html.includes('Supuestos'));
 });
 
 test('brand: name, claim, colours and self-hosted fonts', async () => {

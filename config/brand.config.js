@@ -26,6 +26,7 @@ export default {
     red: '#D7263D', // ONLY the demo banner (white text) and error borders
     border: '#C9DCE6', // thin lines and box borders (PDF, email)
     paleYellow: '#FFF6D6', // highlighted cells (total price, excess), with night text
+    mint: '#D6F0EE', // soft turquoise band on the landing (night or turquoiseText text only)
   },
   // Logo symbol (a mountain with the sun behind it), drawn by src/logo.js and src/pdf.js.
   // Mountain is turquoise on light backgrounds and white on turquoise or dark ones.
@@ -39,80 +40,220 @@ export default {
 
   demoBanner: 'Demo — no es un seguro real',
 
+  // Banner on every web page (PDF and email use demoBanner).
+  siteBanner: 'Demo — no es un seguro real. Ningún pago es real.',
+
+  // Website texts. {placeholders} are filled in by the server (src/landing.js) or by public/app.js.
   texts: {
-    pageTitle: 'Seguros Wildpass · Seguro de viaje (demo)',
-    heading: 'Seguro de viaje',
+    pageTitle: 'Seguros Wildpass · Seguro de viaje con deportes de aventura (demo)',
+    metaDescription: 'Demo de seguro de viaje con deportes de aventura. Calcula tu precio sin datos personales.',
     heroSubtitle: 'Seguro de viaje con deportes de aventura, sin letra pequeña y con la póliza en tu email en 2 minutos.',
-    intro: 'Calcula tu precio en segundos. Solo para viajes que salen de España.',
 
-    // Step 1: quote
-    quoteTitle: '1. Tu viaje',
-    origin: 'País de salida',
-    destination: 'País de destino',
-    departureDate: 'Fecha de salida',
-    returnDate: 'Fecha de regreso',
-    travelerAges: 'Edad de cada viajero (el día de salida)',
-    addTraveler: 'Añadir viajero',
-    removeTraveler: 'Quitar',
-    getQuote: 'Ver precios',
-
-    // Step 2: plans
-    plansTitle: '2. Elige tu plan',
-    perTraveler: 'por viajero',
-    total: 'Total',
-    excess: 'Franquicia por siniestro médico',
-    notIncluded: 'No incluida',
-    planExclusionsTitle: 'No cubre',
-    exclusionsTitle: 'Exclusiones de ambos planes',
-    choosePlan: 'Elegir',
-
-    // Step 3: travellers
-    detailsTitle: '3. Datos de los viajeros',
-    policyholder: 'Tomador del seguro',
-    fullName: 'Nombre y apellidos',
-    email: 'Correo electrónico',
-    traveler: 'Viajero',
-    age: 'años',
-    ageColumn: 'Edad',
-    priceColumn: 'Precio',
-    birthDate: 'Fecha de nacimiento',
-    noIdNote: 'No te pedimos DNI ni datos de tarjeta.',
-    continue: 'Continuar',
-
-    // Step 4: review + payment
-    reviewTitle: '4. Revisa y paga',
-    trip: 'Viaje',
-    plan: 'Plan',
-    travelers: 'Viajeros',
-    reviewExclusionsTitle: 'Exclusiones',
-    acceptTerms: 'He leído y acepto las condiciones del seguro',
-    termsLink: 'Ver condiciones',
-    payButton: 'Pagar (simulado)',
-    simulatedPaymentNote: 'Pago simulado: no se cobra nada y no se piden datos de tarjeta.',
-    mustAcceptTerms: 'Debes aceptar las condiciones para continuar.',
-
-    // Step 5: confirmation
-    doneTitle: '¡Listo! Tu póliza de demostración',
-    policyNumber: 'Número de póliza',
-    downloadPdf: 'Descargar certificado (PDF)',
-    emailStatus: 'Estado del correo',
-    emailStatuses: {
-      not_configured: 'El envío de correos no está configurado',
-      pending: 'Enviando…',
-      sent: 'Enviado',
-      failed: 'No se pudo enviar',
-      accepted: 'Aceptado por el servicio de correo',
-      deferred: 'Entrega retrasada, se reintentará',
-      delivered: 'Entregado',
-      opened: 'Abierto',
-      bounced: 'Rebotado (no se pudo entregar)',
-      blocked: 'Bloqueado',
-      marked_as_spam: 'Marcado como spam',
+    // Landing: hero + quote form
+    form: {
+      destination: '¿A dónde vas?',
+      destinationPlaceholder: 'Elige un país',
+      departure: 'Ida',
+      return: 'Vuelta',
+      travelers: 'Viajeros y edades',
+      travelersHint: 'Edad de cada viajero el día de la ida.',
+      ageLabel: 'Edad del viajero {n}',
+      addTraveler: '+ Añadir',
+      addTravelerLabel: 'Añadir otro viajero',
+      removeTravelerLabel: 'Quitar el viajero {n}',
+      submit: 'Ver mi precio',
+      note: 'Sin datos personales para ver el precio.',
+      loading: 'Calculando…',
     },
-    startOver: 'Nuevo presupuesto',
+
+    // Landing: AI block
+    ai: {
+      title: 'Tu asistente también puede contratarlo',
+      text: 'Wildpass es el primer seguro de viaje preparado para agentes de IA. Pídeselo a tu asistente: él cotiza, te enseña el resumen y solo paga cuando tú confirmas.',
+      steps: ['Pide', 'Revisa', 'Confirma'],
+    },
+
+    // Landing: editorial headline + benefits
+    editorial: {
+      label: 'Seguro de viaje para los que no se quedan quietos',
+      headline: 'Tú pon la aventura. Nosotros, todo lo demás.',
+      benefits: [
+        { title: 'Asistencia 24 h, estés donde estés', text: 'Médicos, equipaje y demoras, en español.' },
+        { title: 'Aventura cubierta', text: 'Trekking, buceo, esquí, surf… y rescate hasta {rescue} con Wild+.' },
+        { title: 'Contrátalo con tu asistente de IA', text: 'Él cotiza, tú confirmas.' },
+      ],
+    },
+
+    // Landing: plans band
+    plans: {
+      title: 'Elige cómo quieres viajar',
+      wildDescription: 'Lo esencial para viajar tranquilo.',
+      wildPlusDescription: 'Aventura y cancelación incluidas.',
+      wildPlusBadge: 'El favorito de los aventureros',
+      aiName: 'Con tu asistente de IA',
+      aiDescription: 'Pídeselo y solo confirma.',
+      from: 'Desde {price}',
+      fromNote: '7 días en Europa, 1 adulto.',
+      seePrice: 'Ver mi precio →',
+      howItWorks: 'Cómo funciona →',
+    },
+
+    methodologyLine: 'Precios calibrados con {count} presupuestos reales del mercado.',
+    methodologyLink: 'Ver metodología →',
+
+    // Landing: FAQ (answers use values from the pricing config)
+    faqTitle: 'Preguntas frecuentes',
+    faq: [
+      { q: '¿Esto es un seguro real?', a: 'No. Seguros Wildpass es una demostración: no ofrece ninguna cobertura, ningún pago es real y no se piden datos de tarjeta. La póliza que recibes es un documento de prueba sin validez.' },
+      { q: '¿Qué diferencia hay entre Wild y Wild+?', a: 'Wild cubre gastos médicos hasta {wildMedEurope} en Europa y {wildMedWorld} en el resto del mundo, equipaje hasta {wildBaggage} y tiene una franquicia de {wildExcess} por siniestro médico. No incluye cancelación ni deportes de aventura. Wild+ sube los gastos médicos a {plusMedEurope} y {plusMedWorld}, el equipaje a {plusBaggage}, no tiene franquicia e incluye cancelación hasta {plusCancellation} por viajero, deportes de aventura y rescate hasta {rescue}.' },
+      { q: '¿Qué deportes de aventura cubre Wild+?', a: 'Wild+ incluye trekking hasta {trekkingAltitude} m, buceo hasta {divingDepth} m, esquí y snowboard en pistas señalizadas, surf, rafting y barranquismo, con búsqueda y rescate hasta {rescue}. No cubre deportes profesionales ni actividades extremas como el salto BASE, ni lo que pase de esos límites.' },
+      { q: '¿Cuánto tarda en llegar la póliza?', a: 'La póliza se emite en cuanto confirmas el pago (simulado): puedes descargarla al momento y te la enviamos por email, donde suele llegar en un par de minutos. Si no la ves, mira en Spam.' },
+      { q: '¿Puede contratarlo mi asistente de IA?', a: 'Sí, si tu asistente es compatible con WebMCP, el estándar que permite a los agentes de IA usar una web. Tu asistente pide el precio, te enseña el resumen completo y solo puede pagar cuando tú lo confirmas expresamente.' },
+      { q: '¿Cómo calculáis el precio?', a: 'El precio depende del destino (Europa, resto del mundo, o EE. UU., Canadá y Japón), de los días de viaje y de la edad de cada viajero. Lo calibramos con {count} presupuestos reales del mercado y lo explicamos en la página de metodología.' },
+    ],
+    finalCtaTitle: '¿Listo para irte?',
+    finalCtaButton: 'Ver mi precio',
+
+    // Footer
+    footerLegal: 'Seguros Wildpass es un producto ficticio creado para una demostración. No es un seguro real, no ofrece cobertura y ningún pago es real.',
+    footerTerms: 'Condiciones del seguro',
+    footerMethodology: 'Metodología de precios',
+    footerWebmcp: 'Hecho con WebMCP',
+    agentActivity: 'Actividad del asistente de IA en esta página',
+
+    // Checkout
+    checkout: {
+      progress: 'Paso {x} de 4',
+      changeTrip: '← Cambiar viaje',
+      back: '← Volver',
+      tripLine: '{from} – {to} · {days} días · {n} {travelersWord}',
+      travelerOne: 'viajero',
+      travelerMany: 'viajeros',
+      totalLabel: 'Total',
+      totalPaidLabel: 'Pagado (simulado)',
+      totalFrom: 'desde {price}',
+
+      step1Title: 'Tu viaje a {destination}, cubierto',
+      step1Line: 'Precio total para {n} {travelersWord}. Sin sorpresas después.',
+      compare: {
+        feature: 'Cobertura',
+        price: 'Precio total',
+        medical: 'Gastos médicos ({zone})',
+        repatriation: 'Repatriación',
+        baggage: 'Equipaje (robo o daños)',
+        cancellation: 'Cancelación',
+        perTraveler: 'por viajero',
+        excess: 'Franquicia por siniestro médico',
+        adventure: 'Deportes de aventura',
+        adventureYes: 'Incluidos, con rescate hasta {rescue}',
+        adventureNo: 'No incluidos',
+        notIncluded: 'No incluida',
+        exclusions: 'Principales exclusiones',
+        commonExclusions: 'Exclusiones de ambos planes',
+      },
+      choose: 'Elegir {plan}',
+
+      step2Title: '¿Quién viaja?',
+      step2Line: 'Solo necesitamos nombre y fecha de nacimiento. Nada de DNI.',
+      policyholder: 'Quién contrata',
+      fullName: 'Nombre y apellidos',
+      email: 'Email',
+      emailHint: 'Te enviaremos la póliza aquí.',
+      traveler: 'Viajero {n} · {age} años',
+      ageYears: '{age} años',
+      birthDate: 'Fecha de nacimiento',
+      birthDatePlaceholder: 'dd/mm/aaaa',
+      sameAsPolicyholder: 'Es quien contrata',
+      continue: 'Continuar',
+
+      step3Title: 'Revisa antes de pagar',
+      trip: 'Viaje',
+      dates: 'Fechas',
+      plan: 'Plan',
+      whoBuys: 'Quién contrata',
+      travelers: 'Viajeros',
+      coverage: 'Coberturas por viajero',
+      keyConditions: 'Lo más importante',
+      exclusions: 'Exclusiones',
+      terms: 'Leer las condiciones completas',
+      accept: 'He leído y acepto las condiciones y exclusiones.',
+      pay: 'Pagar {total} (simulado)',
+      payNote: 'Es una demo: no se cobra nada ni se piden datos de tarjeta.',
+      editDetails: '← Editar datos',
+
+      step4Title: '¡Listo! Ya puedes irte salvaje',
+      policyNumber: 'Nº de póliza',
+      download: 'Descargar mi póliza',
+      emailSent: 'Te hemos enviado la póliza a {email}. Si no la ves, mira en Spam.',
+      emailNotConfigured: 'El envío por email no está activo en esta demo: descarga la póliza con el botón.',
+      startOver: 'Calcular otro viaje',
+
+      working: 'Un momento…',
+    },
+
+    // Friendly error messages by server error_code ({placeholders} come from limits or the error).
+    errors: {
+      RETURN_BEFORE_DEPARTURE: 'La vuelta tiene que ser después de la ida. ¿Lo revisamos?',
+      TRIP_TOO_LONG: 'Cubrimos viajes de hasta {maxTripDays} días.',
+      INVALID_AGE: 'Por ahora aseguramos a viajeros de {minAge} a {maxAge} años.',
+      INVALID_TRAVELER_COUNT: 'Podéis ser de {minTravelers} a {maxTravelers} viajeros.',
+      DEPARTURE_NOT_IN_FUTURE: 'La ida tiene que ser a partir de mañana.',
+      DEPARTURE_PASSED: 'La fecha de ida ya ha pasado. Calcula el precio de nuevo con otras fechas.',
+      INVALID_DATE: 'Revisa las fechas de ida y vuelta.',
+      SAME_COUNTRY: 'Elige un destino fuera de España.',
+      INVALID_COUNTRY: 'Elige un destino de la lista.',
+      ORIGIN_NOT_SUPPORTED: 'Por ahora solo aseguramos viajes que salen de España.',
+      TERMS_NOT_ACCEPTED: 'Necesitamos que aceptes las condiciones para emitir la póliza.',
+      INVALID_EMAIL: 'Ese email no parece correcto. Es donde te enviaremos la póliza.',
+      INVALID_NAME: 'Escribe el nombre y apellidos de cada persona.',
+      INVALID_BIRTH_DATE: 'Escribe la fecha de nacimiento como dd/mm/aaaa.',
+      AGE_MISMATCH: 'Con esa fecha de nacimiento, el viajero {traveler} tendría {actualAge} años, y el precio es para {quotedAge}. ¿La revisamos?',
+      QUOTE_EXPIRED: 'Este precio ha caducado. Calcúlalo de nuevo, solo tarda un momento.',
+      NETWORK_ERROR: 'No hemos podido conectar. Revisa tu conexión y vuelve a intentarlo.',
+      missingDestination: 'Elige a dónde vas.',
+      missingDates: 'Elige las fechas de ida y vuelta.',
+      missingAge: 'Escribe la edad de cada viajero.',
+      missingName: 'Escribe el nombre y apellidos.',
+      missingBirthDate: 'Escribe la fecha de nacimiento como dd/mm/aaaa.',
+      generic: 'Algo no ha ido bien. Vuelve a intentarlo.',
+    },
+
+    // Methodology page
+    methodology: {
+      title: 'Cómo calculamos el precio',
+      intro: 'Nuestros precios son provisionales y están calibrados con {count} presupuestos reales pedidos el {date} a tres aseguradoras de viaje conocidas en España, para viajes en diciembre de 2026. Mostramos sus precios sin nombre: comparamos planes de nivel parecido, no cada límite uno a uno.',
+      methodTitle: 'Método',
+      method: [
+        'Para cada aseguradora elegimos el plan más parecido a Wild y a Wild+ por nivel de cobertura.',
+        'Nuestro objetivo es quedar un poco por debajo de la mediana de esos tres planes, para un adulto de 18 a 64 años.',
+        'Precio por viajero = precio base de 7 días (según zona y plan) × factor por duración × factor por edad. El total es la suma de todos los viajeros.',
+        'Contamos el día de ida y el de vuelta: del 10 al 17 de diciembre son 8 días.',
+      ],
+      tableTitle: 'Comparación (precio por adulto)',
+      tableTrip: 'Viaje',
+      tablePlan: 'Plan',
+      tableInsurer: 'Aseguradora {letter}',
+      tableMedian: 'Mediana',
+      tableOurs: 'Wildpass',
+      tableNote: 'Precios en euros. Los de Wildpass se calculan en directo con la tarifa actual.',
+      borrowedNote: '* Mismo precio que a los 68 años: esas aseguradoras no cobran según la edad.',
+      perPersonNote: 'En EE. UU., precio por persona de un presupuesto para dos adultos.',
+      days: '{n} días',
+      assumptionsTitle: 'Supuestos (sin datos del mercado)',
+      assumptions: [
+        'Menores de 0 a 17 años: pagan el 70 % del precio de un adulto.',
+        'De 65 a 74 años: 1,65 veces el precio de un adulto (es el recargo que vimos en el mercado). Preferimos cobrar más que rechazar a los mayores.',
+        'De 75 a 85 años: 2,2 veces el precio de un adulto.',
+        'Viajes largos: a partir del día 16, cada día extra cuesta lo mismo que el precio medio por día de un viaje de 11 a 15 días.',
+        'Precios tomados en un solo día: no recogen temporadas ni ofertas.',
+      ],
+      back: '← Volver al inicio',
+    },
 
     back: 'Volver',
-    loading: 'Cargando…',
+    // Terms page
+    planExclusionsTitle: 'No cubre',
+    exclusionsTitle: 'Exclusiones de ambos planes',
     networkError: 'No se pudo conectar con el servidor. Inténtalo de nuevo.',
 
     // Terms page, PDF and email

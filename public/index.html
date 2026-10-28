@@ -3,100 +3,192 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Seguro de viaje</title>
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <title>{{t.pageTitle}}</title>
+  <meta name="description" content="{{t.metaDescription}}">
+  <meta name="theme-color" content="#0E7C86">
+  {{{iconLinks}}}
+  {{{fontPreloads}}}
   <link rel="stylesheet" href="/brand.css">
   <link rel="stylesheet" href="/style.css">
 </head>
+<!-- Template filled in by the server (src/landing.js): double braces = escaped text, triple braces = built HTML. -->
 <body>
-  <div class="banner" id="demo-banner">Demo — no es un seguro real</div>
-  <header class="site-header">
-    <!--logo-->
-  </header>
-  <section class="hero">
-    <div class="hero-inner">
-      <h1 class="claim" id="claim"></h1>
-      <p class="hero-subtitle" data-t="heroSubtitle"></p>
-      <p class="claim-es" id="claim-es"></p>
-    </div>
-  </section>
-  <main>
-    <p class="muted"><span id="brand-name"></span> · <span data-t="intro"></span></p>
+  <div class="banner" id="demo-banner">{{brand.siteBanner}}</div>
+  <header class="site-header"><div class="wrap">{{{logo}}}</div></header>
 
-    <!-- Step 1: quote -->
-    <section id="step-quote">
-      <h2 data-t="quoteTitle"></h2>
-      <form id="quote-form" novalidate>
-        <label><span data-t="origin"></span> <select id="origin" required></select></label>
-        <label><span data-t="destination"></span> <select id="destination" required><option value="">—</option></select></label>
-        <label><span data-t="departureDate"></span> <input type="date" id="departure" required></label>
-        <label><span data-t="returnDate"></span> <input type="date" id="return" required></label>
-        <fieldset>
-          <legend data-t="travelerAges"></legend>
-          <div id="ages"></div>
-          <button type="button" id="add-age" data-t="addTraveler"></button>
-        </fieldset>
-        <div class="error" hidden></div>
-        <button type="submit" class="primary" data-t="getQuote"></button>
-      </form>
+  <main id="landing">
+    <!-- 1. Hero + quote form -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <h1 id="hero-title">{{brand.claim}}</h1>
+          <p class="hero-sub">{{t.heroSubtitle}}</p>
+        </div>
+        <form id="quote-form" class="quote-card" novalidate>
+          <div class="field">
+            <label for="destination">{{t.form.destination}}</label>
+            <select id="destination" name="destination" aria-required="true">
+              <option value="">{{t.form.destinationPlaceholder}}</option>
+              {{{countryOptions}}}
+            </select>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="departure">{{t.form.departure}}</label>
+              <input type="date" id="departure" name="departure" aria-required="true">
+            </div>
+            <div class="field">
+              <label for="return">{{t.form.return}}</label>
+              <input type="date" id="return" name="return" aria-required="true">
+            </div>
+          </div>
+          <fieldset class="field ages-field" aria-describedby="ages-hint">
+            <legend>{{t.form.travelers}} <span class="hint" id="ages-hint">· {{t.form.travelersHint}}</span></legend>
+            <div class="ages" id="ages">
+              <span class="age-chip"><input class="age" name="age" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" autocomplete="off" aria-label="{{firstAgeLabel}}" aria-required="true"></span>
+              <button type="button" class="add-age" id="add-age" aria-label="{{t.form.addTravelerLabel}}">{{t.form.addTraveler}}</button>
+            </div>
+          </fieldset>
+          <div class="error" id="quote-error" role="alert" hidden></div>
+          <button type="submit" class="primary block" id="quote-submit">{{t.form.submit}}</button>
+          <p class="form-note">{{t.form.note}}</p>
+        </form>
+      </div>
+      {{{heroArt}}}
     </section>
 
-    <!-- Step 2: plans -->
-    <section id="step-plans" hidden>
-      <h2 data-t="plansTitle"></h2>
-      <p id="trip-line"></p>
-      <div id="plans" class="plans"></div>
-      <h3 data-t="exclusionsTitle"></h3>
-      <ul id="exclusions"></ul>
-      <div class="error" hidden></div>
-      <button type="button" class="back" data-back="step-quote" data-t="back"></button>
+    <!-- 2. AI block -->
+    <section class="ai" id="ia" aria-labelledby="ai-title">
+      <div class="wrap">
+        <h2 id="ai-title">{{t.ai.title}}</h2>
+        <p class="ai-text">{{t.ai.text}}</p>
+        <ol class="ai-steps">{{{aiSteps}}}</ol>
+      </div>
     </section>
 
-    <!-- Step 3: traveller details -->
-    <section id="step-details" hidden>
-      <h2 data-t="detailsTitle"></h2>
-      <form id="details-form" novalidate>
-        <fieldset>
-          <legend data-t="policyholder"></legend>
-          <label><span data-t="fullName"></span> <input id="ph-name" autocomplete="name" required></label>
-          <label><span data-t="email"></span> <input id="ph-email" type="email" autocomplete="email" required></label>
-        </fieldset>
-        <div id="travelers"></div>
-        <p class="note" data-t="noIdNote"></p>
-        <div class="error" hidden></div>
-        <button type="button" class="back" data-back="step-plans" data-t="back"></button>
-        <button type="submit" class="primary" data-t="continue"></button>
-      </form>
+    <!-- 3. Editorial headline + benefits -->
+    <section class="editorial" aria-labelledby="editorial-title">
+      <div class="wrap">
+        <p class="eyebrow">{{t.editorial.label}}</p>
+        <h2 id="editorial-title" class="big-headline">{{t.editorial.headline}}</h2>
+        <ul class="benefits">{{{benefits}}}</ul>
+      </div>
     </section>
 
-    <!-- Step 4: review + simulated payment -->
-    <section id="step-review" hidden>
-      <h2 data-t="reviewTitle"></h2>
-      <div id="review"></div>
-      <p><a id="terms-link" href="/condiciones" target="_blank" rel="noopener" data-t="termsLink"></a></p>
-      <label class="check"><input type="checkbox" id="accept-terms"> <span data-t="acceptTerms"></span></label>
-      <p class="note" data-t="simulatedPaymentNote"></p>
-      <div class="error" hidden></div>
-      <button type="button" class="back" data-back="step-details" data-t="back"></button>
-      <button type="button" class="primary" id="pay"></button>
+    <!-- 4. Plans band -->
+    <section class="plans-band" aria-labelledby="plans-title">
+      <div class="wrap">
+        <h2 id="plans-title">{{t.plans.title}}</h2>
+        <ul class="plan-cards">
+          <li class="plan-card">
+            <h3>{{planNames.wild}}</h3>
+            <p>{{t.plans.wildDescription}}</p>
+            <p class="from-price">{{price.wild}}<sup aria-hidden="true">*</sup></p>
+            <a class="card-link" href="#quote-form" data-focus-form>{{t.plans.seePrice}}</a>
+          </li>
+          <li class="plan-card featured">
+            <p class="badge">{{t.plans.wildPlusBadge}}</p>
+            <h3>{{planNames.wild_plus}}</h3>
+            <p>{{t.plans.wildPlusDescription}}</p>
+            <p class="from-price">{{price.wild_plus}}<sup aria-hidden="true">*</sup></p>
+            <a class="card-link" href="#quote-form" data-focus-form>{{t.plans.seePrice}}</a>
+          </li>
+          <li class="plan-card">
+            <h3>{{t.plans.aiName}}</h3>
+            <p>{{t.plans.aiDescription}}</p>
+            <a class="card-link" href="#ia">{{t.plans.howItWorks}}</a>
+          </li>
+        </ul>
+        <p class="from-note"><span aria-hidden="true">* </span>{{t.plans.fromNote}}</p>
+      </div>
     </section>
 
-    <!-- Step 5: confirmation -->
-    <section id="step-done" hidden>
-      <h2 data-t="doneTitle"></h2>
-      <p><span data-t="policyNumber"></span>: <strong id="policy-number"></strong></p>
-      <p><a id="pdf-link" target="_blank" rel="noopener" data-t="downloadPdf"></a></p>
-      <p><span data-t="emailStatus"></span>: <span id="email-status"></span></p>
-      <button type="button" id="start-over" data-t="startOver"></button>
-    </section>
+    <!-- 5. Methodology line -->
+    <p class="wrap methodology-line">{{methodologyLine}} <a href="/metodologia">{{t.methodologyLink}}</a></p>
 
-    <details class="agent">
-      <summary id="webmcp-status">WebMCP…</summary>
-      <pre id="agent-activity">—</pre>
-    </details>
+    <!-- 6. FAQ + final CTA -->
+    <section class="faq" aria-labelledby="faq-title">
+      <div class="wrap narrow">
+        <h2 id="faq-title">{{t.faqTitle}}</h2>
+        {{{faq}}}
+      </div>
+    </section>
+    <section class="final-cta" aria-labelledby="cta-title">
+      <div class="wrap">
+        <h2 id="cta-title">{{t.finalCtaTitle}}</h2>
+        <a class="primary button-link" href="#quote-form" data-focus-form>{{t.finalCtaButton}}</a>
+      </div>
+    </section>
   </main>
+
+  <!-- Checkout (shown after the quote; filled in by public/app.js) -->
+  <main id="checkout" hidden>
+    <div class="wrap narrow checkout-wrap">
+      <div class="progress">
+        <p class="progress-text" id="progress-text"></p>
+        <div class="progress-bar" id="progress-bar" role="progressbar" aria-valuemin="1" aria-valuemax="4" aria-labelledby="progress-text"><span id="progress-fill"></span></div>
+      </div>
+
+      <section class="step" id="step-1" hidden aria-labelledby="step-1-title">
+        <button type="button" class="link-button" data-go="landing">{{t.checkout.changeTrip}}</button>
+        <h2 id="step-1-title" tabindex="-1"></h2>
+        <p class="trip-line" id="trip-line"></p>
+        <div id="compare"></div>
+        <p class="muted" id="step-1-line"></p>
+        <div class="error" role="alert" hidden></div>
+      </section>
+
+      <section class="step" id="step-2" hidden aria-labelledby="step-2-title">
+        <button type="button" class="link-button" data-go="1">{{t.checkout.back}}</button>
+        <h2 id="step-2-title" tabindex="-1">{{t.checkout.step2Title}}</h2>
+        <p class="muted">{{t.checkout.step2Line}}</p>
+        <form id="details-form" novalidate>
+          <fieldset class="person">
+            <legend>{{t.checkout.policyholder}}</legend>
+            <div class="field"><label for="ph-name">{{t.checkout.fullName}}</label><input id="ph-name" autocomplete="name" aria-required="true"></div>
+            <div class="field"><label for="ph-email">{{t.checkout.email}}</label><input id="ph-email" type="email" inputmode="email" autocomplete="email" aria-describedby="ph-email-hint" aria-required="true"><p class="hint" id="ph-email-hint">{{t.checkout.emailHint}}</p></div>
+          </fieldset>
+          <div id="travelers"></div>
+          <div class="error" role="alert" hidden></div>
+          <button type="submit" class="primary block">{{t.checkout.continue}}</button>
+        </form>
+      </section>
+
+      <section class="step" id="step-3" hidden aria-labelledby="step-3-title">
+        <button type="button" class="link-button" data-go="2">{{t.checkout.editDetails}}</button>
+        <h2 id="step-3-title" tabindex="-1">{{t.checkout.step3Title}}</h2>
+        <div id="review"></div>
+        <label class="check" for="accept-terms"><input type="checkbox" id="accept-terms"> <span>{{t.checkout.accept}}</span></label>
+        <div class="error" role="alert" hidden></div>
+        <button type="button" class="primary block" id="pay"></button>
+        <p class="form-note">{{t.checkout.payNote}}</p>
+      </section>
+
+      <section class="step" id="step-4" hidden aria-labelledby="step-4-title">
+        <h2 id="step-4-title" tabindex="-1">{{t.checkout.step4Title}}</h2>
+        <p class="policy-number"><span>{{t.checkout.policyNumber}}</span> <strong id="policy-number"></strong></p>
+        <a class="primary button-link block" id="pdf-link" target="_blank" rel="noopener">{{t.checkout.download}}</a>
+        <p id="email-line"></p>
+        <button type="button" class="secondary" id="start-over">{{t.checkout.startOver}}</button>
+      </section>
+    </div>
+
+    <div class="total-bar" id="total-bar" aria-live="polite">
+      <div class="wrap narrow"><span id="total-label"></span><strong id="total-value"></strong></div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p class="footer-legal">{{t.footerLegal}}</p>
+      <p class="footer-links"><a href="/condiciones">{{t.footerTerms}}</a><a href="/metodologia">{{t.footerMethodology}}</a><span>{{t.footerWebmcp}}</span></p>
+      <details class="agent">
+        <summary>{{t.agentActivity}} · <span id="webmcp-status">WebMCP…</span></summary>
+        <pre id="agent-activity">—</pre>
+      </details>
+    </div>
+  </footer>
+
   <script type="module" src="/app.js"></script>
   <script type="module" src="/webmcp.js"></script>
 </body>

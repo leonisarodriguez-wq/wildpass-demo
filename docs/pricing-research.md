@@ -54,7 +54,7 @@ Observations from the data:
 | Rest of world | 48.46 | 68.73 |
 | USA/Canada/Japan | 50.22 | 70.49 |
 
-Length exponent: **0.28**, up to day 14.
+Length exponent: **0.28**, up to day 15 (from day 16, the long-trip rule in §5 applies).
 
 | Age band | Factor | Evidence |
 |---|---|---|
@@ -69,8 +69,8 @@ Length exponent: **0.28**, up to day 14.
 |---|---|---|---|---|---|---|---|---|
 | Italy (8 days) | Wild | 23.53 | 24.85 | 19.53 | 23.53 | 22 | **22.00** | −6.5% |
 | Italy (8 days) | Wild+ | 30.50 | 34.18 | 30.22 | 30.50 | 29.50 | **29.50** | −3.3% |
-| Thailand (15 days) | Wild | 64.00 | 65.61 | 56.71 | 64.00 | 60 | **60.21** | −5.9% |
-| Thailand (15 days) | Wild+ | 88.02 | 90.87 | 79.99 | 88.02 | 85 | **85.39** | −3.0% |
+| Thailand (15 days) | Wild | 64.00 | 65.61 | 56.71 | 64.00 | 60 | **59.99** | −6.3% |
+| Thailand (15 days) | Wild+ | 88.02 | 90.87 | 79.99 | 88.02 | 85 | **85.08** | −3.3% |
 | USA (11 days) | Wild | 57.00 | 57.65 | 69.21 | 57.65 | 57 | **57.00** | −1.1% |
 | USA (11 days) | Wild+ | 79.48 | 83.67 | 83.26 | 83.26 | 80 | **80.00** | −3.9% |
 | Mexico, adult 35 (11 days) | Wild | 57.00\* | 58.03\* | 52.59 | 57.00 | 55 | **55.00** | −3.5% |
