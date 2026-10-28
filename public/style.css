@@ -36,6 +36,9 @@ button { font: inherit; cursor: pointer; }
 .primary { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 14px 28px; border: 0; border-radius: 12px; box-shadow: none;
   background: var(--yellow); color: var(--night); font-family: var(--font-text); font-size: 1.1rem; font-weight: 700; text-decoration: none; text-align: center; }
 .primary:hover { filter: brightness(0.95); }
+/* Press feedback for every button and button-link (a small push down; no animation with reduced motion). */
+.primary, .secondary { transition: transform 0.12s ease, filter 0.15s ease, background-color 0.15s ease; }
+.primary:active:not(:disabled), .secondary:active:not(:disabled) { transform: translateY(1px) scale(0.98); }
 .primary:disabled { opacity: 0.55; cursor: not-allowed; } /* e.g. "Pagar" until the terms are accepted */
 .primary[aria-busy="true"] { opacity: 0.7; cursor: progress; }
 .block { display: flex; width: 100%; }
@@ -230,6 +233,10 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .faq-item summary::after { content: '+'; position: absolute; right: 18px; top: 50%; transform: translateY(-50%); font-size: 1.6rem; font-weight: 400; color: var(--turquoise-text); }
 .faq-item[open] summary::after { content: '−'; }
 .faq-item p { padding: 0 16px 16px; margin: 0; color: var(--secondary); }
+/* Smooth open/close (browsers with ::details-content: Chrome, Edge, Safari 18.4+; others simply open at once). */
+.faq-item, .dev-tools { interpolate-size: allow-keywords; }
+.faq-item::details-content, .dev-tools::details-content { height: 0; overflow: clip; transition: height 0.3s ease, content-visibility 0.3s allow-discrete; }
+.faq-item[open]::details-content, .dev-tools[open]::details-content { height: auto; }
 .final-cta { background: var(--turquoise); padding: 48px 0; text-align: center; }
 .final-cta h2 { color: var(--white); font-size: clamp(1.8rem, 7vw, 2.6rem); margin-bottom: 18px; }
 
@@ -324,10 +331,94 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .summary .total-row { display: flex; justify-content: space-between; align-items: baseline; background: var(--mint); border-radius: 10px; padding: 12px; margin-top: 14px; font-weight: 700; }
 .summary .total-row strong { font-family: var(--font-headings); font-size: 1.4rem; }
 
-.policy-number { background: var(--white); border-radius: 16px; padding: 16px; font-size: 1rem; }
-.done-trip { margin: 16px 0 0; }
-.done-trip .trip-item { padding-right: 0; }
-.policy-number strong { display: block; font-family: var(--font-headings); font-size: 1.7rem; letter-spacing: 0.02em; }
+.policy-number { margin: 0; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--secondary); }
+.policy-number strong { display: block; margin-top: 2px; font-family: var(--font-headings); font-size: 1.7rem; letter-spacing: 0.04em; color: var(--night); text-transform: none; }
+
+/* Success screen: a boarding pass. Main part + stub, separated by a perforated (dashed + notched) line. */
+.boarding { display: grid; grid-template-columns: minmax(0, 1fr); margin: 8px 0 4px; }
+/* Each half is white and has quarter-circle cuts at the shared edge: together they make the two ticket notches. */
+.boarding-main, .boarding-stub { background: var(--white); }
+.boarding-main { border-radius: 18px 18px 0 0;
+  -webkit-mask: radial-gradient(circle 11px at 0 100%, #0000 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 11px at 100% 100%, #0000 98%, #000) right / 51% 100% no-repeat;
+          mask: radial-gradient(circle 11px at 0 100%, #0000 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 11px at 100% 100%, #0000 98%, #000) right / 51% 100% no-repeat; }
+.boarding-stub { border-radius: 0 0 18px 18px;
+  -webkit-mask: radial-gradient(circle 11px at 0 0, #0000 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 11px at 100% 0, #0000 98%, #000) right / 51% 100% no-repeat;
+          mask: radial-gradient(circle 11px at 0 0, #0000 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 11px at 100% 0, #0000 98%, #000) right / 51% 100% no-repeat; }
+.boarding-main { position: relative; padding: 16px 18px 18px; }
+.boarding-head { display: flex; justify-content: space-between; gap: 12px; margin: 0 0 14px; font-family: var(--font-headings); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--turquoise-text); }
+.boarding-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; margin: 0; }
+.boarding-grid .b-wide { grid-column: 1 / -1; padding-right: 128px; }
+.boarding-grid dt { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--secondary); }
+.boarding-grid dd { margin: 2px 0 0; font-family: var(--font-headings); font-weight: 700; font-size: 1.15rem; overflow-wrap: anywhere; }
+.done-name { display: block; }
+@media (max-width: 479px) { .boarding-head span + span { display: none; } }
+.boarding-stub { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "num num" "note qr"; column-gap: 16px; row-gap: 10px; align-items: end;
+  padding: 18px; border-top: 2px dashed var(--border); }
+.boarding-stub .policy-number { grid-area: num; }
+.qr { grid-area: qr; width: 112px; height: 112px; }
+.qr svg { display: block; width: 100%; height: 100%; }
+.qr-note { grid-area: note; margin: 0; font-size: 0.85rem; color: var(--secondary); }
+/* "CUBIERTO" stamp: lands with a thump once (static with reduced motion). */
+.stamp { position: absolute; right: 14px; top: 52px; margin: 0; padding: 4px 12px; border: 3px solid var(--turquoise-text); border-radius: 8px;
+  font-family: var(--font-headings); font-weight: 700; font-size: 1.05rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--turquoise-text);
+  transform: rotate(-12deg); opacity: 0.9; animation: stamp 0.5s 0.35s cubic-bezier(0.3, 1.6, 0.5, 1) both; pointer-events: none; }
+@keyframes stamp { from { transform: rotate(-12deg) scale(2.4); opacity: 0; } }
+.confetti { position: fixed; left: 50%; top: 40%; width: 0; height: 0; z-index: 60; pointer-events: none; }
+.confetti i { position: absolute; width: 8px; height: 12px; border-radius: 2px; opacity: 0; animation: confetti 1.8s var(--d) cubic-bezier(0.2, 0.6, 0.4, 1) forwards; }
+@keyframes confetti {
+  0% { opacity: 1; transform: translate(0, 0) rotate(0); }
+  45% { opacity: 1; transform: translate(calc(var(--x) * 0.8), var(--y)) rotate(calc(var(--r) * 0.5)); }
+  100% { opacity: 0; transform: translate(var(--x), calc(var(--y) + 340px)) rotate(var(--r)); } }
+
+/* ---------- "¿Y si…?" scenarios ---------- */
+.section-intro { color: var(--secondary); font-size: 1.05rem; margin: 0 0 20px; }
+.whatif { padding: 48px 0; }
+.whatif h2, .destinations h2 { font-size: clamp(1.6rem, 6vw, 2.4rem); margin-bottom: 6px; }
+.whatif-tabs { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -16px 14px; padding: 2px 16px 6px; scrollbar-width: none; }
+.whatif-tab { flex: none; scroll-snap-align: start; min-height: 44px; padding: 8px 16px; border: 2px solid var(--night); border-radius: 999px; background: var(--white); color: var(--night); font-weight: 700; font-size: 0.95rem; }
+.whatif-tab:hover { background: var(--mint); }
+.whatif-tab[aria-selected="true"] { background: var(--night); color: var(--white); }
+/* All panels share one grid cell, so the box keeps the height of the tallest one: switching tabs never moves the page. */
+.whatif-panels { display: grid; }
+.whatif-panel { grid-area: 1 / 1; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; background: var(--white); border-radius: 18px; padding: 18px; }
+.whatif-panel[hidden] { display: grid; visibility: hidden; }
+.whatif-panel:not([hidden]) { animation: rise-in 0.4s ease both; }
+.whatif-art svg { width: 64px; height: 64px; }
+.whatif-body h3 { font-size: 1.35rem; margin: 0 0 4px; }
+.whatif-figure { margin: 0 0 8px; color: var(--turquoise-text); font-weight: 600; }
+.whatif-figure .count { display: inline-block; font-family: var(--font-headings); font-size: 2rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--night); }
+.whatif-text { margin: 0 0 12px; }
+.verdicts { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 8px; }
+.verdict { display: grid; grid-template-columns: 4rem auto; align-items: baseline; gap: 4px 10px; padding: 8px 12px; border-radius: 10px; background: var(--sky); }
+.verdict-state { font-weight: 700; font-size: 0.85rem; padding: 1px 8px; border-radius: 999px; }
+.verdict.is-ok .verdict-state { background: var(--turquoise); color: var(--white); }
+.verdict.is-no .verdict-state { background: var(--white); color: var(--night); border: 1.5px solid var(--secondary); }
+.verdict-text { grid-column: 1 / -1; font-size: 0.9rem; color: var(--secondary); }
+.whatif-figure-label { display: block; }
+.whatif-note { margin: 14px 0 0; font-size: 0.9rem; color: var(--secondary); }
+.whatif-note a { color: var(--turquoise-text); font-weight: 700; }
+
+/* ---------- destinations strip ---------- */
+.destinations { padding: 8px 0 48px; }
+.dest-strip { list-style: none; display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0; padding: 4px 16px 10px; scroll-padding: 0 16px; }
+.dest-strip li { flex: none; width: 46vw; max-width: 220px; scroll-snap-align: start; }
+.dest-card { display: flex; flex-direction: column; width: 100%; padding: 0 0 12px; border: 2px solid var(--border); border-radius: 16px; background: var(--white); overflow: hidden; text-align: left; color: var(--night);
+  transition: transform 0.15s ease, border-color 0.15s ease; }
+.dest-card:hover { border-color: var(--turquoise); transform: translateY(-2px); }
+.dest-card:active { transform: translateY(1px) scale(0.98); }
+.mini-scene { display: block; width: 100%; height: 96px; }
+.dest-name { padding: 10px 12px 0; font-family: var(--font-headings); font-weight: 700; font-size: 1.1rem; }
+.dest-price { padding: 0 12px; font-size: 0.9rem; color: var(--secondary); }
+.dest-note { margin-top: 6px; font-size: 0.85rem; color: var(--secondary); }
+
+/* ---------- scroll reveal + sticky bar ---------- */
+.reveal { transition: opacity 0.7s ease; }
+.reveal:not(.is-in) { opacity: 0; } /* fade only: moving whole sections would count as layout shift */
+.sticky-cta { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: var(--white); border-top: 1px solid var(--border);
+  animation: slide-up 0.25s ease both; }
+@keyframes slide-up { from { transform: translateY(100%); } }
+@media (min-width: 700px) { .sticky-cta { display: none; } }
+@media (max-width: 699px) { .site-footer { padding-bottom: 100px; } }
 #step-4 .primary { margin: 14px 0; }
 
 .total-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: var(--white); border-top: 1px solid var(--border); padding: 10px 0 calc(10px + env(safe-area-inset-bottom)); }
@@ -349,8 +440,15 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
   .trip-card dl { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
   .trip-item { padding-right: 0; }
   .edit-trip { top: 50%; transform: translateY(-50%); }
-  .trip-card.done-trip { padding: 14px 18px; }
-  .done-trip dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .boarding-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .boarding-stub { grid-template-areas: "num qr" "note qr"; align-items: start; }
+  .boarding-stub .qr-note { align-self: end; }
+  .whatif-panel { grid-template-columns: 120px minmax(0, 1fr); gap: 24px; padding: 28px; }
+  .whatif-art svg { width: 120px; height: 120px; }
+  .verdict { grid-template-columns: 4.5rem auto minmax(0, 1fr); justify-content: start; }
+  .verdict-text { grid-column: auto; }
+  .whatif-figure-label { display: inline; }
+  .dest-strip li { width: 200px; }
   .plan-option { padding: 24px 16px 16px; }
   .plan-option.featured { padding: 23px 15px 15px; }
 }

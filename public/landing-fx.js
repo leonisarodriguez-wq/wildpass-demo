@@ -171,4 +171,82 @@ else {
 }
 reduced.addEventListener?.('change', () => { if (reduced.matches) { run++; finalState(); replay.hidden = true; } parallax(); });
 
+// ---------- count-up: big limits ("15.000 €") count from 0 once, the first time they are seen ----------
+const counted = new WeakSet();
+function countUp(node) {
+  if (counted.has(node) || reduced.matches) return;
+  counted.add(node);
+  const to = Number(node.dataset.to);
+  const final = node.textContent;
+  node.style.minWidth = `${node.getBoundingClientRect().width}px`; // keep the width: nothing next to it moves
+  const start = performance.now();
+  const step = now => {
+    const t = Math.min(1, (now - start) / 1100);
+    const value = Math.round(to * (1 - (1 - t) ** 3));
+    node.textContent = t < 1 ? eur(value) : final;
+    if (t < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+const countObserver = new IntersectionObserver(entries => {
+  for (const e of entries) if (e.isIntersecting && !e.target.closest('[hidden]')) { countUp(e.target); countObserver.unobserve(e.target); }
+}, { threshold: 0.6 });
+document.querySelectorAll('.count').forEach(n => countObserver.observe(n));
+
+// ---------- "¿Y si…?" tabs (ARIA tabs: click, arrow keys, Home/End) ----------
+const tabs = [...document.querySelectorAll('.whatif-tab')];
+function selectTab(tab, focus) {
+  for (const t of tabs) {
+    const on = t === tab;
+    t.setAttribute('aria-selected', String(on));
+    t.tabIndex = on ? 0 : -1;
+    const panel = document.getElementById(t.getAttribute('aria-controls'));
+    panel.hidden = !on;
+    if (on) panel.querySelectorAll('.count').forEach(n => { countObserver.unobserve(n); countObserver.observe(n); });
+  }
+  if (focus) { tab.focus(); tab.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: reduced.matches ? 'auto' : 'smooth' }); }
+}
+for (const tab of tabs) {
+  tab.addEventListener('click', () => selectTab(tab, false));
+  tab.addEventListener('keydown', e => {
+    const i = tabs.indexOf(tab);
+    const next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+    if (next === undefined) return;
+    e.preventDefault();
+    selectTab(tabs[(next + tabs.length) % tabs.length], true);
+  });
+}
+
+// ---------- destination cards: set the destination, switch the hero scene, go to the form ----------
+for (const card of document.querySelectorAll('.dest-card')) {
+  card.addEventListener('click', () => {
+    destination.value = card.dataset.country;
+    destination.dispatchEvent(new Event('change', { bubbles: true }));
+    form.scrollIntoView({ behavior: reduced.matches ? 'auto' : 'smooth', block: 'center' });
+    const next = ['#departure', '#return'].map(s => $(s)).find(f => !f.value) ?? $('#quote-submit');
+    next.focus({ preventScroll: true });
+  });
+}
+
+// ---------- sections slide in once when they come into view ----------
+if (!reduced.matches && 'IntersectionObserver' in window) {
+  const sections = [...document.querySelectorAll('#landing > section:not(.hero)')];
+  const revealObserver = new IntersectionObserver(entries => {
+    for (const e of entries) if (e.isIntersecting) { e.target.classList.add('is-in'); revealObserver.unobserve(e.target); }
+  }, { rootMargin: '0px 0px -10% 0px' });
+  for (const section of sections) {
+    // Only sections still below the screen get the effect, so nothing already visible blinks.
+    if (section.getBoundingClientRect().top > innerHeight) { section.classList.add('reveal'); revealObserver.observe(section); }
+  }
+}
+
+// ---------- phones: sticky "Ver mi precio" bar once the hero is off screen (not while the form is visible) ----------
+const sticky = $('#sticky-cta');
+let heroVisible = true;
+let formVisible = true;
+const syncSticky = () => { sticky.hidden = heroVisible || formVisible; };
+new IntersectionObserver(([e]) => { heroVisible = e.isIntersecting; syncSticky(); }).observe($('.hero'));
+new IntersectionObserver(([e]) => { formVisible = e.isIntersecting; syncSticky(); }).observe(form);
+new IntersectionObserver(([e]) => { if (e.isIntersecting) sticky.hidden = true; else syncSticky(); }).observe($('.final-cta'));
+
 loadConfig().then(config => { T = config.brand.texts; if (formReady()) updatePrice(); }).catch(() => {});

@@ -2,6 +2,7 @@
 // It only collects input and shows results: every rule is checked on the server, through the SAME API
 // the WebMCP tools use. Error texts are friendly versions (brand config `texts.errors`) of the server's codes.
 import { callApi, loadConfig } from './api.js';
+import { qrSvg } from './qr.js';
 
 const $ = sel => document.querySelector(sel);
 const state = { quote: null, plan: null, orderId: null, review: null, paid: null, step: 'landing' };
@@ -245,10 +246,34 @@ function renderTripCard() {
   const lines = tripLines(state.quote.trip);
   for (const key of ['destination', 'dates', 'travelers']) $(`#trip-${key}`).textContent = lines[key];
 }
+// Success screen = boarding pass: names, destination, dates, plan, policy number and a QR code (made in the browser,
+// public/qr.js) that opens the policy PDF. The stamp animates in CSS; a short confetti burst runs once (never with reduced motion).
 function renderDoneTrip() {
-  const lines = tripLines(state.review.summary.trip);
-  for (const key of ['destination', 'dates', 'travelers']) $(`#done-${key}`).textContent = lines[key];
-  $('#done-plan').textContent = state.review.summary.plan.plan_name;
+  const { trip, plan, travelers } = state.review.summary;
+  const B = C.boarding;
+  $('#done-names-label').textContent = travelers.length === 1 ? B.passenger : B.passengers;
+  $('#done-names').replaceChildren(...travelers.map(t => el('span', { class: 'done-name', text: t.full_name })));
+  $('#done-destination').textContent = trip.destination_name;
+  $('#done-departure').textContent = dateEs(trip.departure_date);
+  $('#done-return').textContent = dateEs(trip.return_date);
+  $('#done-plan').textContent = plan.plan_name;
+  $('#policy-qr').innerHTML = qrSvg(state.paid.pdf_url, { label: B.qrLabel });
+}
+
+function confetti() {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const box = $('#confetti');
+  const colours = ['--turquoise', '--night', '--mint', '--turquoise-text'];
+  box.replaceChildren(...Array.from({ length: 36 }, (_, i) => {
+    const piece = el('i');
+    piece.style.setProperty('--x', `${Math.round((Math.random() - 0.5) * 520)}px`);
+    piece.style.setProperty('--y', `${Math.round(-140 - Math.random() * 220)}px`);
+    piece.style.setProperty('--r', `${Math.round(Math.random() * 720 - 360)}deg`);
+    piece.style.setProperty('--d', `${(Math.random() * 0.25).toFixed(2)}s`);
+    piece.style.background = `var(${colours[i % colours.length]})`;
+    return piece;
+  }));
+  setTimeout(() => box.replaceChildren(), 2600);
 }
 
 // ---------- step 1: compare plans ----------
@@ -507,6 +532,7 @@ $('#pay').addEventListener('click', async e => {
     // The review and order can't be reused after payment: going back starts a new quote.
     history.replaceState({ step: 'landing' }, '', location.pathname);
     render('4');
+    confetti();
   });
   syncPay();
 });

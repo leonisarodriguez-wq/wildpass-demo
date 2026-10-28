@@ -96,6 +96,24 @@
     </section>
 
     <!-- 4. Plans band -->
+    <section class="whatif" id="y-si" aria-labelledby="whatif-title">
+      <div class="wrap">
+        <h2 id="whatif-title">{{t.whatIf.title}}</h2>
+        <p class="section-intro">{{t.whatIf.intro}}</p>
+        {{{whatIf}}}
+        <p class="whatif-note">{{t.whatIf.note}} <a href="/condiciones">{{t.whatIf.noteLink}}</a>.</p>
+      </div>
+    </section>
+
+    <section class="destinations" aria-labelledby="dest-title">
+      <div class="wrap">
+        <h2 id="dest-title">{{t.destinations.title}}</h2>
+        <p class="section-intro">{{t.destinations.intro}}</p>
+      </div>
+      <ul class="dest-strip">{{{destinations}}}</ul>
+      <p class="wrap dest-note">{{t.destinations.note}}</p>
+    </section>
+
     <section class="plans-band" aria-labelledby="plans-title">
       <div class="wrap">
         <h2 id="plans-title">{{t.plans.title}}</h2>
@@ -136,6 +154,7 @@
         <a class="primary button-link" href="#quote-form" data-focus-form>{{t.finalCtaButton}}</a>
       </div>
     </section>
+    <div class="sticky-cta" id="sticky-cta" hidden><a class="primary block" href="#quote-form" data-focus-form>{{t.stickyCta}}</a></div>
   </main>
 
   <!-- Checkout (shown after the quote; filled in by public/app.js) -->
@@ -200,16 +219,25 @@
 
       <section class="step" id="step-4" hidden aria-labelledby="step-4-title">
         <h2 id="step-4-title" tabindex="-1">{{t.checkout.step4Title}}</h2>
-        <p class="policy-number"><span>{{t.checkout.policyNumber}}</span> <strong id="policy-number"></strong></p>
-        <section class="trip-card done-trip" aria-labelledby="done-trip-title">
-          <h3 class="sr-only" id="done-trip-title">{{t.checkout.tripCard.title}}</h3>
-          <dl>
-            <div class="trip-item">{{{iconPin}}}<dt>{{t.checkout.tripCard.destination}}</dt><dd id="done-destination"></dd></div>
-            <div class="trip-item">{{{iconCalendar}}}<dt>{{t.checkout.tripCard.dates}}</dt><dd id="done-dates"></dd></div>
-            <div class="trip-item">{{{iconPeople}}}<dt>{{t.checkout.tripCard.travelers}}</dt><dd id="done-travelers"></dd></div>
-            <div class="trip-item">{{{iconShield}}}<dt>{{t.checkout.tripCard.plan}}</dt><dd id="done-plan"></dd></div>
-          </dl>
-        </section>
+        <article class="boarding" aria-labelledby="boarding-title">
+          <div class="boarding-main">
+            <p class="boarding-head"><span id="boarding-title">{{t.checkout.boarding.title}}</span><span>{{brand.name}}</span></p>
+            <dl class="boarding-grid">
+              <div class="b-wide"><dt id="done-names-label">{{t.checkout.boarding.passenger}}</dt><dd id="done-names"></dd></div>
+              <div><dt>{{t.checkout.boarding.destination}}</dt><dd id="done-destination"></dd></div>
+              <div><dt>{{t.checkout.boarding.plan}}</dt><dd id="done-plan"></dd></div>
+              <div><dt>{{t.checkout.boarding.departure}}</dt><dd id="done-departure"></dd></div>
+              <div><dt>{{t.checkout.boarding.return}}</dt><dd id="done-return"></dd></div>
+            </dl>
+            <p class="stamp" id="stamp" aria-hidden="true">{{t.checkout.boarding.stamp}}</p>
+          </div>
+          <div class="boarding-stub">
+            <p class="policy-number"><span>{{t.checkout.policyNumber}}</span> <strong id="policy-number"></strong></p>
+            <div class="qr" id="policy-qr"></div>
+            <p class="qr-note" aria-hidden="true">{{t.checkout.boarding.qrNote}}</p>
+          </div>
+        </article>
+        <div class="confetti" id="confetti" aria-hidden="true"></div>
         <a class="primary button-link block" id="pdf-link" target="_blank" rel="noopener">{{t.checkout.download}}</a>
         <p id="email-line"></p>
         <p class="form-note" id="payment-line"></p>

@@ -445,10 +445,44 @@ test('AI block: example prompt, honest note and a developers list generated from
   for (const field of ['review_token', 'accept_terms', 'user_confirmed', 'confirmed_total_eur']) assert.ok(html.includes(`<li><code>${field}</code>:`), field);
 });
 
-test('checkout copy: Spanish dates, new success title and the trip summary on the success step', async () => {
+test('checkout copy: Spanish dates, new success title and the boarding pass on the success step', async () => {
   const html = await (await fetch(`${base}/`)).text();
   assert.equal((html.match(/type="date"[^>]*lang="es"/g) ?? []).length, 2);
   assert.ok(html.includes('¡Todo listo para empezar tu aventura!'));
   assert.ok(!html.includes('Ya puedes irte salvaje'));
-  for (const id of ['done-destination', 'done-dates', 'done-travelers', 'done-plan']) assert.ok(html.includes(`id="${id}"`), id);
+  for (const id of ['done-names', 'done-destination', 'done-departure', 'done-return', 'done-plan', 'policy-number', 'policy-qr', 'pdf-link', 'email-line', 'start-over']) assert.ok(html.includes(`id="${id}"`), id);
+  for (const label of ['Pasajero/a', 'Destino', 'Salida', 'Regreso', 'Cubierto']) assert.ok(html.includes(label), label);
+});
+
+test('QR code: the hand-written encoder makes valid codes (structure checks)', async () => {
+  const { qrMatrix } = await import('../public/qr.js');
+  const url = 'https://example.trycloudflare.com/poliza/' + 'A'.repeat(43) + '.pdf';
+  const m = qrMatrix(url);
+  const size = m.length;
+  assert.equal(size, 41); // 89 bytes → version 6 at level M
+  // Finder patterns in three corners (7×7 dark ring + 3×3 centre) and the timing pattern alternating.
+  for (const [x, y] of [[0, 0], [size - 7, 0], [0, size - 7]]) {
+    for (let i = 0; i < 7; i++) assert.ok(m[y][x + i] && m[y + 6][x + i] && m[y + i][x] && m[y + i][x + 6]);
+    assert.ok(m[y + 3][x + 3] && !m[y + 1][x + 1]);
+  }
+  for (let i = 8; i < size - 8; i++) assert.equal(m[6][i], i % 2 === 0);
+  assert.ok(m[size - 8][8], 'dark module');
+  assert.throws(() => qrMatrix('x'.repeat(300)), /too long/);
+});
+
+test('landing: what-if scenarios and destination cards use the real limits and engine prices', async () => {
+  const html = nbsp(await (await fetch(`${base}/`)).text());
+  assert.ok(html.includes('Ejemplos orientativos. Consulta coberturas y exclusiones completas en las'));
+  const plus = pricing.plans.wild_plus.coverage;
+  for (const amount of [plus.medical_expenses_rest_of_world_eur, plus.baggage_theft_damage_eur, plus.cancellation_per_traveler_eur, plus.search_and_rescue_eur]) {
+    assert.ok(html.includes(`data-to="${amount}"`), `figure ${amount}`);
+  }
+  assert.ok(html.includes('hasta 3.000 € por viajero') && html.includes('hasta 15.000 €'));
+  assert.equal((html.match(/role="tab"/g) ?? []).length, 4);
+  // "7 días desde X €" = Wild, 7 days, 1 adult, from the engine for that country's zone.
+  for (const code of ['TH', 'IT', 'US']) {
+    const q = await call('get_quote', quoteInput({ destination_country: code, return_date: addDays(DEP, 6), traveler_ages: [35] }));
+    const wild = q.plans.find(p => p.plan === 'wild').total_price_eur.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+    assert.ok(html.includes(`data-country="${code}"`) && html.includes(`7 días desde ${wild} €`), `${code} ${wild}`);
+  }
 });

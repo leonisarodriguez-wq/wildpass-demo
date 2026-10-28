@@ -115,6 +115,50 @@ export default {
       ],
     },
 
+    // Landing: "¿Y si…?" scenarios. Limits are {placeholders} filled from the pricing config; `figure` = the big number
+    // (plan + coverage key in pricing config), `plans` = per-plan verdict chips (ok: covered or not).
+    whatIf: {
+      title: '¿Y si…?',
+      intro: 'Situaciones de viaje que pasan, y qué plan te cubre.',
+      tabsLabel: 'Situaciones',
+      seePrice: 'Ver mi precio',
+      note: 'Ejemplos orientativos. Consulta coberturas y exclusiones completas en las',
+      noteLink: 'condiciones',
+      covered: 'Cubierto',
+      notCovered: 'No cubierto',
+      scenarios: [
+        { id: 'sprain', tab: 'Me tuerzo el tobillo de trekking', title: 'Te cubre Wild+',
+          figure: { plan: 'wild_plus', key: 'medical_expenses_rest_of_world_eur' }, figureLabel: 'en gastos médicos fuera de Europa con Wild+',
+          text: 'Los dos planes cubren gastos médicos: Wild hasta {wildMedEurope} en Europa y {wildMedWorld} fuera; Wild+ hasta {plusMedEurope} y {plusMedWorld}, sin franquicia. Pero el trekking es un deporte de aventura, y solo Wild+ lo cubre (hasta {trekkingAltitude} m de altitud).',
+          plans: { wild: { ok: false, text: 'No cubre lesiones en deportes de aventura' }, wild_plus: { ok: true, text: 'Médico y trekking incluidos' } } },
+        { id: 'suitcase', tab: 'La aerolínea pierde mi maleta', title: 'Te cubren los dos planes',
+          figure: { plan: 'wild_plus', key: 'baggage_theft_damage_eur' }, figureLabel: 'por robo o daños del equipaje con Wild+',
+          text: 'Mientras tu maleta no aparece, el retraso de equipaje te cubre lo imprescindible: hasta {wildBaggageDelay} con Wild y {plusBaggageDelay} con Wild+. El robo o los daños del equipaje, hasta {wildBaggage} con Wild y {plusBaggage} con Wild+.',
+          plans: { wild: { ok: true, text: 'Retraso {wildBaggageDelay} · equipaje {wildBaggage}' }, wild_plus: { ok: true, text: 'Retraso {plusBaggageDelay} · equipaje {plusBaggage}' } } },
+        { id: 'cancel', tab: 'Cancelo por una enfermedad', title: 'Te cubre Wild+',
+          figure: { plan: 'wild_plus', key: 'cancellation_per_traveler_eur' }, figureLabel: 'por viajero en cancelación con Wild+',
+          text: 'Si una enfermedad te obliga a cancelar antes de salir, Wild+ te cubre los gastos del viaje hasta {plusCancellation} por viajero. Wild no incluye cancelación.',
+          plans: { wild: { ok: false, text: 'Sin cancelación' }, wild_plus: { ok: true, text: 'Hasta {plusCancellation} por viajero' } } },
+        { id: 'rescue', tab: 'Me pierdo en la montaña', title: 'Te cubre Wild+',
+          figure: { plan: 'wild_plus', key: 'search_and_rescue_eur' }, figureLabel: 'en búsqueda y rescate con Wild+',
+          text: 'Si te pierdes haciendo una actividad cubierta, Wild+ paga la búsqueda y el rescate hasta {rescue}. Wild no incluye búsqueda y rescate.',
+          plans: { wild: { ok: false, text: 'Sin búsqueda y rescate' }, wild_plus: { ok: true, text: 'Hasta {rescue}' } } },
+      ],
+    },
+
+    // Landing: destinations strip (each card: its hero scene + "7 días desde X €", Wild, 1 adult, from the pricing engine)
+    destinations: {
+      title: '¿A dónde te escapas?',
+      intro: 'Toca un destino y lo dejamos puesto en el formulario.',
+      price: '7 días desde {price}',
+      note: 'Precio del plan Wild para 1 adulto.',
+      cardLabel: 'Elegir {name}: 7 días desde {price}',
+      countries: ['TH', 'JP', 'PE', 'IS', 'MX', 'US', 'IT'],
+    },
+
+    // Landing: sticky bar on phones once the hero is off screen
+    stickyCta: 'Ver mi precio',
+
     // Landing: plans band
     plans: {
       title: 'Elige cómo quieres viajar',
@@ -151,6 +195,19 @@ export default {
     // Checkout
     checkout: {
       progress: 'Paso {x} de 4',
+      // Success screen = a boarding pass
+      boarding: {
+        title: 'Tarjeta de embarque',
+        passenger: 'Pasajero/a',
+        passengers: 'Pasajeros/as',
+        destination: 'Destino',
+        departure: 'Salida',
+        return: 'Regreso',
+        plan: 'Plan',
+        stamp: 'Cubierto',
+        qrLabel: 'Código QR con el enlace a tu póliza en PDF',
+        qrNote: 'Escanéalo para abrir tu póliza',
+      },
       tripCard: {
         title: 'Tu viaje',
         destination: 'Destino',

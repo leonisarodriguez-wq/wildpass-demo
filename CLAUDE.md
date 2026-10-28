@@ -27,6 +27,13 @@ The owner is not a programmer: explain things simply, report test results honest
   no order), and the AI example chat + the real tools timeline (`showcaseHtml` in landing.js: tool names from webmcp-tools.js, price from the engine
   for `texts.ai.example`, final state server-rendered). `prefers-reduced-motion` → no animation, final state shown. Form fields use `--field-border`
   #6F94A7 (3.25:1 on white; #7FA3B5 was asked for but is only 2.69:1); `--border` #C9DCE6 stays for decorative card lines.
+  Below the benefits: "¿Y si…?" (ARIA tabs, `whatIfHtml`: limits from pricing config, big figure counts up once) and "¿A dónde te escapas?"
+  (`destinationsHtml`: scroll-snap cards, mini scene, "7 días desde X €" = Wild, 1 adult, engine; tap → sets destination + scene, scrolls to form).
+  Sections fade in once (opacity only: moving them counted as layout shift); FAQ opens smoothly via `::details-content` (Chrome/Safari; others
+  open at once); phones get a sticky "Ver mi precio" bar once the hero is off screen (inside #landing, so never in the checkout).
+- Success step = boarding pass (names, destination, dates, plan, policy number, "CUBIERTO" stamp, one confetti burst in brand colours, never
+  with reduced motion) with a QR code of the PDF link made in the browser by `public/qr.js` (hand-written encoder, byte mode, level M,
+  versions 1–10; checked with an independent reader, jsQR, outside the repo). No external QR service.
 - Illustrations: original inline SVGs in `src/illustrations.js` (night outline + turquoise fill + small yellow accent). No emoji, no stock art,
   no fake reviews/ratings/press logos/invented stats; only promise what the product really does.
 - SQLite via Node's built-in `node:sqlite` (no native npm module). DB file in `data/` (git-ignored). Small migrations run at start in `src/db.js`.

@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { formatEur } from './business.js';
 import { logoHtml } from './logo.js';
 import * as art from './illustrations.js';
-import { heroScene, routeStrip, sceneFor, sceneSprite } from './scenes.js';
+import { heroScene, miniScene, routeStrip, sceneFor, sceneSprite } from './scenes.js';
 import { quoteCount } from '../config/market-quotes.js';
 
 export const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -36,6 +36,8 @@ function copyValues(pricing, market) {
     wildMedEurope: formatEur(wild.coverage.medical_expenses_europe_eur),
     wildMedWorld: formatEur(wild.coverage.medical_expenses_rest_of_world_eur),
     wildBaggage: formatEur(wild.coverage.baggage_theft_damage_eur),
+    wildBaggageDelay: formatEur(wild.coverage.baggage_delay_eur),
+    plusBaggageDelay: formatEur(plus.coverage.baggage_delay_eur),
     wildExcess: formatEur(wild.excess_per_medical_claim_eur),
     plusMedEurope: formatEur(plus.coverage.medical_expenses_europe_eur),
     plusMedWorld: formatEur(plus.coverage.medical_expenses_rest_of_world_eur),
@@ -108,13 +110,16 @@ function realTools({ brand, pricing, payments }) {
   return buildTools({ limits: pricing.limits, plans: Object.fromEntries(Object.entries(pricing.plans).map(([id, p]) => [id, p.name])), brand, payments });
 }
 
+// Pricing zone of a destination (same lookup as business.js).
+const zoneOf = (code, pricing) => Object.entries(pricing.zones).find(([, codes]) => codes.includes(code))?.[0] ?? 'rest_of_world';
+
 // "Tu asistente también puede contratarlo": an animated example chat (left) + the real tools lighting up (right).
 // Fully server-rendered in its FINAL state (readable without JS and with reduced motion); public/landing-fx.js only
 // hides and replays it. The price is computed by the pricing engine for the example trip in the brand config.
 export function showcaseHtml({ brand, pricing, business, payments }) {
   const a = brand.texts.ai;
   const ex = a.example;
-  const zone = Object.entries(pricing.zones).find(([, codes]) => codes.includes(ex.destination))?.[0] ?? 'rest_of_world';
+  const zone = zoneOf(ex.destination, pricing);
   const totalCents = ex.ages.reduce((sum, age) => sum + business.pricePerTravelerCents(zone, ex.plan, ex.days, age), 0);
   const values = { price: formatEur(totalCents / 100), plan: pricing.plans[ex.plan].name };
   const tools = realTools({ brand, pricing, payments });
@@ -144,6 +149,42 @@ export function showcaseHtml({ brand, pricing, business, payments }) {
   </figure>`;
 }
 
+// "¿Y si…?": ARIA tabs, one panel per scenario. Every limit comes from the pricing config (placeholders + `figure`).
+export function whatIfHtml({ brand, pricing, values }) {
+  const w = brand.texts.whatIf;
+  const arts = { sprain: art.whatIfSprain, suitcase: art.whatIfSuitcase, cancel: art.whatIfCancel, rescue: art.whatIfRescue };
+  const tabs = w.scenarios.map((sc, i) => `<button type="button" role="tab" class="whatif-tab" id="wi-tab-${sc.id}" aria-controls="wi-panel-${sc.id}" aria-selected="${i === 0}"${i ? ' tabindex="-1"' : ''}>${escapeHtml(sc.tab)}</button>`).join('');
+  const panels = w.scenarios.map((sc, i) => {
+    const amount = pricing.plans[sc.figure.plan].coverage[sc.figure.key];
+    if (typeof amount !== 'number' || amount <= 0) throw new Error(`What-if ${sc.id}: no limit ${sc.figure.key} in ${sc.figure.plan}`);
+    const verdicts = Object.entries(sc.plans).map(([plan, v]) => `<li class="verdict ${v.ok ? 'is-ok' : 'is-no'}"><strong>${escapeHtml(pricing.plans[plan].name)}</strong> <span class="verdict-state">${escapeHtml(v.ok ? w.covered : w.notCovered)}</span><span class="verdict-text">${escapeHtml(fill(v.text, values))}</span></li>`).join('');
+    return `<div class="whatif-panel" role="tabpanel" id="wi-panel-${sc.id}" aria-labelledby="wi-tab-${sc.id}" tabindex="0"${i ? ' hidden' : ''}>
+      <div class="whatif-art">${arts[sc.id]}</div>
+      <div class="whatif-body">
+        <h3>${escapeHtml(sc.title)}</h3>
+        <p class="whatif-figure"><span class="count" data-to="${amount}">${escapeHtml(formatEur(amount))}</span> <span class="whatif-figure-label">${escapeHtml(sc.figureLabel)}</span></p>
+        <p class="whatif-text">${escapeHtml(fill(sc.text, values))}</p>
+        <ul class="verdicts">${verdicts}</ul>
+        <a class="primary button-link" href="#quote-form" data-focus-form>${escapeHtml(w.seePrice)}</a>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="whatif-tabs" role="tablist" aria-label="${escapeHtml(w.tabsLabel)}">${tabs}</div><div class="whatif-panels">${panels}</div>`;
+}
+
+// "¿A dónde te escapas?": one card per scene destination, "7 días desde X €" = Wild, 1 adult, from the engine.
+export function destinationsHtml({ brand, pricing, business, countries }) {
+  const d = brand.texts.destinations;
+  const adult = pricing.ageFactors.find(b => b.factor === 1).minAge;
+  return d.countries.map(code => {
+    const country = countries.find(c => c.code === code);
+    if (!country) throw new Error(`Destinations: unknown country ${code}`);
+    const price = formatEur(business.pricePerTravelerCents(zoneOf(code, pricing), 'wild', 7, adult) / 100);
+    return `<li><button type="button" class="dest-card" data-country="${code}" aria-label="${escapeHtml(fill(d.cardLabel, { name: country.name, price }))}">`
+      + `${miniScene(sceneFor(code, pricing))}<span class="dest-name">${escapeHtml(country.name)}</span><span class="dest-price">${escapeHtml(fill(d.price, { price }))}</span></button></li>`;
+  }).join('');
+}
+
 export function createLanding({ brand, pricing, business, market, countries, templatePath, payments = { provider: 'simulated' } }) {
   const template = readFileSync(templatePath, 'utf8');
   const t = brand.texts;
@@ -158,10 +199,12 @@ export function createLanding({ brand, pricing, business, market, countries, tem
       countryOptions: countries.filter(c => c.code !== 'ES').map(c => `<option value="${c.code}" data-scene="${sceneFor(c.code, pricing)}">${escapeHtml(c.name)}</option>`).join(''),
       showcase: showcaseHtml({ brand, pricing, business, payments }),
       sceneSprite, heroScene, routeStrip,
+      whatIf: whatIfHtml({ brand, pricing, values }),
+      destinations: destinationsHtml({ brand, pricing, business, countries }),
       benefits: t.editorial.benefits.map((b, i) => `<li class="benefit">${[art.globePin, art.mountainRope, art.chatRobotCheck][i]}<h3>${escapeHtml(b.title)}</h3><p>${escapeHtml(fill(b.text, values))}</p></li>`).join(''),
       faq: t.faq.map(f => `<details class="faq-item"><summary>${escapeHtml(f.q)}</summary><p>${escapeHtml(fill(f.a, values))}</p></details>`).join(''),
       travelerRow: firstTravelerRow(t.form, pricing.limits),
-      iconPin: art.iconPin, iconCalendar: art.iconCalendar, iconPeople: art.iconPeople, iconRemove: art.iconRemove, iconShield: art.iconShield,
+      iconPin: art.iconPin, iconCalendar: art.iconCalendar, iconPeople: art.iconPeople, iconRemove: art.iconRemove,
       devTools: devToolsHtml({ brand, pricing, payments }),
     };
     return render(template, {
