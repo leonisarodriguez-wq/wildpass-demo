@@ -115,10 +115,13 @@ function liveCheck(form, checksFor) {
   form.addEventListener('change', recheck);
 }
 
-// Messages that are not about one field (network, payment…): the form's own box.
+// Messages that are not about one field (network, payment…): the scope's own box, wherever it sits inside it
+// (step 3 keeps it in .pay-col). Each scope has exactly one (test/flow.test.js). Never throws: a missing box once
+// stopped the success step from showing after a card payment.
 function showError(scope, message, field) {
   if (field) { setFieldError(field, message); field.focus(); return; }
-  const box = scope.querySelector(':scope > .error, form > .error');
+  const box = scope.querySelector('.error[role="alert"]');
+  if (!box) { if (message) console.error('[Wildpass] no error box for:', message); return; }
   if (!message) { box.hidden = true; box.textContent = ''; return; }
   box.textContent = message;
   box.hidden = false;

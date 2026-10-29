@@ -2,7 +2,7 @@
 // Runs against a temporary database; email is not configured on purpose.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../src/app.js';
@@ -596,6 +596,24 @@ test('destinations: popular first, remote territories gone, "do not travel" coun
   const tools = buildTools({ limits: pricing.limits, plans: { wild: 'Wild', wild_plus: 'Wild+' }, brand, payments: { provider: 'simulated' } });
   assert.match(tools[0].description, /DESTINATION_NOT_COVERED/);
   assert.equal(brand.texts.errors.DESTINATION_NOT_COVERED, 'No podemos asegurar viajes a destinos con recomendación oficial de no viajar.');
+});
+
+// app.js showError() looks for ONE `.error[role="alert"]` inside each scope. When step 3's box moved into .pay-col,
+// the old selector found nothing, threw after a successful card payment and the success step never showed.
+test('every scope app.js shows errors in has exactly one error box', async () => {
+  const html = await (await fetch(`${base}/`)).text();
+  const part = (from, to) => html.slice(html.indexOf(from), html.indexOf(to, html.indexOf(from)));
+  const scopes = {
+    'quote-form': part('<form id="quote-form"', '</form>'),
+    'step-1': part('id="step-1"', 'id="step-2"'),
+    'details-form': part('<form id="details-form"', '</form>'),
+    'step-3': part('id="step-3"', 'id="step-4"'),
+  };
+  for (const [name, chunk] of Object.entries(scopes)) {
+    assert.equal((chunk.match(/class="error"[^>]*role="alert"/g) ?? []).length, 1, name);
+  }
+  const app = readFileSync(new URL('../public/app.js', import.meta.url), 'utf8');
+  assert.ok(app.includes(`scope.querySelector('.error[role="alert"]')`), 'showError uses the box wherever it sits');
 });
 
 test('checkout copy: Spanish dates, new success title and the boarding pass on the success step', async () => {

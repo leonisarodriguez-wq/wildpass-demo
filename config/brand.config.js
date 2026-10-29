@@ -314,7 +314,7 @@ export default {
     faqShow: 'Ver preguntas frecuentes',
     faqHide: 'Ocultar preguntas frecuentes',
     faq: [
-      { q: '¿Esto es un seguro real?', a: 'No. Seguros Wildpass es una demostración: no ofrece ninguna cobertura y ningún pago es real. Si se te pide una tarjeta, es solo la tarjeta de prueba de Stripe (modo test): nunca se cobra nada. La póliza que recibes es un documento de prueba sin validez.' },
+      { q: '¿Esto es un seguro real?', a: 'No. Seguros Wildpass es una demostración: no ofrece ninguna cobertura y ningún pago es real. En la web pagas con la tarjeta de prueba de Stripe 4242 4242 4242 4242 (una simulación: nunca se cobra nada). Los asistentes de IA no introducen ninguna tarjeta. La póliza que recibes es un documento de prueba sin validez.' },
       { q: '¿Qué diferencia hay entre Wild y Wild+?', a: 'Wild cubre gastos médicos hasta {wildMedEurope} en Europa y {wildMedWorld} en el resto del mundo, equipaje hasta {wildBaggage} y tiene una franquicia de {wildExcess} por siniestro médico. No incluye cancelación ni deportes de aventura. Wild+ sube los gastos médicos a {plusMedEurope} y {plusMedWorld}, el equipaje a {plusBaggage}, no tiene franquicia e incluye cancelación hasta {plusCancellation} por viajero, deportes de aventura y rescate hasta {rescue}. [Compara los dos con tu viaje](#quote-form).' },
       { q: '¿Qué deportes de aventura cubre Wild+?', a: 'Wild+ incluye trekking hasta {trekkingAltitude} m, buceo hasta {divingDepth} m, esquí y snowboard en pistas señalizadas, surf, rafting y barranquismo, con búsqueda y rescate hasta {rescue}. No cubre deportes profesionales ni actividades extremas como el salto BASE, ni lo que pase de esos límites.' },
       { q: '¿Quién puede contratarlo?', a: 'Viajes que salen de España, de hasta {maxTripDays} días, de {minTravelers} a {maxTravelers} viajeros por póliza y de {minAge} a {maxAge} años. Solo te pedimos nombre, email y fecha de nacimiento: nada de DNI. [Calcula tu precio](#quote-form).' },
@@ -322,7 +322,7 @@ export default {
       { q: '¿Cuánto tarda en llegar la póliza?', a: 'La póliza se emite en cuanto se confirma el pago (de prueba): puedes descargarla al momento y te la enviamos por email, donde suele llegar en un par de minutos. Si no la ves, mira en Spam.' },
       { q: '¿A qué destinos no podéis asegurar?', a: 'A los países donde el Ministerio de Asuntos Exteriores recomienda no viajar. Si eliges uno, el formulario te lo dice al momento.' },
       { q: '¿Qué no cubre ningún plan?', a: 'Las enfermedades preexistentes (salvo la primera asistencia urgente), los incidentes bajo los efectos del alcohol o las drogas, los deportes profesionales y las actividades extremas, los viajes en contra de las recomendaciones oficiales, los actos intencionados y los viajes de más de {maxTripDays} días.' },
-      { q: '¿Puede contratarlo mi asistente de IA?', a: 'Sí, si tu asistente es compatible con WebMCP, el estándar que permite a los agentes de IA usar una web. Tu asistente pide el precio, te enseña el resumen completo y solo puede pagar cuando tú lo confirmas expresamente.' },
+      { q: '¿Puede contratarlo mi asistente de IA?', a: 'Sí, si tu asistente es compatible con WebMCP, el estándar que permite a los agentes de IA usar una web. Tu asistente pide el precio, te enseña el resumen completo y solo puede pagar cuando tú lo confirmas expresamente. Nunca introduce una tarjeta: tras tu confirmación, el pago de prueba se completa en nuestro servidor.' },
       { q: '¿Cómo contacto con vosotros?', a: 'Escríbenos a {contactLink} y te contestamos lo antes posible.', needsContact: true },
     ],
     finalCtaTitle: '¿Preparado para empezar tu viaje?',
@@ -514,7 +514,7 @@ export default {
       cardMethod: 'Tarjeta de crédito o débito',
       cardMethodSelected: 'Seleccionado',
       cardLoading: 'Cargando el pago seguro de Stripe…',
-      stripeNote: 'Pago de prueba con Stripe (modo test). Usa la tarjeta 4242 4242 4242 4242, cualquier fecha futura y cualquier CVC. No se cobra nada.',
+      stripeNote: 'Simulación: pago de prueba con Stripe (modo test). Usa la tarjeta 4242 4242 4242 4242, cualquier fecha futura y cualquier CVC. No se cobra nada.',
       processing: 'Procesando pago…',
       totalPaidStripeLabel: 'Pagado (prueba Stripe)',
       editDetails: '← Editar datos',
@@ -593,7 +593,7 @@ export default {
 
     // Terms page, PDF and email
     termsTitle: 'Condiciones del seguro (demo)',
-    termsIntro: 'Esto es una demostración. No es un seguro real y no ofrece ninguna cobertura.',
+    termsIntro: 'Esto es una demostración. No es un seguro real y no ofrece ninguna cobertura. Ningún pago es real: en la web se paga con la tarjeta de prueba 4242 4242 4242 4242 de Stripe, y los asistentes de IA usan la herramienta confirm_payment, sin tarjeta.',
     // /condiciones: comparison table first, an index with anchors, "Ver mi precio" at the end.
     terms: {
       indexLabel: 'En esta página',

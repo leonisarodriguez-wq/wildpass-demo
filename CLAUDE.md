@@ -157,6 +157,9 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
   - Website: step 3 shows the Stripe Payment Element (deferred mode, brand colours). "Pagar {total}" stays disabled until the terms box is ticked.
     Click → `elements.submit()` → `/api/start_card_payment` (checks, returns client_secret) → `stripe.confirmPayment` (browser → Stripe)
     → `/api/finish_card_payment` (server retrieves the PaymentIntent from Stripe and checks succeeded + amount + currency + order id). These two routes are not WebMCP tools.
+  - app.js `showError(scope, …)` uses the scope's ONE `.error[role="alert"]` wherever it sits and never throws (tested). Bug fixed 29 Oct 2026:
+    step 3's box had moved into `.pay-col`, the old `:scope > .error` selector found nothing, and after a successful card payment the
+    success step never showed (policy issued and emailed, page stuck on step 3, every browser). Card payment tested to step 4 in phone emulation.
   - The policy is issued ONLY after Stripe reports `succeeded`. Stripe unreachable → PAYMENT_PROVIDER_UNAVAILABLE (503), no policy, no fallback mid-payment.
     Declines → PAYMENT_DECLINED (402); friendly Spanish texts per decline code in `brand.texts.errors.card`.
   - `policies.payment_ref` = pi_…; the snapshot gets `payment: { provider, ref, text }`; get_policy, PDF and email show "Pago de prueba Stripe · ref. pi_…".
