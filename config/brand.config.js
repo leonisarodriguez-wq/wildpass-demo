@@ -69,6 +69,8 @@ export default {
     // The claim stays in English (lang="en" on the h1); this Spanish line says what Wildpass is.
     // Under the English claim: brand.claimEs as a short turquoise line (Space Grotesk), then this sentence.
     heroSubtitle: 'Seguro de viaje con deportes de aventura y la póliza en tu email en 2 minutos.',
+    // Experiment "hero", variant B (public/exp.js): this Spanish headline replaces the English claim and the Spanish line.
+    heroB: 'El seguro de viaje que sí cubre tu aventura',
 
     // Trust strip under the hero (white, 4 items with an icon). Only what the product really does: no reviews, no seals.
     trust: [
@@ -513,8 +515,9 @@ export default {
         onlyIn: 'Solo en {plan}',
         limitsOf: 'Límites de {plan}',
         // Under the Wild+ price: what it costs on top of Wild, for the whole trip and per day.
-        difference: '+{diff} ({perDay} al día)',
-        differenceLabel: '{diff} más que {plan}, {perDay} al día',
+        // Experiment "upsell": A = only the total; B = this line under the Wild+ price, (Wild+ − Wild) / trip days.
+        upsellDaily: '+{perDay} al día por aventura y cancelación',
+        upsellDailyLabel: '{perDay} más al día que {plan}, por aventura y cancelación',
       },
       choose: 'Elegir {plan}',
       selectedPlan: 'elegido',
@@ -616,6 +619,68 @@ export default {
       },
 
       working: 'Un momento…',
+    },
+
+    // /metricas: our own funnel measurement (src/events.js). noindex, not in the sitemap.
+    metrics: {
+      title: 'Métricas de la demo',
+      since: 'Datos reales de esta demo desde el {date}.',
+      empty: 'Todavía no hay ningún evento. Los datos aparecen en cuanto alguien usa la web o un asistente.',
+      how: 'Medición propia, sin cookies ni herramientas de terceros: el navegador envía eventos anónimos (un identificador aleatorio por pestaña) a nuestro servidor. Nunca guardamos nombres, emails ni fechas de nacimiento.',
+      totalEvents: '{n} eventos registrados.',
+      funnelTitle: 'Embudo',
+      funnelIntro: 'Sesiones que llegan a cada paso (web y agentes juntos). El porcentaje compara con el paso anterior.',
+      stepOfPrevious: '{pct} del paso anterior',
+      steps: {
+        sessions: 'Sesiones',
+        quote_viewed: 'Precio visto',
+        plan_selected: 'Plan elegido',
+        details_completed: 'Datos completados',
+        review_viewed: 'Revisión',
+        payment_started: 'Pago iniciado',
+        policy_issued: 'Póliza emitida',
+      },
+      channelsTitle: 'Web frente a agentes de IA',
+      channelsIntro: 'Una sesión es «web» si abrió la página principal y «agente» si un asistente usó las herramientas WebMCP.',
+      web: 'Web',
+      agent: 'Agente de IA',
+      plansTitle: 'Wild frente a Wild+',
+      plansSelected: 'Plan elegido (sesiones)',
+      plansIssued: 'Pólizas emitidas',
+      experimentsTitle: 'Experimentos',
+      variantCol: 'Variante',
+      sessionsCol: 'Sesiones',
+      rateCol: 'Conversión',
+      rateCell: '{x} de {n} · {pct}',
+      difference: 'Diferencia (B − A): {diff} puntos',
+      notEnough: 'Todavía no hay datos suficientes para concluir (mínimo recomendado: {n} sesiones por variante).',
+      significant: 'Con {n} o más sesiones por variante, la diferencia es estadísticamente significativa (p = {p}). Gana la variante {winner}.',
+      notSignificant: 'Con {n} o más sesiones por variante, la diferencia no es estadísticamente significativa (p = {p}): no hay ganador claro.',
+      formulaTitle: 'Cómo calculamos el mínimo de sesiones',
+      formula: [
+        'Usamos la fórmula estándar del tamaño de muestra para comparar dos proporciones, con un 95 % de confianza (bilateral) y un 80 % de potencia:',
+        'n = (z₀,₉₇₅ · √(2·p̄·(1 − p̄)) + z₀,₈₀ · √(p₁·(1 − p₁) + p₂·(1 − p₂)))² / (p₂ − p₁)², con z₀,₉₇₅ = 1,96, z₀,₈₀ = 0,84 y p̄ = (p₁ + p₂) / 2.',
+        'p₁ es la conversión de la variante A y p₂ la que queremos poder detectar en B (p₁ + {lift} puntos). Mientras la variante A tenga menos de {observedFrom} sesiones, p₁ es un supuesto de planificación ({hero} para «hero», {upsell} para «upsell»), no un dato; después usamos la conversión real de A.',
+        'Cuando las dos variantes llegan al mínimo, comparamos con una prueba z de dos proporciones: si p < 0,05, la diferencia es significativa.',
+      ],
+      baselineAssumed: 'p₁ supuesto: {p}',
+      baselineObserved: 'p₁ observado en A: {p}',
+      experiments: {
+        hero: { title: 'Titular de la portada («hero»)', a: '«Travel wild. We\'ve got you.» + «Viaja salvaje. Nosotros te cubrimos.»', b: '«El seguro de viaje que sí cubre tu aventura»', metric: 'Métrica: % de sesiones en la portada que eligen un destino.' },
+        upsell: { title: 'Diferencia de precio de Wild+ («upsell», paso 1)', a: 'Solo el precio total de cada plan.', b: 'Bajo el precio de Wild+: «+X € al día por aventura y cancelación».', metric: 'Métrica: % de las elecciones de plan que son Wild+.' },
+      },
+      eventsTitle: 'Todos los eventos',
+      eventCol: 'Evento',
+      countCol: 'Veces',
+      forceNote: 'Para ver una variante concreta: añade ?exp_hero=b o ?exp_upsell=b a la dirección de la portada.',
+      admin: {
+        title: 'Borrar los datos de prueba',
+        text: 'Borra TODOS los eventos de /metricas. No toca pólizas, pedidos ni presupuestos. No se puede deshacer.',
+        confirm: 'Sí, quiero borrar todos los eventos',
+        button: 'Borrar los datos de prueba',
+        done: 'Listo: se han borrado todos los eventos.',
+        needConfirm: 'Marca la casilla para confirmar el borrado.',
+      },
     },
 
     // Friendly error messages by server error_code ({placeholders} come from limits or the error).

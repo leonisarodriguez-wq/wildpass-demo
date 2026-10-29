@@ -27,6 +27,7 @@
   <link rel="stylesheet" href="/brand.css">
   <link rel="stylesheet" href="/style.css">
   <script src="/sun-once.js"></script>
+  <script src="/exp.js"></script>
 </head>
 <!-- Template filled in by the server (src/landing.js): double braces = escaped text, triple braces = built HTML. -->
 <body>
@@ -42,7 +43,7 @@
       <div class="wrap hero-grid">
         {{{heroScene}}}
         <div class="hero-copy">
-          <h1 id="hero-title" lang="en">{{{heroTitle}}}</h1>
+          <h1 id="hero-title"><span class="hero-a" lang="en">{{{heroTitle}}}</span><span class="hero-b">{{t.heroB}}</span></h1>
           <p class="hero-tagline">{{brand.claimEs}}</p>
           <p class="hero-sub">{{t.heroSubtitle}}</p>
         </div>

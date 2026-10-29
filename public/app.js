@@ -4,6 +4,7 @@
 import { callApi, loadConfig } from './api.js';
 import { qrSvg } from './qr.js';
 import { enhanceDestination, isHomeQuery } from './destination-picker.js';
+import { track } from './track.js';
 
 const $ = sel => document.querySelector(sel);
 // The destination field people see: the searchable box once it exists, else the plain <select>.
@@ -284,7 +285,10 @@ liveCheck($('#quote-form'), quoteChecks);
 const checkOne = field => { const c = quoteChecks().find(([f]) => f === field); if (c) setFieldError(field, c[1]()); };
 
 // Destinations with official "do not travel" advice: say so at once, right under the box (the quote is refused anyway).
-$('#destination').addEventListener('change', () => { if (destBlocked() || destField().getAttribute('aria-invalid')) checkOne(destField()); });
+$('#destination').addEventListener('change', () => {
+  if (destBlocked() || destField().getAttribute('aria-invalid')) checkOne(destField());
+  if ($('#destination').value) track('destination_selected'); // the "hero" experiment's metric
+});
 
 $('#departure').addEventListener('change', () => {
   const dep = $('#departure').value;
@@ -326,6 +330,7 @@ $('#quote-form').addEventListener('submit', async e => {
     Object.assign(state, { quote: result, plan: null, selected: state.preferredPlan, orderId: null, review: null, paid: null });
     renderStep1();
     render('1');
+    track('quote_viewed');
   });
 });
 
@@ -424,13 +429,14 @@ function renderStep1() {
   ];
 
   // The same two plan cards at every width: side by side from 600 px, one under the other (full width) on phones.
-  // Wild+ says what it costs on top of Wild: "+12,40 € (0,83 € al día)".
+  // Experiment "upsell" (public/exp.js): A = only each plan's total; B = under the Wild+ price, what it costs on top of
+  // Wild PER DAY, from this quote: (Wild+ − Wild) / trip days, always with cents ("+3,35 € al día por aventura y cancelación").
   const base = q.plans.find(p => p.plan === 'wild');
+  const cents = n => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
   const difference = p => {
-    if (p.plan === 'wild' || !base) return null;
-    const diff = Math.round((p.total_price_eur - base.total_price_eur) * 100) / 100;
-    const values = { diff: eur(diff), perDay: eur(Math.round((diff / q.trip.days) * 100) / 100), plan: base.plan_name };
-    return el('p', { class: 'plan-diff' }, el('span', { 'aria-hidden': 'true', text: fill(cmp.difference, values) }), el('span', { class: 'sr-only', text: fill(cmp.differenceLabel, values) }));
+    if ((window.__wildpassExp?.upsell ?? 'a') !== 'b' || p.plan === 'wild' || !base) return null;
+    const values = { perDay: cents(Math.round(((p.total_price_eur - base.total_price_eur) / q.trip.days) * 100) / 100), plan: base.plan_name };
+    return el('p', { class: 'plan-diff' }, el('span', { 'aria-hidden': 'true', text: fill(cmp.upsellDaily, values) }), el('span', { class: 'sr-only', text: fill(cmp.upsellDailyLabel, values) }));
   };
   $('#compare').replaceChildren(el('div', { class: 'plan-compare' }, q.plans.map(p => {
     const featured = p.plan === 'wild_plus';
@@ -478,6 +484,7 @@ async function choosePlan(plan, button) {
     const result = await callApi('select_plan', { quote_id: state.quote.quote_id, plan });
     if (!result.ok) return showError(step, friendly(result));
     showError(step, null);
+    track('plan_selected', { plan });
     Object.assign(state, { plan, orderId: result.order_id, review: null });
     renderStep2();
     render('2');
@@ -585,8 +592,10 @@ $('#details-form').addEventListener('submit', async e => {
       }
       return showError(form, friendly(result), field);
     }
+    track('details_completed');
     const review = await callApi('review_order', { order_id: state.orderId });
     if (!review.ok) return showError(form, friendly(review));
+    track('review_viewed');
     showError(form, null);
     state.review = review;
     renderStep3();
@@ -726,9 +735,11 @@ $('#pay').addEventListener('click', async e => {
       confirmed_total_eur: state.review.total_eur,
       user_confirmed: true,
     };
+    track('payment_started', { plan: state.plan });
     const result = stripeOn ? await payWithCard(confirmation) : await callApi('confirm_payment', confirmation);
     if (!result.ok) return showError(step, result.friendlyText ?? friendly(result), result.error_code === 'TERMS_NOT_ACCEPTED' ? $('#accept-terms') : null);
     showError(step, null);
+    track('policy_issued', { plan: state.plan });
     state.paid = result;
     $('#policy-number').textContent = result.policy_number;
     $('#pdf-link').href = result.pdf_url;
@@ -803,6 +814,7 @@ $('#resend').addEventListener('click', async e => {
     const result = await callApi('send_policy_copy', { ...sendAuth(), kind: 'resend' });
     showError($('#forward-form'), null);
     if (!afterSend(result, $('#resend-status'), A().resent)) $('#resend-status').textContent = friendly(result);
+    else track('policy_resent');
   });
   syncSendButtons();
 });
@@ -817,6 +829,7 @@ $('#forward-form').addEventListener('submit', async e => {
     if (!result.ok) return showError($('#forward-form'), friendly(result), result.error_code === 'INVALID_EMAIL' ? input : null);
     showError($('#forward-form'), null);
     afterSend(result, $('#forward-status'), A().forwarded);
+    track('policy_forwarded');
     input.value = ''; // one address at a time: ready for the next one
   });
   syncSendButtons();
@@ -856,6 +869,7 @@ async function init() {
   payments = config.payments ?? payments;
   relabelAges();
   enhanceDestination($('#destination'), T.form);
+  track('page_view', { page: '/' });
   // A reload in the middle of the checkout starts again from the landing (nothing is stored in the browser).
   if (location.hash.startsWith('#paso-')) history.replaceState({ step: 'landing' }, '', location.pathname);
   history.replaceState({ step: 'landing' }, '', location.pathname + location.hash);

@@ -323,7 +323,7 @@ test('landing: complete server-rendered page with prices from the pricing engine
   // Every template placeholder was filled (an unknown one would have thrown).
   assert.ok(!/\{\{|\}\}/.test(html), 'leftover template braces');
   // Headline: two fixed lines, never a lonely "you.".
-  assert.ok(/<h1 id="hero-title" lang="en"><span class="claim-part">Travel wild\.<\/span> <span class="claim-part">We(’|'|&#39;)ve got you\.<\/span><\/h1>/.test(html), 'headline in two parts');
+  assert.ok(/<h1 id="hero-title"><span class="hero-a" lang="en"><span class="claim-part">Travel wild\.<\/span> <span class="claim-part">We(’|'|&#39;)ve got you\.<\/span><\/span><span class="hero-b">El seguro de viaje que sí cubre tu aventura<\/span><\/h1>/.test(html), 'headline in two parts, plus the hidden variant B');
   // Live price line sits ABOVE the button and stays hidden until there is a price (no placeholder).
   assert.ok(html.indexOf('id="price-preview"') < html.indexOf('id="quote-submit"') && html.includes('<p class="price-preview" id="price-preview" hidden><span class="pp-main"></span>'));
   assert.ok(!html.includes('Elige destino y fechas para verlo'));

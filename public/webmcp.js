@@ -6,6 +6,19 @@ import { callApi, loadConfig } from './api.js';
 import { connectModelContext, installExecuteTool, normalizeInput, registerToolsOnce } from './model-context.js';
 import { buildTools } from './webmcp-tools.js';
 import { showAgentStep } from './agent-pill.js';
+import { track } from './track.js';
+
+// Each successful tool call = the matching funnel event, with channel "agent" (src/events.js).
+export function agentEvents(tool, input, result) {
+  if (tool === 'confirm_payment') return result?.ok ? [['payment_started'], ['policy_issued']] : [['payment_started']];
+  if (!result?.ok) return [];
+  return {
+    get_quote: [['quote_viewed']],
+    select_plan: [['plan_selected', input?.plan]],
+    set_traveler_details: [['details_completed']],
+    review_order: [['review_viewed']],
+  }[tool] ?? [];
+}
 
 function loadScript(src) {
   return new Promise((resolve, reject) => {
@@ -30,6 +43,7 @@ async function register() {
         const { input, error } = normalizeInput(raw);
         const result = error ?? await callApi(tool.name, input);
         showAgentStep(config.brand.texts.agentPill, config.plans, tool.name, input, result);
+        for (const [event, plan] of agentEvents(tool.name, input, result)) track(event, { channel: 'agent', plan: plan ?? (event === 'policy_issued' ? result.plan : undefined) });
         return result;
       },
     }));

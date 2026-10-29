@@ -563,6 +563,7 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
       ok: true,
       policy_number,
       status: 'active',
+      plan: order.plan,
       paid_total_eur: toEur(order.review_total_cents),
       payment: paymentRef ? 'Stripe test mode — paid with a Stripe test card, nothing real was charged' : 'simulated — nothing was charged',
       ...(paymentRef && { payment_ref: paymentRef }),

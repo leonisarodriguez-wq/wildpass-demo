@@ -14,7 +14,7 @@ The owner is not a programmer: explain things simply, report test results honest
   with browser history per step, a trip summary card (steps 1–2, "Editar" goes back to the form) and a fixed 64 px action bar
   ("Elige un plan" + price range until a plan is chosen; its yellow button = the step's action, `barAction()` in app.js:
   "Ver planes"/"Continuar con X" → "Continuar" → "Ir al pago" (focuses the terms box) → "Pagar {total}").
-  Step 1: Wild+ shows "+X € (Y € al día)" over Wild. Step 3 = compact review card ("Tu seguro" + Editar, one-line rows,
+  Step 1: Wild+ price line depends on the "upsell" experiment (see Measurement). Step 3 = compact review card ("Tu seguro" + Editar, one-line rows,
   "Zona de precio", 3 chips, coverage/exclusions in closed `<details>`), "Acepta las condiciones para pagar" under the disabled
   Pagar and "Póliza al instante en tu email" beside it; ≥960 px review left + payment right, so the card form and Pagar are on the
   first screen at 1440×900 (phones: payment after one scroll). Quote form: one row per traveller, "Viajero N" + age dropdown
@@ -114,6 +114,18 @@ The owner is not a programmer: explain things simply, report test results honest
 - Website texts in Spanish. Server error messages in Spanish too (shown to users). Tool descriptions in English (read by AI agents).
 - `.env` holds secrets (BREVO_API_KEY, SENDER_EMAIL, STRIPE_PUBLISHABLE_KEY, STRIPE_SECRET_KEY) and CONTACT_EMAIL (FAQ mailto). Never put secrets in code or Git; never print a key (check presence/prefix/length only). `.env.example` has placeholders only.
   The email sender NAME comes from the brand config ("Seguros Wildpass (demo)"), not from `.env`.
+
+## Measurement and experiments (Blocks 2–3, 29 Oct 2026)
+- Own funnel events, no cookies/third parties: `public/track.js` → POST `/api/events` (2 kB body limit) → `src/events.js` → SQLite `events`.
+  Fields: event (13 names in `EVENT_NAMES`), random session_id (sessionStorage), channel web|agent, device (width <700 = mobile), page, plan,
+  exp_hero, exp_upsell; ts set by the server. Never personal data (unknown fields refused). Limits: 40/min and 300/day per session,
+  1500/h per IP, table capped at 200k rows. WebMCP tool calls send the matching event with channel "agent" (`agentEvents` in webmcp.js).
+- `/metricas` (`src/metrics-page.js`): funnel, web vs agent, Wild vs Wild+, experiments, all events. noindex (meta + X-Robots-Tag), no-store,
+  never in the sitemap. `?admin=<METRICS_ADMIN_KEY from .env>` shows "Borrar los datos de prueba" (POST /metricas/borrar, checkbox required).
+- Experiments: `public/exp.js` (classic <head> script) assigns a|b 50/50 per browser (localStorage `wildpass-exp`), `?exp_hero=` / `?exp_upsell=`
+  force and keep it; sets html[data-exp-*] before the first paint. Hero B = `texts.heroB` (hides the English claim and claimEs, same subtitle).
+  Upsell: A = totals only (the old "+X € (Y € al día)" line is gone), B = "+X € al día por aventura y cancelación" = (Wild+ − Wild)/days.
+  Sample size: two proportions, 95 %/80 % (`sampleSizePerVariant`), planning assumptions in `config/experiments.config.js` until A has 100 sessions.
 
 ## Brand
 - Name "Seguros Wildpass". Logo: symbol (mountain with the sun behind it) left of "wildpass" (lowercase, Space Grotesk Bold), small "seguros de viaje" below.

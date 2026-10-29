@@ -9,6 +9,10 @@ import { createBusiness, fail } from './business.js';
 import { buildPolicyPdf } from './pdf.js';
 import { createEmailService } from './email.js';
 import { createStripe } from './stripe.js';
+import { createEvents } from './events.js';
+import { metricsPageBody } from './metrics-page.js';
+import experiments from '../config/experiments.config.js';
+import { timingSafeEqual, createHash } from 'node:crypto';
 import { faviconSvg } from './logo.js';
 import { agentsPageBody, createLanding, llmsTxt, notFoundBody, pageShell, termsPageBody } from './landing.js';
 import marketQuotes from '../config/market-quotes.js';
@@ -32,6 +36,7 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
   mkdirSync(pdfDir, { recursive: true });
   const db = openDb(join(dataDir, 'travel.db'));
   const stripe = createStripe({ env, fetchImpl: stripeFetch, log }); // test keys only, else simulated payments
+  const events = createEvents({ db, ...(now && { now }) });
   const business = createBusiness({ db, pricing, brand, pdfDir, buildPdf: buildPolicyPdf, email: createEmailService({ env, brand, fetchImpl }), stripe, ...(now && { now }) });
 
   const regionNames = new Intl.DisplayNames(['es'], { type: 'region' });
@@ -99,6 +104,11 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
   });
 
   api.use((req, res) => res.status(404).json(fail('UNKNOWN_ENDPOINT', 'Esta dirección de la API no existe.', 'Revisa la dirección; las acciones disponibles son get_quote, select_plan, set_traveler_details, review_order, confirm_payment y get_policy.')));
+  // Funnel events (src/events.js): small, validated, rate-limited. Its own tiny body limit.
+  app.post('/api/events', express.json({ limit: '2kb' }), (req, res) => {
+    const result = events.record(req.body ?? null, { ip: req.ip });
+    res.status(result.ok ? 200 : { TOO_MANY_EVENTS: 429, EVENTS_FULL: 507 }[result.error_code] ?? 400).json(result);
+  });
   app.use('/api', api);
 
   // ---------- pages and files ----------
@@ -137,7 +147,7 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
 
   // Developer & AI-agent page, linked only from the footer.
   app.get('/agentes', (req, res) => {
-    res.type('html').send(pageShell({ brand, title: brand.texts.agents.title, body: agentsPageBody({ brand, pricing, payments }), scripts: ['/agentes.js'] }));
+    res.type('html').send(pageShell({ brand, title: brand.texts.agents.title, body: agentsPageBody({ brand, pricing, payments }), scripts: ['/agentes.js', '/page-view.js'] }));
   });
 
   // Every visitor and every agent is welcome: no user-agent is ever blocked (the safety rules live in business.js).
@@ -147,7 +157,28 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
   });
 
   app.get('/condiciones', (req, res) => {
-    res.type('html').send(pageShell({ brand, title: brand.texts.termsTitle, body: termsPageBody({ brand, pricing }) }));
+    res.type('html').send(pageShell({ brand, title: brand.texts.termsTitle, body: termsPageBody({ brand, pricing }), scripts: ['/page-view.js'] }));
+  });
+
+  // /metricas: real data of this demo. noindex (meta + header), not in the sitemap, never cached.
+  // ?admin=<METRICS_ADMIN_KEY> shows the "delete test data" form; the key comes only from .env.
+  const adminKey = String(env.METRICS_ADMIN_KEY ?? '');
+  const hash = v => createHash('sha256').update(String(v)).digest();
+  const isAdmin = given => adminKey.length >= 16 && typeof given === 'string' && timingSafeEqual(hash(given), hash(adminKey));
+  const metricsPage = (req, res, flash = '') => {
+    const admin = isAdmin(req.query.admin) ? { key: req.query.admin } : null;
+    if (admin && req.query.borrado === '1') flash = brand.texts.metrics.admin.done;
+    if (admin && req.query.confirmar === '1') flash = brand.texts.metrics.admin.needConfirm;
+    res.set({ 'X-Robots-Tag': 'noindex, nofollow', 'Cache-Control': 'no-store' }).type('html')
+      .send(pageShell({ brand, title: brand.texts.metrics.title, head: '<meta name="robots" content="noindex, nofollow">', body: metricsPageBody({ brand, data: events.summary(), experiments, admin, flash }) }));
+  };
+  app.get('/metricas', (req, res) => metricsPage(req, res));
+  app.post('/metricas/borrar', express.urlencoded({ extended: false, limit: '1kb' }), (req, res) => {
+    const key = req.body?.admin;
+    if (!isAdmin(key)) return res.status(403).set('X-Robots-Tag', 'noindex').type('text').send('No autorizado');
+    if (req.body.confirm !== 'si') return res.redirect(303, `/metricas?admin=${encodeURIComponent(key)}&confirmar=1`);
+    events.reset();
+    res.redirect(303, `/metricas?admin=${encodeURIComponent(key)}&borrado=1`);
   });
 
   app.get('/poliza/:file', (req, res) => {
@@ -187,5 +218,5 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
     res.status(500).json(fail('INTERNAL_ERROR', 'Error interno del servidor.', 'Inténtalo de nuevo en unos segundos. Si se repite, avisa al soporte.'));
   });
 
-  return { app, db, business, stripe: { enabled: stripe.enabled, reason: stripe.reason } };
+  return { app, db, business, events, stripe: { enabled: stripe.enabled, reason: stripe.reason } };
 }

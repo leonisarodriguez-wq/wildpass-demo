@@ -98,9 +98,10 @@ export function headerHtml(brand, { home = false } = {}) {
 }
 
 // Shared shell for simple pages (terms, /agentes, 404).
-export function pageShell({ brand, title, body, scripts = [] }) {
+// head: extra tags (robots meta, JSON-LD…), already-built HTML.
+export function pageShell({ brand, title, body, scripts = [], head = '' }) {
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escapeHtml(title)} · ${escapeHtml(brand.name)}</title>${iconLinks}${fontPreloads}<link rel="stylesheet" href="/brand.css"><link rel="stylesheet" href="/style.css"></head>
+<title>${escapeHtml(title)} · ${escapeHtml(brand.name)}</title>${head}${iconLinks}${fontPreloads}<link rel="stylesheet" href="/brand.css"><link rel="stylesheet" href="/style.css"></head>
 <body>${skipLinkHtml(brand)}${bannerHtml(brand)}${headerHtml(brand)}
 <main class="page" id="contenido" tabindex="-1"><div class="wrap"><div class="card-page">${body}</div></div></main>
 ${footerHtml(brand)}${['/site-nav.js', ...scripts].map(src => `<script type="module" src="${src}"></script>`).join('')}</body></html>`;
