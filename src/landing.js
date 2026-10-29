@@ -83,7 +83,7 @@ function footerHtml(brand) {
   const t = brand.texts;
   return `<footer class="site-footer"><div class="wrap">
     <p class="footer-legal">${escapeHtml(t.footerLegal)}</p>
-    <p class="footer-links"><a href="/condiciones">${escapeHtml(t.footerTerms)}</a><a href="/agentes">${escapeHtml(t.footerAgents)}</a><a class="footer-quiet" href="/caso">${escapeHtml(t.footerCaso)}</a><span>${escapeHtml(t.footerWebmcp)}</span></p>
+    <p class="footer-links"><a href="/condiciones">${escapeHtml(t.footerTerms)}</a><a href="/terminos">${escapeHtml(t.footerContracting)}</a><a href="/privacidad">${escapeHtml(t.footerPrivacy)}</a><a href="/agentes">${escapeHtml(t.footerAgents)}</a><a class="footer-quiet" href="/caso">${escapeHtml(t.footerCaso)}</a><span>${escapeHtml(t.footerWebmcp)}</span></p>
   </div></footer>`;
 }
 
@@ -282,6 +282,18 @@ export function termsPageBody({ brand, pricing }) {
     <p><a href="/">← ${escapeHtml(t.back)}</a></p>`;
 }
 
+// /terminos and /privacidad: demo documents (texts.legal). `[text](/path)` in a paragraph = an internal link.
+export function legalPageBody({ brand, kind }) {
+  const t = brand.texts.legal;
+  const doc = t[kind];
+  const link = line => escapeHtml(line).replace(/\[([^\]]+)\]\((\/[^)\s]*)\)/g, '<a href="$2">$1</a>');
+  return `<h1>${escapeHtml(doc.title)}</h1><p class="legal-notice" role="note"><strong>${escapeHtml(doc.notice)}</strong></p>
+    <nav class="terms-index" aria-label="${escapeHtml(t.indexLabel)}"><p class="terms-index-label">${escapeHtml(t.indexLabel)}</p>
+      <ol>${doc.sections.map(sec => `<li><a href="#${sec.id}">${escapeHtml(sec.title)}</a></li>`).join('')}</ol></nav>
+    ${doc.sections.map(sec => `<h2 id="${sec.id}">${escapeHtml(sec.title)}</h2>${(sec.paragraphs ?? []).map(x => `<p>${link(x)}</p>`).join('')}${sec.list ? `<ul>${sec.list.map(x => `<li>${link(x)}</li>`).join('')}</ul>` : ''}`).join('')}
+    <p><a href="/">← ${escapeHtml(brand.texts.back)}</a></p>`;
+}
+
 // /caso: the case study (draft). Product numbers come from the configs; [COMPLETAR] / [DATO A VERIFICAR] are highlighted.
 export function casePageBody({ brand, pricing, market, payments }) {
   const t = brand.texts;
@@ -331,7 +343,7 @@ export function llmsTxt({ brand, pricing, payments, baseUrl }) {
     ...tools.flatMap((tool, i) => [`${i + 1}. ${tool.name}: ${tool.es}`, ...(tool === pay ? rules.map(f => `   - ${f}: ${pay.rulesEs[f]}`) : [])]), '',
     l.confirm, '',
     `## ${l.whoTitle}`, '', l.residence, '', `**${l.dni}**`, '', l.dniHow, '', l.testId, '',
-    `## ${l.moreTitle}`, '', `- [${l.agentsLink}](${baseUrl}/agentes)`, `- [${l.termsLink}](${baseUrl}/condiciones)`, '',
+    `## ${l.moreTitle}`, '', `- [${l.agentsLink}](${baseUrl}/agentes)`, `- [${l.termsLink}](${baseUrl}/condiciones)`, `- [${l.contractingLink}](${baseUrl}/terminos)`, `- [${l.privacyLink}](${baseUrl}/privacidad)`, '',
   ].join('\n');
 }
 
@@ -409,6 +421,7 @@ function contactFormHtml(brand) {
     + `<div class="field"><label for="contact-email">${e(c.email)}</label><p class="hint" id="contact-email-hint">${e(c.emailHelp)}</p><input id="contact-email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" aria-required="true" aria-describedby="contact-email-hint"></div>`
     + `<div class="field"><label for="contact-message">${e(c.message)}</label><textarea id="contact-message" name="message" rows="5" maxlength="2000" aria-required="true"></textarea></div>`
     + `<div class="hp" aria-hidden="true"><label for="contact-website">${e(c.honeypot)}</label><input id="contact-website" name="website" tabindex="-1" autocomplete="off"></div>`
+    + `<p class="muted privacy-link"><a href="/privacidad">${e(brand.texts.checkout.privacyLink)}</a></p>`
     + `<label class="check" for="contact-consent"><input type="checkbox" id="contact-consent" name="consent" aria-required="true"> <span>${e(c.consent)}</span></label>`
     + `<p class="error" role="alert" hidden></p>`
     + `<button type="submit" class="secondary" id="contact-send">${e(c.send)}</button>`

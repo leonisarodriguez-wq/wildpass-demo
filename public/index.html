@@ -215,6 +215,7 @@
         <button type="button" class="link-button" data-go="1">{{t.checkout.back}}</button>
         <h2 id="step-2-title" tabindex="-1">{{t.checkout.step2Title}}</h2>
         <p class="muted">{{t.checkout.step2Line}}</p>
+        <p class="muted privacy-link"><a href="/privacidad">{{t.checkout.privacyLink}}</a></p>
         <form id="details-form" novalidate>
           <fieldset class="person">
             <legend>{{t.checkout.policyholder}}</legend>
@@ -241,7 +242,7 @@
           <div id="payment-element"><p class="form-note">{{t.checkout.cardLoading}}</p></div>
           <p class="form-note stripe-note">{{t.checkout.stripeNote}}</p>
         </div>
-        <label class="check" for="accept-terms"><input type="checkbox" id="accept-terms"> <span>{{t.checkout.accept}}</span></label>
+        <label class="check" for="accept-terms"><input type="checkbox" id="accept-terms"> <span>{{t.checkout.acceptBefore}} <a href="/condiciones" target="_blank" rel="noopener">{{t.checkout.acceptConditions}}</a> {{t.checkout.acceptAnd}} <a href="/terminos" target="_blank" rel="noopener">{{t.checkout.acceptContracting}}</a></span></label>
         <div class="error" role="alert" hidden></div>
         <div class="pay-row">
           <button type="button" class="primary" id="pay" disabled aria-describedby="pay-hint"></button>
@@ -315,7 +316,7 @@
   <footer class="site-footer">
     <div class="wrap">
       <p class="footer-legal">{{t.footerLegal}}</p>
-      <p class="footer-links"><a href="/condiciones">{{t.footerTerms}}</a><a href="/agentes">{{t.footerAgents}}</a><a class="footer-quiet" href="/caso">{{t.footerCaso}}</a><span>{{t.footerWebmcp}}</span></p>
+      <p class="footer-links"><a href="/condiciones">{{t.footerTerms}}</a><a href="/terminos">{{t.footerContracting}}</a><a href="/privacidad">{{t.footerPrivacy}}</a><a href="/agentes">{{t.footerAgents}}</a><a class="footer-quiet" href="/caso">{{t.footerCaso}}</a><span>{{t.footerWebmcp}}</span></p>
     </div>
   </footer>
 

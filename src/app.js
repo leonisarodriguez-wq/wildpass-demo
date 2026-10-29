@@ -15,7 +15,7 @@ import { metricsPageBody } from './metrics-page.js';
 import experiments from '../config/experiments.config.js';
 import { timingSafeEqual, createHash } from 'node:crypto';
 import { faviconSvg } from './logo.js';
-import { agentsPageBody, casePageBody, completeIdPageBody, createLanding, llmsTxt, notFoundBody, pageShell, termsPageBody } from './landing.js';
+import { agentsPageBody, casePageBody, completeIdPageBody, createLanding, legalPageBody, llmsTxt, notFoundBody, pageShell, termsPageBody } from './landing.js';
 import marketQuotes from '../config/market-quotes.js';
 import { COUNTRY_CODES } from '../config/countries.js';
 import brand from '../config/brand.config.js';
@@ -165,6 +165,12 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
   app.get('/llms.txt', (req, res) => {
     res.type('text/plain').send(llmsTxt({ brand, pricing, payments, baseUrl: baseUrl(req) }));
   });
+
+  for (const [path, kind] of [['/terminos', 'terminos'], ['/privacidad', 'privacidad']]) {
+    app.get(path, (req, res) => {
+      res.type('html').send(pageShell({ brand, title: brand.texts.legal[kind].pageTitle, body: legalPageBody({ brand, kind }), scripts: ['/page-view.js'] }));
+    });
+  }
 
   app.get('/condiciones', (req, res) => {
     res.type('html').send(pageShell({ brand, title: brand.texts.termsTitle, body: termsPageBody({ brand, pricing }), scripts: ['/page-view.js'] }));

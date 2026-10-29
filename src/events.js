@@ -8,7 +8,7 @@ export const EVENT_NAMES = [
   'payment_started', 'policy_issued', 'policy_resent', 'policy_forwarded',
 ];
 // Pages that send page_view (/metricas never does).
-export const TRACKED_PAGES = ['/', '/agentes', '/condiciones', '/caso'];
+export const TRACKED_PAGES = ['/', '/agentes', '/condiciones', '/terminos', '/privacidad', '/caso'];
 const PLAN_IDS = ['wild', 'wild_plus', 'wild_max'];
 const FIELDS = ['event', 'session_id', 'channel', 'device', 'page', 'plan', 'exp_hero', 'exp_upsell'];
 const SESSION_RE = /^[A-Za-z0-9_-]{16,64}$/;

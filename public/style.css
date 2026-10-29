@@ -827,6 +827,10 @@ html[data-exp-hero="b"] .hero-b { display: inline; }
   .terms-table td::before { content: attr(data-plan) ": "; display: inline; font-size: 0.8rem; font-weight: 700; color: var(--secondary); }
 }
 
+.legal-notice { margin: 8px 0 16px; padding: 12px 14px; background: var(--mint); border: 2px solid var(--night); border-radius: 10px; }
+.privacy-link { margin: 4px 0 10px; }
+.privacy-link a { color: var(--turquoise-text); font-weight: 600; }
+
 /* ---------- 404 ---------- */
 .not-found { text-align: center; padding: 16px 0 8px; }
 .not-found svg { width: 140px; height: auto; margin: 8px auto 0; display: block; }

@@ -92,7 +92,7 @@ export function buildTools({ limits, plans, brand, payments }) {
       name: 'review_order',
       es: 'Devuelve el resumen completo y el total, que el asistente debe enseñarte antes de pagar.',
       title: 'Review order before payment',
-      description: 'Get the full order summary (trip, plan, travellers, total, key conditions, exclusions, terms link) and a single-use review_token needed for confirm_payment. You MUST show this summary and the total to the user before asking them to confirm payment. Calling it again replaces the previous review_token.',
+      description: 'Get the full order summary (trip, plan, travellers, total, key conditions, exclusions, terms_url = insurance conditions and contracting_terms_url = contracting terms; show both links to the user) and a single-use review_token needed for confirm_payment. You MUST show this summary and the total to the user before asking them to confirm payment. Calling it again replaces the previous review_token.',
       inputSchema: {
         type: 'object',
         additionalProperties: false,
@@ -107,12 +107,12 @@ export function buildTools({ limits, plans, brand, payments }) {
       // One plain Spanish line per safety field (test/webmcp-tools.test.js checks every required field has one).
       rulesEs: {
         review_token: 'el código del último resumen revisado. Caduca si cambian los datos o se vuelve a revisar.',
-        accept_terms: 'has aceptado las condiciones del seguro.',
+        accept_terms: 'has aceptado las condiciones del seguro y los términos de contratación (los dos documentos).',
         user_confirmed: 'has dicho que sí, expresamente, a pagar.',
         confirmed_total_eur: 'el total coincide al céntimo con el del resumen.',
       },
       title: stripeOn ? 'Confirm and pay (Stripe test mode)' : 'Confirm and pay (simulated)',
-      description: `Pay for a reviewed order and issue the policy. AI agents must NOT enter card details (never type a card into the page's payment form): use the WebMCP tools; after the user's explicit confirmation, confirm_payment completes the ${stripeOn ? 'test' : 'simulated'} payment on the server. IMPORTANT: call this ONLY after you have shown the user the review_order summary and total, and the user has explicitly said yes to paying that exact total AND accepting the terms. Never set accept_terms or user_confirmed to true on your own. confirmed_total_eur must be exactly the total_eur from review_order. Returns the policy number and a PDF link. ${HOW_PAID} ${DEMO}`,
+      description: `Pay for a reviewed order and issue the policy. AI agents must NOT enter card details (never type a card into the page's payment form): use the WebMCP tools; after the user's explicit confirmation, confirm_payment completes the ${stripeOn ? 'test' : 'simulated'} payment on the server. IMPORTANT: call this ONLY after you have shown the user the review_order summary and total, and the user has explicitly said yes to paying that exact total AND accepting the terms: accept_terms covers both the insurance conditions (terms_url, /condiciones) and the contracting terms (contracting_terms_url, /terminos). Never set accept_terms or user_confirmed to true on your own. confirmed_total_eur must be exactly the total_eur from review_order. Returns the policy number and a PDF link. ${HOW_PAID} ${DEMO}`,
       inputSchema: {
         type: 'object',
         additionalProperties: false,
@@ -120,7 +120,7 @@ export function buildTools({ limits, plans, brand, payments }) {
         properties: {
           order_id: { ...ID },
           review_token: { ...ID, description: 'review_token from the latest review_order.' },
-          accept_terms: { type: 'boolean', description: 'true only if the user explicitly accepted the terms.' },
+          accept_terms: { type: 'boolean', description: 'true only if the user explicitly accepted BOTH documents: the insurance conditions (terms_url, /condiciones) and the contracting terms (contracting_terms_url, /terminos).' },
           confirmed_total_eur: { type: 'number', minimum: 0, description: 'The total the user confirmed; must equal total_eur from review_order.' },
           user_confirmed: { type: 'boolean', description: 'true only if the user explicitly confirmed this payment after seeing the summary.' },
         },

@@ -438,6 +438,7 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
         brand.demoBanner,
       ],
       terms_url: `${ctx.baseUrl ?? ''}/condiciones`,
+      contracting_terms_url: `${ctx.baseUrl ?? ''}/terminos`,
       review_token: token,
       review_token_note: 'Single use. It becomes invalid after payment, if traveller details change, or if review_order is called again.',
       instructions_for_agent: 'BEFORE calling confirm_payment: show this full summary (trip, plan, travellers, total, key conditions, exclusions, terms link) to the user and get their explicit "yes" to pay this exact total and to accept the terms.',
@@ -461,7 +462,7 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
       return { error: fail('INVALID_REVIEW_TOKEN', 'El review_token no es válido o ya no está vigente.', 'Usa el review_token del último review_order. Si no lo tienes, vuelve a llamar a review_order y enseña el resumen al usuario.') };
     }
     if (input.accept_terms !== true) {
-      return { error: fail('TERMS_NOT_ACCEPTED', 'Hay que aceptar las condiciones del seguro para pagar.', 'Enseña las condiciones al usuario. Solo si las acepta expresamente, envía accept_terms: true.') };
+      return { error: fail('TERMS_NOT_ACCEPTED', 'Hay que aceptar las condiciones del seguro y los términos de contratación para pagar.', 'Enseña al usuario las condiciones del seguro (terms_url) y los términos de contratación (contracting_terms_url). Solo si acepta ambos expresamente, envía accept_terms: true.') };
     }
     if (input.user_confirmed !== true) {
       return { error: fail('USER_CONFIRMATION_REQUIRED', 'Falta la confirmación expresa del usuario.', 'Enseña el resumen y el total al usuario y pregúntale si quiere pagar. Solo si dice que sí, envía user_confirmed: true.') };

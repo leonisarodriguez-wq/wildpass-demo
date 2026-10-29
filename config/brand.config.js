@@ -370,9 +370,78 @@ export default {
     // Footer
     footerLegal: 'Seguros Wildpass es un producto ficticio creado para una demostración. No es un seguro real, no ofrece cobertura y ningún pago es real.',
     footerTerms: 'Condiciones del seguro',
+    footerContracting: 'Términos de contratación',
+    footerPrivacy: 'Privacidad',
+    footerIncident: 'Si me pasa algo',
     footerWebmcp: 'Hecho con WebMCP',
     footerAgents: 'Para desarrolladores y agentes de IA',
     footerCaso: 'Sobre esta demo', // the only link to /caso (hidden page: noindex, not in the menu)
+
+    // /terminos and /privacidad (demo documents). `[text](/path)` in a paragraph = an internal link.
+    legal: {
+      indexLabel: 'En esta página',
+      terminos: {
+        title: 'Términos y condiciones de uso y contratación (demo)',
+        pageTitle: 'Términos y condiciones (demo)',
+        notice: 'Documento de demostración: no es un contrato real.',
+        sections: [
+          { id: 'quien', title: 'Quién está detrás', paragraphs: [
+            'Seguros Wildpass es un proyecto de demostración, creado como caso práctico. No hay ninguna empresa, aseguradora ni mediador de seguros real detrás: no tiene razón social, número fiscal ni ningún registro. Todo lo que ves aquí es ficticio.' ] },
+          { id: 'que-es', title: 'Qué es esta web', paragraphs: [
+            'Es una web de demostración de un seguro de viaje ficticio con tres planes (Wild, Wild+ y Wild Max) que pueden usar tanto personas como asistentes de IA, a través de las herramientas WebMCP. No ofrece cobertura, no emite pólizas con valor legal y no presta asistencia.',
+            'Las coberturas, los límites y las exclusiones que ves están en las [condiciones del seguro](/condiciones). Los precios son provisionales y salen de un estudio de mercado de demostración.' ] },
+          { id: 'contratacion', title: 'Cómo funciona la contratación', paragraphs: ['Los pasos son estos:'], list: [
+            'Cotizar: indicas destino, fechas y edades. Para ver el precio no pedimos datos personales.',
+            'Elegir plan: Wild, Wild+ o Wild Max.',
+            'Datos: nombre y fecha de nacimiento de cada viajero, email de quien contrata y su DNI o NIE. Solo se asegura a residentes en España.',
+            'Revisión: antes de pagar ves un resumen con el total y las condiciones.',
+            'Pago de prueba: se hace con Stripe en modo test y no se cobra nada.',
+            'Póliza de demostración: se genera un PDF y se envía por email a quien contrata.' ] },
+          { id: 'pago', title: 'El pago es de prueba', paragraphs: [
+            'El pago se hace con Stripe en modo test: se usa una tarjeta de prueba (4242 4242 4242 4242) y no se cobra nada. Los datos de la tarjeta se escriben solo en el formulario de Stripe: nuestra web y nuestro servidor nunca los ven. Si el pago de prueba no estuviera activo, el pago sería simulado.' ] },
+          { id: 'cancelacion', title: 'Cancelación y desistimiento', paragraphs: [
+            'En una demo no aplican, porque no hay contrato real ni ningún cobro. Un seguro real informaría aquí de los plazos y de cómo cancelar o desistir, según la normativa aplicable. Esta demo no afirma cumplir ninguna normativa.' ] },
+          { id: 'agentes', title: 'Uso de asistentes de IA', paragraphs: [
+            'Un asistente de IA puede calcular el precio, ayudarte a elegir y preparar la compra con tus datos. Nunca paga sin tu confirmación explícita del total y nunca introduce los datos de tu tarjeta. El DNI o NIE es opcional para los asistentes: sin él, la póliza queda como «DNI pendiente» y lo completas tú con un enlace que recibes por email.',
+            'Para pagar hay que aceptar las condiciones del seguro y estos términos de contratación: con la herramienta confirm_payment, accept_terms incluye ambos documentos.' ] },
+          { id: 'marca', title: 'La marca', paragraphs: [
+            'Wildpass y Seguros Wildpass son nombres de demostración. No corresponden a ninguna empresa real y no se ha comprobado su disponibilidad como marca.' ] },
+          { id: 'contacto', title: 'Contacto', paragraphs: [
+            'Escríbenos con el formulario de contacto de las [preguntas frecuentes](/#preguntas). Para saber cómo tratamos tus datos, consulta la [política de privacidad](/privacidad).' ] },
+        ],
+      },
+      privacidad: {
+        title: 'Privacidad (demo)',
+        pageTitle: 'Privacidad (demo)',
+        notice: 'Documento de demostración: no es un aviso legal real.',
+        sections: [
+          { id: 'quien', title: 'Quién trata los datos', paragraphs: [
+            'Wildpass es un proyecto de demostración sin empresa real. Los datos que escribes se usan solo para que la demo funcione. Para cualquier duda, escríbenos con el formulario de contacto de las [preguntas frecuentes](/#preguntas).' ] },
+          { id: 'datos', title: 'Qué datos pedimos y para qué', paragraphs: ['Pedimos lo mínimo para completar la compra de demostración:'], list: [
+            'Para ver el precio: destino, fechas y edades. No son datos personales y no pedimos nada más.',
+            'Al contratar: nombre y fecha de nacimiento de cada viajero, y el email de quien contrata, para enviarle la póliza.',
+            'Al contratar: el DNI o NIE de quien contrata, para emitir la póliza a su nombre, y que reside en España.',
+            'Si nos escribes por el formulario de contacto: tu nombre, tu email y tu mensaje, solo para contestarte.',
+            'Los datos del viaje (destino, fechas, plan y precio) se guardan con la póliza.' ] },
+          { id: 'dni', title: 'Tu DNI o NIE', paragraphs: [
+            'Se guarda solo en la base de datos de pólizas. En pantalla, en el PDF y en el email se muestra siempre enmascarado (por ejemplo, *****678Z). No aparece en las métricas ni en los registros del servidor.' ] },
+          { id: 'metricas', title: 'Métricas anónimas y sin cookies', paragraphs: [
+            'Medimos cómo se usa la web con eventos propios: el paso del proceso de compra, el plan elegido, si es la web o un asistente, el tipo de dispositivo (móvil o escritorio) y la variante de un experimento. Cada visita tiene un identificador aleatorio que vive en la pestaña del navegador y que no te identifica. No usamos cookies ni herramientas de terceros y no guardamos datos personales en las métricas.' ] },
+          { id: 'pagos', title: 'Pagos', paragraphs: [
+            'Usamos Stripe en modo test. La tarjeta se escribe solo en el formulario de Stripe: nuestra web nunca la ve y no la guardamos. De cada pago de prueba solo conservamos su referencia.' ] },
+          { id: 'email', title: 'Email', paragraphs: [
+            'La póliza y sus copias se envían con Brevo. Si reenvías la póliza a alguien, guardamos su dirección enmascarada, solo para llevar la cuenta de los envíos.' ] },
+          { id: 'agentes', title: 'Asistentes de IA', paragraphs: [
+            'Los asistentes de IA no manejan tu tarjeta. El DNI o NIE es opcional para ellos: si no lo envían, lo escribes tú con un enlace de un solo uso que recibes por email.' ] },
+          { id: 'cesion', title: 'No vendemos ni cedemos tus datos', paragraphs: [
+            'No vendemos ni cedemos tus datos a nadie. Solo los reciben los dos servicios que hacen funcionar la demo: Stripe (pago de prueba) y Brevo (email).' ] },
+          { id: 'borrado', title: 'Cuánto tiempo los guardamos', paragraphs: [
+            'Son datos de prueba y se borrarán al terminar la evaluación de la demo.' ] },
+          { id: 'aviso', title: 'Importante', paragraphs: [
+            'Este documento describe lo que hace la demo. No afirma que cumplamos ninguna ley de protección de datos: un servicio real tendría que informar también de la base legal, los plazos y los derechos de cada persona.' ] },
+        ],
+      },
+    },
 
     // /llms.txt: plain text for AI agents. Tool lines come from public/webmcp-tools.js (each tool's `es` line).
     llms: {
@@ -391,6 +460,8 @@ export default {
       moreTitle: 'Más información',
       agentsLink: 'Instrucciones para agentes y desarrolladores',
       termsLink: 'Condiciones del seguro',
+      contractingLink: 'Términos y condiciones de uso y contratación (demo)',
+      privacyLink: 'Privacidad (demo)',
     },
 
     // "Completa tu DNI" page (one-time link from the policy email).
@@ -470,7 +541,7 @@ export default {
         ['QUOTE_EXPIRED', 'El presupuesto ha caducado: pide otro con get_quote.'],
         ['AGE_MISMATCH', 'Una fecha de nacimiento no da la edad del presupuesto el día de la ida.'],
         ['INVALID_REVIEW_TOKEN', 'No es el review_token del último review_order.'],
-        ['TERMS_NOT_ACCEPTED', 'accept_terms no es true: el usuario no ha aceptado las condiciones.'],
+        ['TERMS_NOT_ACCEPTED', 'accept_terms no es true: el usuario no ha aceptado las condiciones del seguro y los términos de contratación.'],
         ['USER_CONFIRMATION_REQUIRED', 'user_confirmed no es true: falta el «sí» del usuario.'],
         ['TOTAL_MISMATCH', 'confirmed_total_eur no es exactamente el total revisado.'],
         ['ALREADY_PAID', 'El pedido ya está pagado: consulta la póliza con get_policy.'],
@@ -634,7 +705,12 @@ export default {
       keyConditions: 'Lo más importante',
       exclusions: 'Exclusiones',
       terms: 'Leer las condiciones completas',
-      accept: 'He leído y acepto las condiciones y exclusiones.',
+      accept: 'Acepto las condiciones del seguro y los términos de contratación',
+      acceptBefore: 'Acepto las',
+      acceptConditions: 'condiciones del seguro',
+      acceptAnd: 'y los',
+      acceptContracting: 'términos de contratación',
+      privacyLink: 'Consulta cómo tratamos tus datos',
       pay: 'Pagar {total} (simulado)',
       payNote: 'Es una demo: no se cobra nada ni se piden datos de tarjeta.',
       // Stripe test mode (only when test keys are configured).
@@ -862,7 +938,7 @@ export default {
       SAME_COUNTRY: 'Elige un destino fuera de España.',
       INVALID_COUNTRY: 'Elige un destino de la lista.',
       ORIGIN_NOT_SUPPORTED: 'Por ahora solo aseguramos viajes que salen de España.',
-      TERMS_NOT_ACCEPTED: 'Necesitamos que aceptes las condiciones para emitir la póliza.',
+      TERMS_NOT_ACCEPTED: 'Necesitamos que aceptes las condiciones del seguro y los términos de contratación para emitir la póliza.',
       INVALID_EMAIL: 'Ese email no parece correcto. Es donde te enviaremos la póliza.',
       INVALID_NAME: 'Escribe el nombre y apellidos de cada persona.',
       INVALID_BIRTH_DATE: 'Escribe la fecha de nacimiento como dd/mm/aaaa.',
