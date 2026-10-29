@@ -144,6 +144,8 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 - confirm_payment refuses unless: valid current review_token, accept_terms === true, user_confirmed === true, confirmed_total_eur exactly equals the reviewed total.
 - Changing traveller details or calling review_order again invalidates the previous review_token.
 - Agents must show the summary to the user and get explicit confirmation BEFORE confirm_payment (stated in the tool description).
+- Agents never type a card: the sentence "Los agentes no deben introducir datos de tarjeta…" is on /agentes (`texts.agents.noCard`), /llms.txt
+  (`texts.llms.noCard`), in English in confirm_payment's description, and a discreet line in the payment step's served HTML (`texts.checkout.agentNote`).
 - Errors are never bare throws: every API/tool result is `{ ok: true, ... }` or `{ ok: false, error_code, message, how_to_fix }`.
 - Payment (`src/stripe.js`, Stripe TEST MODE ONLY, REST API via fetch, no npm package): at start-up only pk_test_/sk_test_ keys turn Stripe on;
   a live key, a missing key or anything else → Stripe OFF, simulated payment, one warning in the log (never the key).
@@ -199,18 +201,20 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 - Tools register a moment after page load (they wait for /api/config); an agent listing tools instantly may see none yet.
 - Agent testing: Claude Code MCP server `chrome-devtools` (Google's chrome-devtools-mcp 1.10.1, headless Chrome for Testing 156, `--enable-features=WebMCP`). `@mcp-b/chrome-devtools-mcp` 3.0.0 is broken (empty package) — don't use it.
 
-## Running (24/7 as systemd services — files in `deploy/`, installed with `sudo sh deploy/install.sh`)
+## Running (24/7: systemd service + Tailscale Funnel — files in `deploy/`, installed with `sudo sh deploy/install.sh`)
 - `wildpass-app.service`: `node server.js` as user leonisa_prueba, ONLY on 127.0.0.1:3000, starts at boot, `Restart=always`.
   Hardened: may only write `data/` (database + policy PDFs). Logs: `journalctl -u wildpass-app`.
-- `wildpass-tunnel.service`: Cloudflare Quick Tunnel (`/usr/local/bin/cloudflared`, a root-owned copy of `~/.local/bin/cloudflared`) → 127.0.0.1:3000.
-  `Restart=always`, starts at boot. Its status page is on 127.0.0.1:20241 (localhost only); `/quicktunnel` there gives the hostname.
-  After start, `wildpass-save-url` saves the address to `/var/lib/wildpass-tunnel/url`; the command **`wildpass-url`** prints it.
-- **The Quick Tunnel address changes whenever the tunnel service restarts** (also after a reboot). So the two services have NO dependency
-  on each other: to deploy app changes run ONLY `sudo systemctl restart wildpass-app` (tunnel and address stay; visitors see a Cloudflare
-  error page for ~1 s). Never restart wildpass-tunnel unless a new address is OK. `install.sh` re-run never restarts a running tunnel.
-- PDF/terms links use the request's public host (cloudflared sends X-Forwarded-Proto; `trust proxy` = loopback). Leave `PUBLIC_BASE_URL` empty.
-- Exposed to the internet: ONLY the website through the tunnel (plus SSH, unchanged). No database, dev tools or browser debugging port.
-  Don't start hand-run copies (`npm start`, cloudflared) next to the services: port 3000/20241 would clash.
+- **Public address (fixed): https://wildpass.taile53924.ts.net** — Tailscale Funnel (since 29 Oct 2026). Tailscale installed from its apt repo,
+  `tailscaled` enabled at boot, machine name `wildpass` in the owner's tailnet (MagicDNS + HTTPS certificates on; ACL `nodeAttrs` grants `funnel`).
+  Published with `sudo tailscale funnel --bg 3000` (`--bg` = saved in Tailscale's state, survives reboots; `install.sh` runs it too).
+  `tailscale funnel status` shows it; the command **`wildpass-url`** prints the address. No bot filter, no robots.txt of its own, no x-robots-tag.
+- Deploy app changes: ONLY `sudo systemctl restart wildpass-app` (Funnel and address stay; visitors get an error for ~1 s).
+- PDF/terms links use the request's public host (tailscaled sends X-Forwarded-Proto: https; `trust proxy` = loopback). Leave `PUBLIC_BASE_URL` empty.
+- Testing the PUBLIC path from this server: here the name resolves to the tailnet IP (100.x), which skips Funnel. Get the public IP with
+  DNS-over-HTTPS (`cloudflare-dns.com/dns-query?name=…&type=A`) and use `curl --resolve wildpass.taile53924.ts.net:443:<ip>`.
+- Exposed to the internet: ONLY the website through Funnel (plus SSH, unchanged). No database, dev tools or browser debugging port.
+  Don't start hand-run copies (`npm start`) next to the service: port 3000 would clash.
+- The old Cloudflare Quick Tunnel (`wildpass-tunnel.service`, `cloudflared`, `wildpass-save-url`) is being retired: it stays on until the owner says so.
 - `npm test` → automated tests (Node's built-in test runner, temporary database, port chosen automatically: safe while the service runs).
 - The test browser (chrome-devtools MCP) is only started by Claude Code when testing; it uses a pipe, not a network port.
 - Supply-chain rule: only install package versions at least 2 weeks old; pin exact versions.
@@ -224,11 +228,9 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
   min-width: 0`, stacked below 360 px. Tested in Chrome's phone emulation only, not on a real iPhone.
 - Native date pickers (Ida/Vuelta) show the BROWSER's date format (dd/mm/aaaa in a Spanish browser, mm/dd/yyyy in an English one);
   everything we print ourselves is always dd/mm/aaaa.
-- Cloudflare Quick Tunnel (trycloudflare.com, a Cloudflare-owned zone we cannot configure) blocks AI bots by itself (checked 29 Oct 2026):
-  it serves its OWN robots.txt (Disallow for GPTBot, ClaudeBot, ChatGPT-User, Claude-User, OAI-SearchBot, PerplexityBot, Google-Extended…,
-  put in FRONT of ours, confirmed 29 Oct 2026), answers 403 "Your request was blocked." to GPTBot/ClaudeBot/PerplexityBot user-agents, and adds `x-robots-tag: none`.
-  Our app answers 200 to all of them (tested in flow.test.js). Fixing it needs a tunnel/host we control (e.g. a named Cloudflare Tunnel on
-  our own domain with "Block AI bots" and managed robots.txt switched off).
+- Why not Cloudflare Quick Tunnel any more: trycloudflare.com (a zone we cannot configure) served its OWN robots.txt in front of ours
+  (Disallow for GPTBot, ClaudeBot, ChatGPT-User…), answered 403 to GPTBot/ClaudeBot/PerplexityBot and added `x-robots-tag: none` (checked 29 Oct 2026).
+  Through Funnel all 8 visitors (7 AI agents + Safari iPhone) get 200 on /, /robots.txt, /llms.txt, /agentes with our robots.txt only (29 Oct 2026).
 - No rate limiting. No real payment (Stripe test mode only) or real insurer. Prices are provisional.
 - No Stripe webhook: if the browser closes after Stripe succeeded but before finish_card_payment, no policy is issued yet; paying that
   order again (review → Pagar, or confirm_payment) finds the succeeded PaymentIntent and issues the policy without charging again.

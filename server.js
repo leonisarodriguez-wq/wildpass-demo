@@ -1,4 +1,4 @@
-// Starts the website on 127.0.0.1 (this machine only). Use a tunnel to expose it.
+// Starts the website on 127.0.0.1 (this machine only). Tailscale Funnel exposes it.
 import { existsSync } from 'node:fs';
 import { createApp } from './src/app.js';
 

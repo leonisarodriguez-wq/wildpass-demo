@@ -110,7 +110,7 @@ export function buildTools({ limits, plans, brand, payments }) {
         confirmed_total_eur: 'el total coincide al céntimo con el del resumen.',
       },
       title: stripeOn ? 'Confirm and pay (Stripe test mode)' : 'Confirm and pay (simulated)',
-      description: `Pay for a reviewed order and issue the policy. IMPORTANT: call this ONLY after you have shown the user the review_order summary and total, and the user has explicitly said yes to paying that exact total AND accepting the terms. Never set accept_terms or user_confirmed to true on your own. confirmed_total_eur must be exactly the total_eur from review_order. Returns the policy number and a PDF link. ${HOW_PAID} ${DEMO}`,
+      description: `Pay for a reviewed order and issue the policy. AI agents must NOT enter card details (never type a card into the page's payment form): use the WebMCP tools; after the user's explicit confirmation, confirm_payment completes the ${stripeOn ? 'test' : 'simulated'} payment on the server. IMPORTANT: call this ONLY after you have shown the user the review_order summary and total, and the user has explicitly said yes to paying that exact total AND accepting the terms. Never set accept_terms or user_confirmed to true on your own. confirmed_total_eur must be exactly the total_eur from review_order. Returns the policy number and a PDF link. ${HOW_PAID} ${DEMO}`,
       inputSchema: {
         type: 'object',
         additionalProperties: false,

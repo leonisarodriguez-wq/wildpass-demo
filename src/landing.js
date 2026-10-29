@@ -158,6 +158,7 @@ export function agentsPageBody({ brand, pricing, payments }) {
   const rules = (pay.inputSchema.required ?? []).filter(f => pay.rulesEs[f]);
   return `<h1>${escapeHtml(g.title)}</h1>
     <p>${escapeHtml(g.intro)}</p>
+    <p class="agent-no-card"><strong>${escapeHtml(g.noCard)}</strong></p>
     <h2>${escapeHtml(g.webmcpTitle)}</h2>
     <p>${escapeHtml(g.webmcpText)}</p>
     <h2>${escapeHtml(g.promptTitle)}</h2>
@@ -226,7 +227,7 @@ export function llmsTxt({ brand, pricing, payments, baseUrl }) {
   const rules = (pay.inputSchema.required ?? []).filter(f => pay.rulesEs[f]);
   return [
     `# ${brand.name}`, '', `> ${brand.siteBanner}`, '', l.intro, '',
-    `## ${l.howTitle}`, '', fill(l.how, { url: `${baseUrl}/` }), '',
+    `## ${l.howTitle}`, '', `**${l.noCard}**`, '', fill(l.how, { url: `${baseUrl}/` }), '',
     ...tools.flatMap((tool, i) => [`${i + 1}. ${tool.name}: ${tool.es}`, ...(tool === pay ? rules.map(f => `   - ${f}: ${pay.rulesEs[f]}`) : [])]), '',
     l.confirm, '',
     `## ${l.moreTitle}`, '', `- [${l.agentsLink}](${baseUrl}/agentes)`, `- [${l.termsLink}](${baseUrl}/condiciones)`, '',
@@ -318,7 +319,7 @@ export function createLanding({ brand, pricing, business, market, countries, tem
   const t = brand.texts;
   const values = copyValues(pricing, market);
 
-  // baseUrl = this request's public address: link previews need absolute URLs (the tunnel address can change).
+  // baseUrl = this request's public address: link previews need absolute URLs (the public address comes from the request).
   function landingHtml({ baseUrl = '' } = {}) {
     const prices = fromPrices(business, pricing);
     const html = {

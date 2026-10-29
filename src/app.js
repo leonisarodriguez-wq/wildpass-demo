@@ -39,7 +39,7 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
   const payments = { provider: stripe.enabled ? 'stripe_test' : 'simulated' };
 
   const app = express();
-  app.set('trust proxy', 'loopback'); // cloudflared runs on this machine and sets X-Forwarded-Proto
+  app.set('trust proxy', 'loopback'); // tailscaled (Funnel) runs on this machine and sets X-Forwarded-Proto
   app.disable('x-powered-by');
 
   // With Stripe on, only what Stripe.js and its card frames need: its script, its frames and its API.

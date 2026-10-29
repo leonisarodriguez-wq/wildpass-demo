@@ -1,5 +1,5 @@
-# Seguros Wildpass demo website (Node). Listens ONLY on 127.0.0.1:3000; the tunnel service exposes it.
-# Restarting this service never touches wildpass-tunnel.service (no dependency between them on purpose).
+# Seguros Wildpass demo website (Node). Listens ONLY on 127.0.0.1:3000; Tailscale Funnel exposes it.
+# Tailscale Funnel (tailscaled) proxies https://wildpass.<tailnet>.ts.net to it; restarting this service never touches Tailscale.
 [Unit]
 Description=Seguros Wildpass demo website (127.0.0.1:3000)
 After=network.target

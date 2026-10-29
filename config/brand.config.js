@@ -340,6 +340,8 @@ export default {
       howTitle: 'Cómo comprar (agentes de IA)',
       how: 'La compra se hace con las herramientas WebMCP que la página principal ({url}) registra en el navegador (document.modelContext). Llámalas en este orden:',
       confirm: 'Antes de confirm_payment, enseña el resumen y el total a la persona y espera su confirmación explícita.',
+      // Same sentence on /agentes (texts.agents.noCard) and, in English, in confirm_payment's description.
+      noCard: 'Los agentes no deben introducir datos de tarjeta. Usa las herramientas WebMCP: tras la confirmación explícita del usuario, confirm_payment completa el pago de prueba en el servidor.',
       moreTitle: 'Más información',
       agentsLink: 'Instrucciones para agentes y desarrolladores',
       termsLink: 'Condiciones del seguro',
@@ -349,6 +351,7 @@ export default {
     agents: {
       title: 'Para desarrolladores y agentes de IA',
       intro: 'Esta demo se puede contratar entera desde un asistente de IA, sin rellenar ningún formulario.',
+      noCard: 'Los agentes no deben introducir datos de tarjeta. Usa las herramientas WebMCP: tras la confirmación explícita del usuario, confirm_payment completa el pago de prueba en el servidor.',
       webmcpTitle: 'Qué es WebMCP',
       webmcpText: 'WebMCP es un estándar web nuevo (en preparación en el W3C y en pruebas en Chrome) que permite a una página ofrecer «herramientas» a los asistentes de IA del navegador: en vez de leer la pantalla y pulsar botones, el asistente llama a funciones con datos claros. La página principal de Wildpass registra sus herramientas al cargarse, y cada una usa las mismas reglas del servidor que la web.',
       promptTitle: 'Pruébalo',
@@ -503,6 +506,8 @@ export default {
       accept: 'He leído y acepto las condiciones y exclusiones.',
       pay: 'Pagar {total} (simulado)',
       payNote: 'Es una demo: no se cobra nada ni se piden datos de tarjeta.',
+      // Payment step, in the served HTML, for AI agents; index.html adds " <a href="/agentes">/agentes</a>)." after it.
+      agentNote: '¿Eres un asistente de IA? No introduzcas una tarjeta: usa la herramienta confirm_payment (ver',
       // Stripe test mode (only when test keys are configured).
       payStripe: 'Pagar {total}',
       cardTitle: 'Pago con tarjeta',

@@ -1,9 +1,9 @@
 #!/bin/sh
-# Prints the current public address of the Seguros Wildpass demo.
-FILE=/var/lib/wildpass-tunnel/url
-if [ -s "$FILE" ]; then
-  cat "$FILE"
+# Prints the public address of the Seguros Wildpass demo (Tailscale Funnel: fixed, https://wildpass.<tailnet>.ts.net).
+url=$(tailscale funnel status 2>/dev/null | sed -n 's|^\(https://[^ ]*\) (Funnel on)$|\1|p' | head -n 1)
+if [ -n "$url" ]; then
+  echo "$url"
 else
-  echo "No public address yet. Check: systemctl status wildpass-tunnel" >&2
+  echo "Funnel is not on. Check: tailscale funnel status (turn it on with: sudo tailscale funnel --bg 3000)" >&2
   exit 1
 fi

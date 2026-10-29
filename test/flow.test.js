@@ -609,7 +609,7 @@ test('checkout copy: Spanish dates, new success title and the boarding pass on t
 
 test('QR code: the hand-written encoder makes valid codes (structure checks)', async () => {
   const { qrMatrix } = await import('../public/qr.js');
-  const url = 'https://example.trycloudflare.com/poliza/' + 'A'.repeat(43) + '.pdf';
+  const url = 'https://wildpass.example.ts.net/poliza/' + 'A'.repeat(43) + '.pdf';
   const m = qrMatrix(url);
   const size = m.length;
   assert.equal(size, 41); // 89 bytes → version 6 at level M
@@ -657,6 +657,17 @@ test('agents are welcome: robots.txt allows all, /llms.txt lists the 6 tools, th
   assert.ok(llms.includes(`(${base}/agentes)`) && llms.includes('WebMCP'));
   const html = nbsp(await (await fetch(`${base}/`)).text());
   assert.ok(html.includes('Puede contratar por ti aquí: usa nuestras herramientas WebMCP o el formulario, como tú. Instrucciones: <a href="/agentes">/agentes</a></p>'));
+  // Agents never type a card: said on /llms.txt, /agentes, the payment step (served HTML) and confirm_payment's description.
+  const noCard = 'Los agentes no deben introducir datos de tarjeta. Usa las herramientas WebMCP: tras la confirmación explícita del usuario, confirm_payment completa el pago de prueba en el servidor.';
+  assert.ok(llms.includes(noCard), 'llms.txt');
+  assert.ok((await (await fetch(`${base}/agentes`)).text()).includes(noCard), '/agentes');
+  const step3 = html.slice(html.indexOf('id="step-3"'), html.indexOf('id="step-4"'));
+  assert.ok(step3.includes('<p class="form-note agent-pay-note">¿Eres un asistente de IA? No introduzcas una tarjeta: usa la herramienta confirm_payment (ver <a href="/agentes">/agentes</a>).</p>'), 'payment step');
+  const plans = Object.fromEntries(Object.entries(pricing.plans).map(([id, p]) => [id, p.name]));
+  for (const payments of [{ provider: 'simulated' }, { provider: 'stripe_test' }]) {
+    const pay = buildTools({ limits: pricing.limits, plans, brand: { name: 'Seguros Wildpass' }, payments }).find(t => t.name === 'confirm_payment');
+    assert.match(pay.description, /AI agents must NOT enter card details .*confirm_payment completes the (test|simulated) payment on the server/);
+  }
   for (const ua of ['ChatGPT-User/1.0', 'GPTBot/1.1', 'OAI-SearchBot/1.0', 'ClaudeBot/1.0', 'Claude-User/1.0', 'PerplexityBot/1.0', 'Google-Extended']) {
     for (const path of ['/', '/robots.txt', '/llms.txt', '/agentes']) {
       assert.equal((await fetch(`${base}${path}`, { headers: { 'User-Agent': `Mozilla/5.0 (compatible; ${ua})` } })).status, 200, `${ua} ${path}`);
