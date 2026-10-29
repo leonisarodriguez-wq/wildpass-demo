@@ -168,7 +168,7 @@ The owner is not a programmer: explain things simply, report test results honest
 - Trip days are counted inclusively (departure and return days both count).
 - Validation: origin must be Spain (ES) for now; destination ≠ origin; departure strictly after today (Europe/Madrid); return after departure; max 90 days; 1–8 travellers; ages 0–85; valid email.
 - Traveller birth dates must give exactly the quoted ages at the departure date, in the same order.
-- Never ask for ID numbers. Card numbers only ever go into Stripe's own Payment Element frame (straight to Stripe, test mode); our server never receives card data.
+- ID numbers: ONLY the policyholder's DNI/NIE (required on the website step 2, optional for agents → «DNI pendiente» + one-time link); never passports or travellers' IDs. Card numbers only ever go into Stripe's own Payment Element frame (straight to Stripe, test mode); our server never receives card data.
 
 ## Order flow and safety rules
 quote → select_plan (order) → set_traveler_details → review_order (issues one-time review_token) → confirm_payment → policy.

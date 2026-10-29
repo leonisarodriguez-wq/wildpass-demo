@@ -326,7 +326,7 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
       plan_name: pricing.plans[plan].name,
       total_price_eur: toEur(total),
       traveler_ages: JSON.parse(quote.ages_json),
-      next_step: 'Ask the user for the policyholder (full name, email) and each traveller\'s full name and birth date, in the same order as traveler_ages, then call set_traveler_details.',
+      next_step: 'Ask the user for the policyholder (full name, email) and each traveller\'s full name and birth date, in the same order as traveler_ages, then call set_traveler_details. The policyholder\'s DNI/NIE (holder_id_number) is optional for agents: without it the policy is issued as "DNI pendiente" and the person completes it with the emailed link.',
     };
   }
 

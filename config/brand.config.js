@@ -575,7 +575,7 @@ export default {
       selectedPlan: 'elegido',
 
       step2Title: '¿Quién viaja?',
-      step2Line: 'Nombre y fecha de nacimiento de cada viajero, y el DNI o NIE solo de quien contrata.',
+      step2Line: 'Para emitir la póliza necesitamos el nombre, la fecha de nacimiento y el DNI o NIE de quien contrata.',
       holderId: 'DNI o NIE de quien contrata',
       holderIdHint: 'Lo necesitamos para emitir la póliza a tu nombre.',
       holderIdMissing: 'Escribe el DNI o NIE de quien contrata.',
