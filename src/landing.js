@@ -32,6 +32,7 @@ function render(template, vars) {
 export function copyValues(pricing, market) {
   const wild = pricing.plans.wild;
   const plus = pricing.plans.wild_plus;
+  const max = pricing.plans.wild_max;
   return {
     rescue: formatEur(plus.coverage.search_and_rescue_eur),
     wildMedEurope: formatEur(wild.coverage.medical_expenses_europe_eur),
@@ -44,13 +45,25 @@ export function copyValues(pricing, market) {
     plusMedWorld: formatEur(plus.coverage.medical_expenses_rest_of_world_eur),
     plusBaggage: formatEur(plus.coverage.baggage_theft_damage_eur),
     plusCancellation: formatEur(plus.coverage.cancellation_per_traveler_eur),
+    maxMedEurope: formatEur(max.coverage.medical_expenses_europe_eur),
+    maxMedWorld: formatEur(max.coverage.medical_expenses_rest_of_world_eur),
+    maxBaggage: formatEur(max.coverage.baggage_theft_damage_eur),
+    maxBaggageDelay: formatEur(max.coverage.baggage_delay_eur),
+    maxDental: formatEur(max.coverage.urgent_dental_eur),
+    maxLiability: formatEur(max.coverage.civil_liability_eur),
+    maxCancellation: formatEur(max.coverage.cancellation_per_traveler_eur),
+    maxRescue: formatEur(max.coverage.search_and_rescue_eur),
+    maxSportsEquipment: formatEur(max.coverage.sports_equipment_eur),
+    maxInterruption: formatEur(max.coverage.trip_interruption_per_traveler_eur),
+    maxTrekkingAltitude: max.adventure_sports_limits.trekking_max_altitude_m.toLocaleString('es-ES', { useGrouping: 'always' }),
+    maxDivingDepth: max.adventure_sports_limits.scuba_diving_max_depth_m,
     wildDental: formatEur(wild.coverage.urgent_dental_eur),
     plusDental: formatEur(plus.coverage.urgent_dental_eur),
     wildLiability: formatEur(wild.coverage.civil_liability_eur),
     plusLiability: formatEur(plus.coverage.civil_liability_eur),
     repatriation: plus.coverage.repatriation,
     ...pricing.limits, // maxTripDays, minTravelers, maxTravelers, minAge, maxAge
-    trekkingAltitude: plus.adventure_sports_limits.trekking_max_altitude_m.toLocaleString('es-ES'),
+    trekkingAltitude: plus.adventure_sports_limits.trekking_max_altitude_m.toLocaleString('es-ES', { useGrouping: 'always' }),
     divingDepth: plus.adventure_sports_limits.scuba_diving_max_depth_m,
     count: quoteCount(market),
   };
@@ -422,9 +435,11 @@ export function destinationsHtml({ brand, pricing, business, countries }) {
     const priceOf = plan => formatEur(business.pricePerTravelerCents(zoneOf(code, pricing), plan, 7, adult) / 100);
     const price = priceOf('wild');
     const plusPrice = priceOf('wild_plus');
-    return `<li><button type="button" class="dest-card" data-country="${code}" aria-label="${escapeHtml(fill(d.cardLabel, { name: country.name, price, plusPrice }))}">`
+    const maxPrice = priceOf('wild_max');
+    return `<li><button type="button" class="dest-card" data-country="${code}" aria-label="${escapeHtml(fill(d.cardLabel, { name: country.name, price, plusPrice, maxPrice }))}">`
       + `${miniScene(sceneFor(code, pricing))}<span class="dest-name">${escapeHtml(country.name)}</span><span class="dest-price">${escapeHtml(fill(d.price, { price }))}</span>`
-      + `<span class="dest-price dest-price-plus">${escapeHtml(fill(d.pricePlus, { price: plusPrice }))}</span></button></li>`;
+      + `<span class="dest-price dest-price-plus">${escapeHtml(fill(d.pricePlus, { price: plusPrice }))}</span>`
+      + `<span class="dest-price dest-price-plus">${escapeHtml(fill(d.priceMax, { price: maxPrice }))}</span></button></li>`;
   }).join('');
   return carouselHtml({ id: 'dest-strip', prev: d.prev, next: d.next, items });
 }
@@ -460,9 +475,10 @@ export function createLanding({ brand, pricing, business, market, countries, tem
       html,
       brand,
       t,
-      price: { wild: fill(t.plans.from, { price: formatEur(prices.wild) }), wild_plus: fill(t.plans.from, { price: formatEur(prices.wild_plus) }) },
-      planNames: { wild: pricing.plans.wild.name, wild_plus: pricing.plans.wild_plus.name },
-      choose: { wild: fill(t.plans.choose, { plan: pricing.plans.wild.name }), wild_plus: fill(t.plans.choose, { plan: pricing.plans.wild_plus.name }) },
+      price: Object.fromEntries(Object.keys(pricing.plans).map(id => [id, fill(t.plans.from, { price: formatEur(prices[id]) })])),
+      planNames: Object.fromEntries(Object.entries(pricing.plans).map(([id, p]) => [id, p.name])),
+      choose: Object.fromEntries(Object.entries(pricing.plans).map(([id, p]) => [id, fill(t.plans.choose, { plan: p.name })])),
+      maxDescription: fill(t.plans.wildMaxDescription, values),
       og: { url: `${baseUrl}/`, image: `${baseUrl}/og-image.png` },
     });
   }

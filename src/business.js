@@ -146,7 +146,9 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
   function planDetails(planId, zone) {
     const plan = pricing.plans[planId];
     const medicalKey = zone === 'europe' ? 'medical_expenses_europe_eur' : 'medical_expenses_rest_of_world_eur';
-    const coverage_summary = Object.entries(plan.coverage).map(([key, value]) => {
+    // Lines that only some plans have are left out of the certificate when the plan does not include them.
+    const OPTIONAL_LINES = ['sports_equipment_eur', 'trip_interruption_per_traveler_eur'];
+    const coverage_summary = Object.entries(plan.coverage).filter(([key, value]) => !(OPTIONAL_LINES.includes(key) && !value)).map(([key, value]) => {
       const label = pricing.coverageLabels[key] ?? key;
       if (typeof value === 'string') return `${label}: ${value}`;
       return `${label}: ${value > 0 ? formatEur(value) : 'no incluida'}`;
@@ -297,7 +299,7 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
       })),
       exclusions_all_plans: pricing.exclusions,
       disclaimer: brand.demoBanner,
-      next_step: `Show both plans to the user (only Wild+ covers adventure sports). When the user chooses, call select_plan with this quote_id and plan ${planIdList}.`,
+      next_step: `Show all the plans to the user (only Wild+ and Wild Max cover adventure sports). When the user chooses, call select_plan with this quote_id and plan ${planIdList}.`,
     };
   }
 

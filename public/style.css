@@ -422,17 +422,17 @@ html:has(.agent-pill:not([hidden])) .site-footer { padding-bottom: 90px; }
 .trip-item dd { margin: 0; font-weight: 600; }
 .edit-trip { position: absolute; top: 6px; right: 12px; padding: 0 6px; text-decoration: underline; }
 
-/* Plan comparison: the SAME two cards at every width. ≥600 px side by side (subgrid aligns each coverage row across both
+/* Plan comparison: the SAME three cards at every width. ≥960 px side by side (subgrid aligns each coverage row across both
    cards); phones one under the other at full width, with room above Wild+ for its badge. No phone-only layout. */
 .plan-compare { display: grid; grid-template-columns: minmax(0, 1fr); row-gap: 24px; margin: 22px 0 12px; }
-@media (min-width: 600px) { .plan-compare { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 12px; row-gap: 0; } }
+@media (min-width: 960px) { .plan-compare { grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 12px; row-gap: 0; } }
 /* White cards with a soft border and a light shadow on the sky background; Wild+ = thicker turquoise border and a turquoise
    band on top ("El favorito de los aventureros", white text). ≥600 px, Wild starts one band lower so both names line up. */
 .plan-option { --band-h: 40px; position: relative; display: grid; grid-row: span 9; grid-template-rows: subgrid; row-gap: 0; min-width: 0; /* name, price, 6 coverage rows, button */
   background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 22px 16px 16px; text-align: left;
   box-shadow: 0 2px 12px rgba(11, 31, 58, 0.08); }
 .plan-option.featured { border: 3px solid var(--turquoise); padding: calc(var(--band-h) + 18px) 14px 14px; box-shadow: 0 6px 22px rgba(14, 124, 134, 0.18); }
-@media (min-width: 600px) { .plan-option:not(.featured) { margin-top: var(--band-h); padding-top: 20px; } }
+@media (min-width: 960px) { .plan-option:not(.featured) { margin-top: var(--band-h); padding-top: 20px; } }
 /* The marked plan (step 1): a thick night ring around its card. */
 .plan-option { cursor: pointer; }
 .plan-option.is-selected { box-shadow: 0 0 0 3px var(--night), 0 2px 12px rgba(11, 31, 58, 0.08); }
@@ -753,10 +753,14 @@ html[data-exp-hero="b"] .hero-b { display: inline; }
 .bar-action[hidden] { display: none; }
 @media (max-width: 359px) { .bar-action { padding: 8px 12px; font-size: 0.95rem; } .bar-total strong { font-size: 1.2rem; } }
 
+/* Three plan cards in a row from 960 px; below that one under the other (same design). */
+@media (min-width: 960px) { .plan-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; } }
+.plan-cards { max-width: 34rem; margin: 0 auto; }
+@media (min-width: 960px) { .plan-cards { max-width: none; } }
+
 /* ---------- wider screens ---------- */
 @media (min-width: 700px) {
   .benefits { grid-template-columns: repeat(3, 1fr); gap: 28px; }
-  .plan-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; max-width: 46rem; margin: 0 auto; }
   .plan-card { padding: 24px 16px 18px; }
   .chat { padding: 20px; }
   .bubble { max-width: 78%; }
@@ -807,7 +811,7 @@ html[data-exp-hero="b"] .hero-b { display: inline; }
 .terms-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; line-height: 1.35; }
 .terms-table th, .terms-table td { padding: 9px 8px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); }
 .terms-table thead th { font-family: var(--font-headings); font-size: 1rem; border-bottom: 2px solid var(--night); }
-.terms-table thead th:last-child, .terms-table td:last-child { background: var(--mint); } /* Wild+ column, like its card */
+.terms-table thead th:nth-child(3), .terms-table td:nth-child(3) { background: var(--mint); } /* Wild+ column (the featured one), like its card */
 .terms-table tbody th { font-weight: 600; color: var(--secondary); width: 34%; }
 .terms-table :is(th, td):first-child { padding-left: 0; }
 .page-cta { margin: 28px 0 8px; padding: 20px; background: var(--mint); border-radius: 14px; text-align: center; }
@@ -816,11 +820,11 @@ html[data-exp-hero="b"] .hero-b { display: inline; }
 /* Phones: each row = the coverage name, then Wild | Wild+ side by side (each value labelled), so nothing is cut off. */
 @media (max-width: 599px) {
   .terms-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-  .terms-table tbody tr { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border); padding: 10px 0; }
+  .terms-table tbody tr { display: grid; grid-template-columns: 1fr; border-bottom: 1px solid var(--border); padding: 10px 0; }
   .terms-table tbody :is(th, td) { border: 0; padding: 2px 8px 2px 0; }
   .terms-table tbody th { grid-column: 1 / -1; width: auto; color: var(--night); padding-bottom: 6px; }
-  .terms-table td:last-child { background: var(--mint); border-radius: 8px; padding-left: 8px; }
-  .terms-table td::before { content: attr(data-plan); display: block; font-size: 0.8rem; font-weight: 700; color: var(--secondary); }
+  .terms-table td:nth-child(3) { background: var(--mint); border-radius: 8px; padding-left: 8px; }
+  .terms-table td::before { content: attr(data-plan) ": "; display: inline; font-size: 0.8rem; font-weight: 700; color: var(--secondary); }
 }
 
 /* ---------- 404 ---------- */
@@ -828,7 +832,7 @@ html[data-exp-hero="b"] .hero-b { display: inline; }
 .not-found svg { width: 140px; height: auto; margin: 8px auto 0; display: block; }
 .not-found p { max-width: 32rem; margin-left: auto; margin-right: auto; }
 .not-found-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 20px; }
-@media (min-width: 600px) { .terms-table { table-layout: fixed; } .terms-table thead th:first-child { width: 34%; } } /* Wild and Wild+ get equal columns */
+@media (min-width: 600px) { .terms-table { table-layout: fixed; } .terms-table thead th:first-child { width: 34%; } } /* the three plans get equal columns */
 
 /* /metricas: labelled bars (inline SVG, width attributes), cards and tables. */
 .metrics-since { font-size: 1.05rem; }

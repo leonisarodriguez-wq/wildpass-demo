@@ -1,4 +1,4 @@
-// /metricas: the funnel, web vs agents, Wild vs Wild+, the experiments and every event, from src/events.js.
+// /metricas: the funnel, web vs agents, Wild vs Wild+ vs Wild Max, the experiments and every event, from src/events.js.
 // Server-rendered (no chart library). Bars are inline SVG with width attributes (the CSP blocks style=""): each bar has
 // its label and number as text next to it, so nothing depends on colour, and a <title> as the hover tooltip.
 import { escapeHtml, fill } from './landing.js';
@@ -61,7 +61,7 @@ export function metricsPageBody({ brand, data, experiments, admin = null, flash 
   const m = brand.texts.metrics;
   const f = data.funnel;
   const plansMax = Math.max(...Object.values(data.plans.selected), ...Object.values(data.plans.issued), 0);
-  const planName = id => (id === 'wild' ? 'Wild' : 'Wild+');
+  const planName = id => ({ wild: 'Wild', wild_plus: 'Wild+', wild_max: 'Wild Max' })[id] ?? id;
   const channel = key => `<section class="metrics-card" aria-labelledby="ch-${key}"><h3 id="ch-${key}">${escapeHtml(m[key])}</h3>${funnelList(f[key], m)}</section>`;
   const formula = m.formula.map(line => `<p>${escapeHtml(fill(line, {
     lift: num(experiments.hero.liftPoints * 100), observedFrom: num(experiments.observedFrom),

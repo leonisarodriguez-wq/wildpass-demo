@@ -1,6 +1,6 @@
 // ALL prices, coverage limits, exclusions and validation limits live here.
 // Calibrated on 28 Oct 2026 against real competitor quotes: see docs/pricing-research.md.
-// Money amounts are in euros. Plan ids: "wild" and "wild_plus".
+// Money amounts are in euros. Plan ids: "wild", "wild_plus" and "wild_max".
 
 export default {
   currency: 'EUR',
@@ -11,9 +11,10 @@ export default {
   baseDays: 7,
   lengthExponent: 0.28,
   basePrice7Days: {
-    europe: { wild: 21.19, wild_plus: 28.42 }, // 8 days → 22 € / 29.50 €
-    rest_of_world: { wild: 48.46, wild_plus: 68.73 }, // 11 days → 55 € / 78 €; 15 days → ~60 € / ~85 €
-    usa_canada_japan: { wild: 50.22, wild_plus: 70.49 }, // 11 days → 57 € / 80 €
+    // wild_max: slightly below the median of the premium plans of the 13 quotes (docs/pricing-research.md §6).
+    europe: { wild: 21.19, wild_plus: 28.42, wild_max: 40.4 }, // 8 days → 22 € / 29.50 € / ~42 €
+    rest_of_world: { wild: 48.46, wild_plus: 68.73, wild_max: 86.0 }, // 11 days → 55 € / 78 € / ~98 €; 15 days → ~60 € / ~85 € / ~106 €
+    usa_canada_japan: { wild: 50.22, wild_plus: 70.49, wild_max: 94.6 }, // 11 days → 57 € / 80 € / ~107 €
   },
 
   // Long trips — ASSUMPTION without market data (see docs). Counted like competitors
@@ -77,6 +78,8 @@ export default {
         cancellation_per_traveler_eur: 0, // 0 = not included
         adventure_sports: 'no incluidos',
         search_and_rescue_eur: 0,
+        sports_equipment_eur: 0,
+        trip_interruption_per_traveler_eur: 0,
       },
       adventure_sports_included: false,
       excess_per_medical_claim_eur: 75,
@@ -97,6 +100,8 @@ export default {
         cancellation_per_traveler_eur: 3000,
         adventure_sports: 'incluidos: trekking hasta 4.000 m, buceo hasta 30 m, esquí y snowboard en pistas señalizadas, surf, rafting y barranquismo',
         search_and_rescue_eur: 15000,
+        sports_equipment_eur: 0,
+        trip_interruption_per_traveler_eur: 0,
       },
       adventure_sports_included: true,
       adventure_sports_limits: {
@@ -108,6 +113,36 @@ export default {
       excess_per_medical_claim_eur: 0,
       extraExclusions: [
         'Deportes de aventura fuera de los límites cubiertos: trekking por encima de 4.000 m, buceo a más de 30 m, esquí o snowboard fuera de pistas señalizadas.',
+      ],
+    },
+    // ASSUMPTIONS (no market data in the 13 quotes, which do not record limits): every limit of this plan except the
+    // adventure ones inspired by IATI Mochilero/Estrella (trekking 5,400 m, diving 40 m). See docs/pricing-research.md §6.
+    wild_max: {
+      name: 'Wild Max',
+      coverage: {
+        medical_expenses_europe_eur: 3000000,
+        medical_expenses_rest_of_world_eur: 6000000,
+        repatriation: '100% del coste real',
+        baggage_theft_damage_eur: 3500,
+        baggage_delay_eur: 450,
+        urgent_dental_eur: 1000,
+        civil_liability_eur: 150000,
+        cancellation_per_traveler_eur: 5000,
+        adventure_sports: 'incluidos: trekking hasta 6.000 m, buceo hasta 40 m, esquí y snowboard en pistas señalizadas, surf, rafting y barranquismo',
+        search_and_rescue_eur: 30000,
+        sports_equipment_eur: 1500,
+        trip_interruption_per_traveler_eur: 3000, // unused days + early return home
+      },
+      adventure_sports_included: true,
+      adventure_sports_limits: {
+        trekking_max_altitude_m: 6000,
+        scuba_diving_max_depth_m: 40,
+        skiing_snowboarding: 'marked slopes only',
+        other_included: ['surf', 'rafting', 'canyoning'],
+      },
+      excess_per_medical_claim_eur: 0,
+      extraExclusions: [
+        'Deportes de aventura fuera de los límites cubiertos: trekking por encima de 6.000 m, buceo a más de 40 m, esquí o snowboard fuera de pistas señalizadas.',
       ],
     },
   },
@@ -124,9 +159,11 @@ export default {
     cancellation_per_traveler_eur: 'Cancelación (por viajero)',
     adventure_sports: 'Deportes de aventura',
     search_and_rescue_eur: 'Búsqueda y rescate',
+    sports_equipment_eur: 'Material deportivo',
+    trip_interruption_per_traveler_eur: 'Interrupción del viaje (por viajero)',
   },
 
-  // Exclusions that apply to BOTH plans (each plan adds its own extraExclusions).
+  // Exclusions that apply to ALL plans (each plan adds its own extraExclusions).
   exclusions: [
     'Enfermedades preexistentes, salvo la primera asistencia urgente.',
     'Incidentes bajo los efectos del alcohol o las drogas.',

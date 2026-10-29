@@ -85,21 +85,33 @@ test('age factors and per-day decrease', async () => {
   assert.ok(long.plans[0].total_price_eur / 60 < short.plans[0].total_price_eur / 7);
 });
 
-test('quote contains coverage, excess and exclusions for both plans', async () => {
+test('quote contains coverage, excess and exclusions for the three plans', async () => {
   const q = await call('get_quote', quoteInput());
   assert.equal(q.ok, true);
-  assert.equal(q.plans.length, 2);
-  const [wild, wild_plus] = q.plans;
+  assert.equal(q.plans.length, 3);
+  const [wild, wild_plus, wild_max] = q.plans;
   assert.equal(wild.medical_limit_for_this_trip_eur, 1_000_000); // USA counts as rest of world
   assert.equal(wild_plus.medical_limit_for_this_trip_eur, 5_000_000);
   assert.equal(wild.excess_per_medical_claim_eur, 75);
   assert.equal(wild_plus.excess_per_medical_claim_eur, 0);
   assert.equal(wild.cancellation_included, false);
   assert.equal(wild_plus.cancellation_included, true);
+  // Wild Max: the same or better than Wild+ in every limit, no excess, with the extra lines.
+  assert.equal(wild_max.plan, 'wild_max');
+  assert.equal(wild_max.excess_per_medical_claim_eur, 0);
+  assert.ok(wild_max.medical_limit_for_this_trip_eur >= wild_plus.medical_limit_for_this_trip_eur);
+  assert.equal(wild_max.coverage_limits_eur.cancellation_per_traveler_eur, 5000);
+  assert.equal(wild_max.search_and_rescue_eur, 30000);
+  assert.equal(wild_max.coverage_limits_eur.sports_equipment_eur, 1500);
+  assert.equal(wild_max.coverage_limits_eur.trip_interruption_per_traveler_eur, 3000);
+  assert.equal(wild_max.adventure_sports_limits.trekking_max_altitude_m, 6000);
+  assert.equal(wild_max.adventure_sports_limits.scuba_diving_max_depth_m, 40);
+  for (const key of Object.keys(wild_plus.coverage_limits_eur)) if (typeof wild_plus.coverage_limits_eur[key] === 'number') assert.ok(wild_max.coverage_limits_eur[key] >= wild_plus.coverage_limits_eur[key], key);
+  assert.ok(wild_max.total_price_eur > wild_plus.total_price_eur && wild_plus.total_price_eur > wild.total_price_eur);
   assert.ok(q.exclusions_all_plans.length >= 5);
   const perPerson = wild.price_per_traveler.map(t => t.price_eur);
   assert.equal(wild.total_price_eur, Math.round(perPerson.reduce((a, b) => a + b) * 100) / 100);
-  assert.deepEqual(q.plans.map(p => [p.plan, p.plan_name]), [['wild', 'Wild'], ['wild_plus', 'Wild+']]);
+  assert.deepEqual(q.plans.map(p => [p.plan, p.plan_name]), [['wild', 'Wild'], ['wild_plus', 'Wild+'], ['wild_max', 'Wild Max']]);
 });
 
 test('only Wild+ covers adventure sports and search & rescue; extreme sports excluded in both', async () => {
@@ -126,6 +138,25 @@ test('only Wild+ covers adventure sports and search & rescue; extreme sports exc
 });
 
 // ---------- full flow ----------
+// Wild Max: an agent buys it end to end (the same rules as the other plans); the sold policy keeps its extra coverage lines.
+test('Wild Max: full purchase as an agent issues the policy with Wild Max coverage and a PDF', async () => {
+  const orderId = await orderReadyToReview('wild_max');
+  const review = await call('review_order', { order_id: orderId });
+  assert.equal(review.ok, true);
+  assert.equal(review.summary.plan.plan, 'wild_max');
+  assert.equal(review.summary.plan.plan_name, 'Wild Max');
+  assert.ok(review.summary.plan.coverage_summary.some(l => nbsp(l).includes('Material deportivo: 1.500 €')));
+  assert.ok(review.summary.plan.coverage_summary.some(l => nbsp(l).includes('Interrupción del viaje (por viajero): 3.000 €')));
+  const paid = await call('confirm_payment', { order_id: orderId, review_token: review.review_token, accept_terms: true, confirmed_total_eur: review.total_eur, user_confirmed: true });
+  assert.equal(paid.ok, true, paid.message);
+  const pdf = await fetch(paid.pdf_url);
+  assert.equal(pdf.status, 200);
+  assert.equal(Buffer.from(await pdf.arrayBuffer()).subarray(0, 5).toString(), '%PDF-');
+  const policy = await call('get_policy', { policy_number: paid.policy_number, email: 'ana.prueba@example.com' });
+  assert.equal(policy.ok, true);
+  assert.equal(policy.details.plan_name ?? policy.details.plan?.plan_name ?? 'Wild Max', 'Wild Max');
+});
+
 test('full purchase flow issues a policy with a downloadable PDF', async () => {
   const orderId = await orderReadyToReview('wild_plus');
   const review = await call('review_order', { order_id: orderId });
@@ -405,7 +436,7 @@ test('brand: name, claim, colours and self-hosted fonts', async () => {
   assert.deepEqual(config.brand.logo, { wordmark: 'wildpass', tagline: 'seguros de viaje' });
   assert.equal(config.brand.claim, "Travel wild. We've got you.");
   assert.equal(config.brand.claimEs, 'Viaja salvaje. Nosotros te cubrimos.');
-  assert.deepEqual(config.plans, { wild: 'Wild', wild_plus: 'Wild+' });
+  assert.deepEqual(config.plans, { wild: 'Wild', wild_plus: 'Wild+', wild_max: 'Wild Max' });
 
   const css = await (await fetch(`${base}/brand.css`)).text();
   for (const colour of ['#E3F4FB', '#FFFFFF', '#0B1F3A', '#3C5368', '#0E7C86', '#0B6770', '#FFC21A', '#D7263D']) assert.ok(css.includes(colour), `${colour} missing`);
@@ -485,10 +516,12 @@ test('AI block on the landing: only title, text, the example chat and the compat
   // CTAs: plan buttons are secondary and preselect their plan; "Comparar planes" and "Ver qué cubre" are secondary too.
   assert.ok(html.includes('<a class="secondary block card-button" href="#quote-form" data-focus-form data-plan="wild">Elegir Wild</a>'));
   assert.ok(html.includes('<a class="secondary block card-button" href="#quote-form" data-focus-form data-plan="wild_plus">Elegir Wild+</a>'));
+  assert.ok(html.includes('<a class="secondary block card-button" href="#quote-form" data-focus-form data-plan="wild_max">Elegir Wild Max</a>'));
+  assert.ok(html.includes('el Kilimanjaro, incluido') && html.includes('Wild Max desde'));
   assert.ok(html.includes('<a class="secondary button-link" href="#planes">Comparar planes</a>') && html.includes('<a class="secondary button-link" href="/condiciones">Ver qué cubre</a>'));
-  // Benefits: no AI repeat; plans: two cards only.
+  // Benefits: no AI repeat; plans: three cards.
   assert.ok(html.includes('Sin franquicia en Wild+') && !html.includes('Contrátalo con tu asistente de IA'));
-  assert.equal((html.match(/<li class="plan-card/g) ?? []).length, 2);
+  assert.equal((html.match(/<li class="plan-card/g) ?? []).length, 3);
   assert.ok(html.includes('¿Y si me tuerzo el tobillo haciendo trekking?'));
 });
 
@@ -551,7 +584,7 @@ test('/condiciones: Wild vs Wild+ table first, an index with working anchors, "V
   assert.ok(index > 0 && table > index, 'index, then the table');
   assert.ok(table < html.indexOf('id="quien"') && table < html.indexOf('id="exclusiones"'), 'the table comes before the other sections');
   const anchors = [...html.slice(index, table).matchAll(/href="#([a-z-]+)"/g)].map(m => m[1]);
-  assert.deepEqual(anchors, ['comparativa', 'quien', 'plan-wild', 'plan-wild-plus', 'exclusiones']);
+  assert.deepEqual(anchors, ['comparativa', 'quien', 'plan-wild', 'plan-wild-plus', 'plan-wild-max', 'exclusiones']);
   for (const id of anchors) assert.ok(html.includes(`id="${id}"`), `anchor #${id} has no target`);
   assert.ok(html.includes('<th scope="col">Wild</th><th scope="col">Wild+</th>'));
   // Every coverage line, with the values from the pricing config.
@@ -633,10 +666,10 @@ test('destinations: popular first, remote territories gone, "do not travel" coun
   assert.equal((await call('get_quote', quoteInput({ destination_country: 'LB' }))).error_code, 'DESTINATION_NOT_COVERED');
   for (const code of ['BY', 'VE']) {
     const ok = await call('get_quote', quoteInput({ destination_country: code }));
-    assert.ok(ok.ok && ok.plans.length === 2 && ok.plans[0].total_price_eur > 0, code);
+    assert.ok(ok.ok && ok.plans.length === 3 && ok.plans[0].total_price_eur > 0, code);
   }
   // The agent is told about the rule in the tool description; the website shows the friendly text.
-  const tools = buildTools({ limits: pricing.limits, plans: { wild: 'Wild', wild_plus: 'Wild+' }, brand, payments: { provider: 'simulated' } });
+  const tools = buildTools({ limits: pricing.limits, plans: { wild: 'Wild', wild_plus: 'Wild+', wild_max: 'Wild Max' }, brand, payments: { provider: 'simulated' } });
   assert.match(tools[0].description, /DESTINATION_NOT_COVERED/);
   assert.equal(brand.texts.errors.DESTINATION_NOT_COVERED, 'No podemos asegurar viajes a destinos con recomendación oficial de no viajar.');
 });
@@ -699,7 +732,7 @@ test('landing: what-if scenarios and destination cards use the real limits and e
     assert.ok(html.includes(`data-to="${amount}"`), `figure ${amount}`);
   }
   assert.ok(html.includes('hasta 3.000 € por viajero') && html.includes('hasta 15.000 €'));
-  // 15 situations: a category filter, one chip (tab) each and ONE card shown; the first is covered by BOTH plans.
+  // 15 situations: a category filter, one chip (tab) each and ONE card shown; the first is covered by the THREE plans.
   const filters = [...html.matchAll(/<button type="button" class="whatif-filter" data-cat="(\w+)" aria-pressed="(true|false)">([^<]+)</g)].map(m => [m[1], m[2], m[3]]);
   assert.deepEqual(filters.map(f => f[2]), ['Todas', 'Salud', 'Equipaje', 'Aventura', 'Cancelación y viaje']);
   assert.deepEqual(filters.map(f => f[1]), ['true', 'false', 'false', 'false', 'false']);
@@ -709,7 +742,7 @@ test('landing: what-if scenarios and destination cards use the real limits and e
   const panels = [...html.matchAll(/<div class="whatif-panel" role="tabpanel" id="wi-panel-\w+"[^>]*>(.*?)<\/ul><\/div>/g)];
   assert.equal(panels.length, 15);
   assert.ok(!panels[0][0].includes(' hidden>') && panels.slice(1).every(p => p[0].includes(' hidden>')), 'only the first card shows');
-  assert.equal((panels[0][1].match(/verdict is-ok/g) ?? []).length, 2, 'first situation covered by both plans');
+  assert.equal((panels[0][1].match(/verdict is-ok/g) ?? []).length, 3, 'first situation covered by the three plans');
   assert.ok(html.includes('Desliza para ver más situaciones') && !html.includes('id="whatif-strip"'));
   // 10 destination cards.
   assert.equal((html.match(/class="dest-card"/g) ?? []).length, 10);

@@ -282,6 +282,17 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 - Delivery scope (owner, 29 Oct 2026): Blocks 1–4 + the contact form. NOT public: Block 5 (JSON-LD, /api/pricing, sitemap… kept on branch `block5-later`),
   «Precio honesto» chart (6.1) and Block 7 (growth loops). /caso lists them as next steps.
 
+## Third plan: Wild Max (29 Oct 2026)
+- Plans now: Wild (essential) → Wild+ (balanced, still the featured one, badge «El favorito de los aventureros») → Wild Max (`wild_max`, maximum protection).
+  Wild Max = medical 3,000,000 / 6,000,000 €, no excess, cancellation 5,000 €/traveller, search & rescue 30,000 €, sports equipment 1,500 €,
+  trip interruption 3,000 €/traveller, trekking up to 6,000 m («Hasta 6.000 m: el Kilimanjaro, incluido» = the hook), diving 40 m, baggage 3,500 €, delay 450 €.
+  Same or better than Wild+ in every line (tested). All values except the adventure ones are ASSUMPTIONS (`docs/pricing-research.md` §6).
+  New coverage lines `sports_equipment_eur` and `trip_interruption_per_traveler_eur` exist in every plan (0 = not included, left out of the certificate).
+- Price: slightly below the median of the premium plans of the 13 quotes (Heymondo Premium, IATI Estrella, Intermundial Premium); Wild and Wild+ prices
+  unchanged (`test/pricing-targets.test.js` checks both). Wild Max copy values: `copyValues` in landing.js (`max…`).
+- Layout: plan cards (landing and checkout step 1) = 3 in a row from 960 px, stacked below with the same design (owner agreed). Step 1 rows gained Trekking,
+  Material deportivo, Interrupción del viaje. Upsell experiment: the daily-cost line only under Wild+ (Wild+ vs Wild). /metricas lists the three plans.
+
 ## Policyholder DNI/NIE and residence (29 Oct 2026)
 - Step 2 (web): required «DNI o NIE de quien contrata» (`#ph-id`, autocomplete off) + required «Resido en España» (`#ph-resident`, client check:
   «Por ahora solo aseguramos a residentes en España. Pronto, más países.»). Format + mod-23 letter checked in app.js AND in `checkIdNumber` (business.js).

@@ -63,13 +63,17 @@ test('/metricas: noindex, real funnel, web vs agent, Wild vs Wild+, experiments 
     await send({ event: e, session_id: sid(4), channel: 'agent', ...(['plan_selected', 'policy_issued'].includes(e) && { plan: 'wild' }) });
   }
 
+  // Session 5 chooses Wild Max: the event is accepted and shows up in the plan split.
+  await ev(5, 'plan_selected', { plan: 'wild_max', exp_hero: 'a', exp_upsell: 'a' });
+
   const { res, html } = await page();
   assert.equal(res.status, 200);
   assert.match(res.headers.get('x-robots-tag'), /noindex/);
   assert.ok(html.includes('<meta name="robots" content="noindex, nofollow">'));
   assert.ok(html.includes('Demo — no es un seguro real'));
+  assert.ok(html.includes('Wild Max'), 'the plan split lists Wild Max');
   assert.match(html, /Datos reales de esta demo desde el \d+ de \w+ de 20\d\d/);
-  for (const label of ['Sesiones', 'Precio visto', 'Plan elegido', 'Datos completados', 'Revisión', 'Pago iniciado', 'Póliza emitida', 'Web frente a agentes de IA', 'Wild frente a Wild+']) assert.ok(html.includes(label), label);
+  for (const label of ['Sesiones', 'Precio visto', 'Plan elegido', 'Datos completados', 'Revisión', 'Pago iniciado', 'Póliza emitida', 'Web frente a agentes de IA', 'Wild, Wild+ y Wild Max']) assert.ok(html.includes(label), label);
   // Sessions: 3 web landings (1, 2, 3) + 1 agent session.
   assert.match(html, /Sesiones<\/span><span class="bar-value">4</);
   assert.ok(html.includes('Todavía no hay datos suficientes para concluir (mínimo recomendado: 388 sesiones por variante).'));

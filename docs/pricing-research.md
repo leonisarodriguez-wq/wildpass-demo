@@ -2,7 +2,7 @@
 
 **Status:** provisional calibration, 28 Oct 2026. Prices live in `config/pricing.config.js`; the automated checks are in `test/pricing-targets.test.js`.
 
-Our plans: **Wild** (id `wild`, the basic plan) and **Wild+** (id `wild_plus`, the complete plan with adventure sports).
+Our plans: **Wild** (id `wild`, the essential plan), **Wild+** (id `wild_plus`, the balanced plan with adventure sports; "El favorito de los aventureros") and **Wild Max** (id `wild_max`, maximum protection; added 29 Oct 2026, see §6).
 
 ## 1. Data collected
 
@@ -104,3 +104,36 @@ History: the first rule (each extra day adds the average of what days 10–14 *a
 6. **Same-plan coverage not compared line by line.** Plans were matched by tier and general level, not by checking every limit (medical, baggage, cancellation, excess).
 7. **Single snapshot of the market.** Prices were collected on one day (28 Oct 2026) for December departures; seasonality and promotions are not captured.
 8. **Changing prices or coverage later does not change sold policies.** When a policy is issued we save a copy of what was sold (trip, plan limits, excess, exclusions, prices) inside the policy. The PDF, the email and `get_policy` use that copy, never the current config (`coverage_source: "snapshot_at_sale"`). New quotes use the new values. Tested in `test/flow.test.js`.
+
+## 6. Wild Max (third plan, 29 Oct 2026)
+
+**Method.** Same rule as the other plans: **slightly below the median** of the comparable plans, for an adult aged 18–64. The comparable plans are the top plan of each insurer in the same 13 quotes: **Heymondo Premium, IATI Estrella and Intermundial Premium** (`comparable.wild_max` in `config/market-quotes.js`). IATI has no top plan in the Italy quote, so Italy has two quotes.
+
+| Trip (our day count) | Heymondo Premium | IATI Estrella | Intermundial Premium | Median | Target (≈ 3 % below) | **Ours** | Ours vs median |
+|---|---|---|---|---|---|---|---|
+| Italy (8 days) | 40.77 | — | 46.60 | 43.69 | 42 | **41.94** | −4.0% |
+| Mexico, adult 35 (11 days) | 101.81\* | 109.66\* | 99.99 | 101.81 | 98 | **97.60** | −4.1% |
+| Thailand (15 days) | 109.37 | 117.80 | 106.99 | 109.37 | 106 | **106.46** | −2.7% |
+| USA (11 days) | 101.82 | 111.39 | 134.99 | 111.39 | 107.5 | **107.36** | −3.6% |
+
+\* Heymondo and IATI quotes were for a 68-year-old, but they do not price by age (§1).
+
+Calibrated 7-day base prices (the same length and age formula as the other plans): **Europe 40.40 · Rest of world 86.00 · USA/Canada/Japan 94.60**. Wild Max costs about 25–42 % more than Wild+ in the same trip (Italy +42 %, USA +34 %, Mexico and Thailand +25 %). Targets and the "below the premium median" rule are checked by `test/pricing-targets.test.js`, which also checks that **the Wild and Wild+ prices did not change** (22 / 29.50, 55 / 78, 59.99 / 85.08, 57 / 80 for the four reference trips).
+
+**What the quotes do NOT tell us (ASSUMPTIONS, marked as such).** The quotes only recorded prices, not each plan's limits. So these Wild Max coverage values are **assumptions**, set to be equal or better than Wild+ in every line, and only the price is calibrated against the market:
+
+| Line | Wild+ | **Wild Max** | Basis |
+|---|---|---|---|
+| Medical expenses, Europe / rest of world | 2,000,000 / 5,000,000 € | **3,000,000 / 6,000,000 €** | ASSUMPTION (limits not recorded in the quotes) |
+| Excess per medical claim | 0 € | **0 €** | Same as Wild+ |
+| Cancellation per traveller | 3,000 € | **5,000 €** | ASSUMPTION |
+| Search and rescue | 15,000 € | **30,000 €** | ASSUMPTION (IATI's rescue limit seen in §5 is 15,000 €) |
+| Sports equipment | not included | **1,500 €** | ASSUMPTION |
+| Trip interruption (unused days + early return) | not included | **3,000 € per traveller** | ASSUMPTION |
+| Trekking altitude | 4,000 m | **6,000 m** | ASSUMPTION, inspired by IATI Mochilero (5,400 m); the hook "Hasta 6.000 m: el Kilimanjaro, incluido" |
+| Scuba diving depth | 30 m | **40 m** | Inspired by IATI Mochilero (40 m) |
+| Baggage theft/damage · delay · urgent dental · civil liability | 2,500 · 300 · 500 · 100,000 € | **3,500 · 450 · 1,000 · 150,000 €** | ASSUMPTION |
+
+Common exclusions stay (extreme activities, professional sports, trips over 90 days). Because coverage was not compared line by line (§5.6), the price position of Wild Max is **a market-price position, not proof that the coverage is equivalent**. **Collect real premium-plan limits before treating these as final.**
+
+**Why three plans.** The top plan anchors the price and makes Wild+ the natural choice. We will measure it with the plan split in `/metricas` (`plan_selected`, `policy_issued` by plan). The upsell experiment still compares Wild+ with Wild (the daily-cost line is shown only under Wild+).

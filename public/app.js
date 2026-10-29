@@ -412,7 +412,7 @@ function confetti() {
 }
 
 // ---------- step 1: compare plans ----------
-// Two separate plan cards; CSS subgrid keeps each coverage row at the same height in both cards.
+// Three separate plan cards (stacked below 960 px); CSS subgrid keeps each coverage row at the same height in both cards.
 function renderStep1() {
   const q = state.quote;
   const n = q.trip.traveler_ages.length;
@@ -421,6 +421,7 @@ function renderStep1() {
   $('#step-1-line').textContent = fill(C.step1Line, { n, travelersWord: travelersWord(n) });
 
   const money = v => (v > 0 ? eur(v) : cmp.notIncluded);
+  const highestTrek = Math.max(0, ...q.plans.map(p => p.adventure_sports_limits?.trekking_max_altitude_m ?? 0));
   const features = [
     [fill(cmp.medical, { zone: q.trip.zone_name }), p => eur(p.medical_limit_for_this_trip_eur)],
     [cmp.repatriation, p => p.coverage_limits_eur.repatriation],
@@ -428,6 +429,15 @@ function renderStep1() {
     [cmp.cancellation, p => (p.cancellation_included ? `${eur(p.coverage_limits_eur.cancellation_per_traveler_eur)} ${cmp.perTraveler}` : cmp.notIncluded)],
     [cmp.excess, p => eur(p.excess_per_medical_claim_eur)],
     [cmp.adventure, p => (p.adventure_sports_included ? fill(cmp.adventureYes, { rescue: eur(p.search_and_rescue_eur) }) : cmp.adventureNo)],
+    // Trekking altitude: the hook of Wild Max (the highest one among the plans) is the Kilimanjaro.
+    [cmp.trekking, p => {
+      const m = p.adventure_sports_limits?.trekking_max_altitude_m;
+      if (!m) return cmp.trekkingNo;
+      const altitude = m.toLocaleString('es-ES', { useGrouping: 'always' });
+      return fill(m >= highestTrek ? cmp.trekkingHook : cmp.trekkingUpTo, { altitude });
+    }],
+    [cmp.sportsEquipment, p => (p.coverage_limits_eur.sports_equipment_eur > 0 ? eur(p.coverage_limits_eur.sports_equipment_eur) : cmp.trekkingNo)],
+    [cmp.interruption, p => (p.coverage_limits_eur.trip_interruption_per_traveler_eur > 0 ? `${eur(p.coverage_limits_eur.trip_interruption_per_traveler_eur)} ${cmp.perTraveler}` : cmp.notIncluded)],
   ];
 
   // The same two plan cards at every width: side by side from 600 px, one under the other (full width) on phones.
@@ -436,7 +446,7 @@ function renderStep1() {
   const base = q.plans.find(p => p.plan === 'wild');
   const cents = n => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
   const difference = p => {
-    if ((window.__wildpassExp?.upsell ?? 'a') !== 'b' || p.plan === 'wild' || !base) return null;
+    if ((window.__wildpassExp?.upsell ?? 'a') !== 'b' || p.plan !== 'wild_plus' || !base) return null;
     const values = { perDay: cents(Math.round(((p.total_price_eur - base.total_price_eur) / q.trip.days) * 100) / 100), plan: base.plan_name };
     return el('p', { class: 'plan-diff' }, el('span', { 'aria-hidden': 'true', text: fill(cmp.upsellDaily, values) }), el('span', { class: 'sr-only', text: fill(cmp.upsellDailyLabel, values) }));
   };

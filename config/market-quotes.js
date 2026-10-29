@@ -9,6 +9,7 @@ export default {
   comparable: {
     wild: { Heymondo: 'Tranquilidad', IATI: 'Estándar', Intermundial: 'Mini' },
     wild_plus: { Heymondo: 'Top', IATI: 'Mochilero', Intermundial: 'Totaltravel' },
+    wild_max: { Heymondo: 'Premium', IATI: 'Estrella', Intermundial: 'Premium' }, // IATI has no top plan in the Italy quote
   },
   trips: [
     {

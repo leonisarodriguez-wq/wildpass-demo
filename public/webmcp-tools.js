@@ -10,14 +10,14 @@ export function buildTools({ limits, plans, brand, payments }) {
   const HOW_PAID = stripeOn
     ? 'Payment runs in Stripe TEST MODE: only after all the checks above pass, the server confirms a Stripe PaymentIntent for exactly the reviewed total using Stripe\'s test payment method pm_card_visa, and issues the policy only if Stripe reports the payment succeeded. You never see, ask for or send card data. An order can never be charged twice: calling again after success returns ALREADY_PAID. If Stripe is unreachable you get PAYMENT_PROVIDER_UNAVAILABLE and no policy is issued; just retry later.'
     : 'No card data is needed or accepted.';
-  const planIds = Object.keys(plans); // e.g. ["wild", "wild_plus"]
-  const planList = planIds.map(id => `"${id}" (${plans[id]})`).join(' and ');
+  const planIds = Object.keys(plans); // e.g. ["wild", "wild_plus", "wild_max"]
+  const planList = planIds.map(id => `"${id}" (${plans[id]})`).join(', ').replace(/, ([^,]+)$/, ' and $1');
   return [
     {
       name: 'get_quote',
-      es: 'Calcula el precio de los dos planes para un viaje: destino, fechas y edades.',
+      es: 'Calcula el precio de los tres planes para un viaje: destino, fechas y edades.',
       title: 'Get travel insurance quote',
-      description: `Get prices for travel insurance for one trip. Returns a quote_id and BOTH plans, ${planList}, with total price, price per traveller, coverage limits, medical excess and each plan's exclusions. Only Wild+ covers adventure sports (trekking up to 4,000 m, scuba diving up to 30 m, skiing/snowboarding on marked slopes, surf, rafting, canyoning) and search & rescue up to 15,000 EUR; professional sports and extreme activities such as base jumping are excluded in both plans. Only trips starting in Spain (origin_country "ES") are accepted, and only for residents of Spain: optional residence_country (default "ES"); any other country returns error_code RESIDENCE_NOT_COVERED (ask the user where they live). Destinations where the Spanish Ministry of Foreign Affairs advises against all travel are not covered: get_quote then returns error_code DESTINATION_NOT_COVERED; tell the user and suggest another destination. Dates are YYYY-MM-DD; departure must be after today; the trip may last at most ${limits.maxTripDays} days counting both departure and return day. traveler_ages = each traveller's age ON THE DEPARTURE DATE. Show both plans to the user and let them choose. ${DEMO}`,
+      description: `Get prices for travel insurance for one trip. Returns a quote_id and ALL plans, ${planList}, with total price, price per traveller, coverage limits, medical excess and each plan's exclusions. Only Wild+ and Wild Max cover adventure sports: Wild+ trekking up to 4,000 m, scuba diving up to 30 m and search & rescue up to 15,000 EUR; Wild Max trekking up to 6,000 m, scuba diving up to 40 m, search & rescue up to 30,000 EUR, sports equipment up to 1,500 EUR, cancellation up to 5,000 EUR per traveller and trip interruption (both plans: skiing/snowboarding on marked slopes, surf, rafting, canyoning). Wild covers none of them. Professional sports and extreme activities such as base jumping are excluded in all plans. Only trips starting in Spain (origin_country "ES") are accepted, and only for residents of Spain: optional residence_country (default "ES"); any other country returns error_code RESIDENCE_NOT_COVERED (ask the user where they live). Destinations where the Spanish Ministry of Foreign Affairs advises against all travel are not covered: get_quote then returns error_code DESTINATION_NOT_COVERED; tell the user and suggest another destination. Dates are YYYY-MM-DD; departure must be after today; the trip may last at most ${limits.maxTripDays} days counting both departure and return day. traveler_ages = each traveller's age ON THE DEPARTURE DATE. Show all the plans to the user and let them choose. ${DEMO}`,
       inputSchema: {
         type: 'object',
         additionalProperties: false,
@@ -48,7 +48,7 @@ export function buildTools({ limits, plans, brand, payments }) {
         required: ['quote_id', 'plan'],
         properties: {
           quote_id: { ...ID, description: 'quote_id returned by get_quote.' },
-          plan: { type: 'string', enum: planIds, description: `The plan the user chose: ${planList}. If the user will do adventure sports, only Wild+ covers them.` },
+          plan: { type: 'string', enum: planIds, description: `The plan the user chose: ${planList}. If the user will do adventure sports, only Wild+ and Wild Max cover them (Wild Max has the highest limits). The plan ids are wild, wild_plus and wild_max.` },
         },
       },
     },

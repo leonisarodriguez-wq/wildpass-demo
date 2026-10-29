@@ -9,6 +9,7 @@ export const EVENT_NAMES = [
 ];
 // Pages that send page_view (/metricas never does).
 export const TRACKED_PAGES = ['/', '/agentes', '/condiciones', '/caso'];
+const PLAN_IDS = ['wild', 'wild_plus', 'wild_max'];
 const FIELDS = ['event', 'session_id', 'channel', 'device', 'page', 'plan', 'exp_hero', 'exp_upsell'];
 const SESSION_RE = /^[A-Za-z0-9_-]{16,64}$/;
 
@@ -29,7 +30,7 @@ export function createEvents({ db, now = () => new Date() }) {
       channel TEXT NOT NULL,         -- web | agent
       device TEXT,                   -- mobile | desktop (by screen width)
       page TEXT,
-      plan TEXT,                     -- wild | wild_plus
+      plan TEXT,                     -- wild | wild_plus | wild_max
       exp_hero TEXT,                 -- a | b
       exp_upsell TEXT                -- a | b
     );
@@ -60,9 +61,9 @@ export function createEvents({ db, now = () => new Date() }) {
     if (!EVENT_NAMES.includes(e.event)) return fail('INVALID_EVENT', 'Nombre de evento desconocido.', `Usa uno de: ${EVENT_NAMES.join(', ')}.`);
     if (typeof e.session_id !== 'string' || !SESSION_RE.test(e.session_id)) return fail('INVALID_EVENT', 'session_id no es válido.', 'Usa un identificador aleatorio de 16 a 64 caracteres (letras, números, - o _).');
     if (!['web', 'agent'].includes(e.channel)) return fail('INVALID_EVENT', 'channel debe ser "web" o "agent".', 'Indica el canal.');
-    if (!oneOf(e.device, ['mobile', 'desktop']) || !oneOf(e.page, TRACKED_PAGES) || !oneOf(e.plan, ['wild', 'wild_plus'])
+    if (!oneOf(e.device, ['mobile', 'desktop']) || !oneOf(e.page, TRACKED_PAGES) || !oneOf(e.plan, PLAN_IDS)
         || !oneOf(e.exp_hero, ['a', 'b']) || !oneOf(e.exp_upsell, ['a', 'b'])) {
-      return fail('INVALID_EVENT', 'Algún valor no está permitido.', 'device: mobile|desktop; page: una página pública; plan: wild|wild_plus; variantes: a|b.');
+      return fail('INVALID_EVENT', 'Algún valor no está permitido.', 'device: mobile|desktop; page: una página pública; plan: wild|wild_plus|wild_max; variantes: a|b.');
     }
     if (!allow(`s:${e.session_id}`, LIMITS.perSessionPerMinute, 60_000) || !allow(`st:${e.session_id}`, LIMITS.perSessionTotal, 86_400_000)
         || !allow(`ip:${ip}`, LIMITS.perIpPerHour, 3_600_000)) {
@@ -94,7 +95,7 @@ export function createEvents({ db, now = () => new Date() }) {
     const STEPS = ['quote_viewed', 'plan_selected', 'details_completed', 'review_viewed', 'payment_started', 'policy_issued'];
     const funnel = channel => [{ step: 'sessions', n: sessionsFor(channel) }, ...STEPS.map(step => ({ step, n: stepFor(step, channel) }))];
 
-    const plans = event => Object.fromEntries(['wild', 'wild_plus'].map(p => [p, count('SELECT COUNT(DISTINCT session_id) AS n FROM events WHERE event = ? AND plan = ?', event, p)]));
+    const plans = event => Object.fromEntries(PLAN_IDS.map(p => [p, count('SELECT COUNT(DISTINCT session_id) AS n FROM events WHERE event = ? AND plan = ?', event, p)]));
     const otherEvents = Object.fromEntries(EVENT_NAMES.map(name => [name, count('SELECT COUNT(*) AS n FROM events WHERE event = ?', name)]));
 
     // Experiments (website only). Hero: sessions that viewed the landing, by variant → % that chose a destination.

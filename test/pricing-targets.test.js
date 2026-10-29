@@ -44,10 +44,10 @@ function within5(actual, target, label) {
 
 // Target "7 days" = 10–17 Dec = 8 days for us; "10 days" = 10–20 Dec = 11; "14 days" = 10–24 Dec = 15.
 const TARGETS = [
-  { label: 'Europe "7 days" (Italy)', destination: 'IT', ourDays: 8, wild: 22, wild_plus: 29.5 },
-  { label: 'Rest of world "10 days" (Mexico)', destination: 'MX', ourDays: 11, wild: 55, wild_plus: 78 },
-  { label: 'Rest of world "14 days" (Thailand)', destination: 'TH', ourDays: 15, wild: 60, wild_plus: 85 },
-  { label: 'USA/Canada/Japan "10 days" (USA)', destination: 'US', ourDays: 11, wild: 57, wild_plus: 80 },
+  { label: 'Europe "7 days" (Italy)', destination: 'IT', ourDays: 8, wild: 22, wild_plus: 29.5, wild_max: 42 },
+  { label: 'Rest of world "10 days" (Mexico)', destination: 'MX', ourDays: 11, wild: 55, wild_plus: 78, wild_max: 98 },
+  { label: 'Rest of world "14 days" (Thailand)', destination: 'TH', ourDays: 15, wild: 60, wild_plus: 85, wild_max: 106 },
+  { label: 'USA/Canada/Japan "10 days" (USA)', destination: 'US', ourDays: 11, wild: 57, wild_plus: 80, wild_max: 107.5 },
 ];
 
 for (const t of TARGETS) {
@@ -55,6 +55,7 @@ for (const t of TARGETS) {
     const prices = await quote(t.destination, t.ourDays, [35]);
     within5(prices.wild[0], t.wild, `${t.label} Wild`);
     within5(prices.wild_plus[0], t.wild_plus, `${t.label} Wild+`);
+    within5(prices.wild_max[0], t.wild_max, `${t.label} Wild Max`);
   });
 }
 
@@ -66,7 +67,7 @@ test('market target: two adults to the USA are priced per person', async () => {
 
 test('age 65-74 costs 1.65 × the adult price (Intermundial evidence)', async () => {
   const prices = await quote('MX', 11, [35, 68]);
-  for (const plan of ['wild', 'wild_plus']) {
+  for (const plan of ['wild', 'wild_plus', 'wild_max']) {
     const [adult, senior] = prices[plan];
     assert.ok(Math.abs(senior - adult * 1.65) <= 0.02, `${plan}: ${senior} is not 1.65 × ${adult}`);
   }
@@ -83,7 +84,7 @@ test('cost per day still falls for longer trips', async () => {
 // costs the average price PER DAY of an 11–15-day trip.
 test('from day 16 (competitors\' day 15), each extra day costs the average price per day of 11-15-day trips', async () => {
   for (const destination of ['IT', 'TH', 'US']) {
-    for (const plan of ['wild', 'wild_plus']) {
+    for (const plan of ['wild', 'wild_plus', 'wild_max']) {
       const price = {};
       for (const days of [11, 12, 13, 14, 15, 16, 17, 30, 60, 90]) price[days] = (await quote(destination, days, [35]))[plan][0];
       const averagePerDay = [11, 12, 13, 14, 15].reduce((sum, d) => sum + price[d] / d, 0) / 5;
@@ -101,4 +102,30 @@ test('from day 16 (competitors\' day 15), each extra day costs the average price
 test('90-day Rest of world Wild costs about 395 € (agreed long-trip rule)', async () => {
   const p = await quote('TH', 90, [35]);
   assert.ok(p.wild[0] > 380 && p.wild[0] < 410, `90-day Rest of world Wild is ${p.wild[0]} €`);
+});
+
+// Wild and Wild+ prices must never change when Wild Max (or anything else) is added: exact figures from the 28 Oct 2026 calibration.
+test('Wild and Wild+ prices are unchanged by Wild Max', async () => {
+  const expected = {
+    'IT-8': { wild: 22.0, wild_plus: 29.5 },
+    'MX-11': { wild: 55.0, wild_plus: 78.0 },
+    'TH-15': { wild: 59.99, wild_plus: 85.08 },
+    'US-11': { wild: 57.0, wild_plus: 80.0 },
+  };
+  for (const [key, want] of Object.entries(expected)) {
+    const [destination, days] = key.split('-');
+    const prices = await quote(destination, Number(days), [35]);
+    assert.equal(prices.wild[0], want.wild, `${key} Wild`);
+    assert.equal(prices.wild_plus[0], want.wild_plus, `${key} Wild+`);
+  }
+});
+
+test('Wild Max stays slightly below the median of the premium plans of the quotes (2–5 %)', async () => {
+  // Medians of Heymondo Premium, IATI Estrella and Intermundial Premium (docs/pricing-research.md §6).
+  const medians = [['IT', 8, 43.69], ['MX', 11, 101.81], ['TH', 15, 109.37], ['US', 11, 111.39]];
+  for (const [destination, days, median] of medians) {
+    const price = (await quote(destination, days, [35])).wild_max[0];
+    const diff = (price / median - 1) * 100;
+    assert.ok(diff < -1.5 && diff > -5.5, `${destination}: Wild Max ${price} € is ${diff.toFixed(1)}% from the premium median ${median} €`);
+  }
 });
