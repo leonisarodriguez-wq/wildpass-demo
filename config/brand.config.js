@@ -108,7 +108,8 @@ export default {
       exampleAsk: 'Ya has escrito datos. ¿Los sustituimos por el ejemplo (Tailandia, 2 viajeros)?',
       exampleYes: 'Sí, usar el ejemplo',
       exampleNo: 'No, mantener mis datos',
-      example: { destination: 'TH', departure: '2026-12-10', return: '2026-12-24', ages: [35, 38] },
+      // Dates move with the calendar so the example never expires: departure in `startInDays` days, `tripDays` days of trip (both days count).
+      example: { destination: 'TH', startInDays: 42, tripDays: 14, ages: [35, 38] },
       residence: 'Desde España · Para residentes en España',
       loading: 'Calculando…',
       passLabel: 'Calcula tu precio',

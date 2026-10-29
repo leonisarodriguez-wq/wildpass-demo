@@ -342,11 +342,14 @@ function formHasData() {
 }
 function fillExample() {
   const ex = T.form.example;
+  // Departure = today + startInDays; the return keeps `tripDays` days counting both ends (like the server).
+  const departure = addDays(todayMadrid(), ex.startInDays);
+  const returnDate = addDays(departure, ex.tripDays - 1);
   $('#destination').value = ex.destination;
   $('#destination').dispatchEvent(new Event('change', { bubbles: true }));
-  $('#departure').value = ex.departure;
+  $('#departure').value = departure;
   $('#departure').dispatchEvent(new Event('change', { bubbles: true }));
-  $('#return').value = ex.return;
+  $('#return').value = returnDate;
   $('#return').dispatchEvent(new Event('change', { bubbles: true }));
   while (ageInputs().length > ex.ages.length) $('#ages').lastElementChild.remove();
   relabelAges();

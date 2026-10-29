@@ -89,7 +89,17 @@ test('«Probar con un ejemplo»: secondary button in the quote form, example dat
   assert.ok(html.includes('<button type="button" class="secondary block example-btn" id="example-fill">Probar con un ejemplo</button>'));
   assert.ok(html.includes('id="example-confirm"') && html.includes('Sí, usar el ejemplo') && html.includes('No, mantener mis datos'));
   const config = await (await fetch(`${base}/api/config`)).json();
-  assert.deepEqual(config.texts?.form?.example ?? config.brand?.texts?.form?.example, { destination: 'TH', departure: '2026-12-10', return: '2026-12-24', ages: [35, 38] });
+  assert.deepEqual(config.texts?.form?.example ?? config.brand?.texts?.form?.example, { destination: 'TH', startInDays: 42, tripDays: 14, ages: [35, 38] });
   const ev = await fetch(`${base}/api/events`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ event: 'example_used', session_id: 'abcdefghijklmnop1234', channel: 'web', device: 'desktop' }) });
   assert.equal((await ev.json()).ok, true);
+});
+
+test('the example trip moves with the calendar: departure in 6 weeks, 14 days, never in the past', async () => {
+  const { default: brand } = await import('../config/brand.config.js');
+  const ex = brand.texts.form.example;
+  assert.equal(ex.startInDays, 42);
+  assert.equal(ex.tripDays, 14);
+  const js = await (await fetch(`${base}/app.js`)).text();
+  assert.ok(js.includes('addDays(todayMadrid(), ex.startInDays)') && js.includes('addDays(departure, ex.tripDays - 1)'));
+  assert.ok(!/2026-12-10/.test(js), 'no fixed example date in app.js');
 });

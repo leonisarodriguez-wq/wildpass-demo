@@ -298,8 +298,8 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
   («Acepto las condiciones del seguro y los términos de contratación» → /condiciones + /terminos; `accept_terms` covers both), step 2 and the contact form
   («Consulta cómo tratamos tus datos»). `review_order` also returns `contracting_terms_url`. `/si-me-pasa-algo` (`incidentPageBody`, texts `texts.incident`): 4 steps,
   no phone numbers, «teléfono de asistencia 24 h» only as «en un seguro real…»; linked in the footer and on the success step.
-- «Probar con un ejemplo» (secondary, under «Ver mi precio»; `texts.form.example` = TH, 10–24 Dec 2026, ages 35 + 38; asks inline before replacing typed data;
-  event `example_used`, 11th name in `EVENT_NAMES`). The example dates are fixed: after 10 Dec 2026 the server would refuse them (DEPARTURE_NOT_IN_FUTURE).
+- «Probar con un ejemplo» (secondary, under «Ver mi precio»; `texts.form.example` = TH, departure in 42 days (6 weeks) from today in Madrid, 14 trip days counting both ends, ages 35 + 38; the dates move so it never expires; asks inline before replacing typed data;
+  event `example_used`, 11th name in `EVENT_NAMES`).
 
 ## Policyholder DNI/NIE and residence (29 Oct 2026)
 - Step 2 (web): required «DNI o NIE de quien contrata» (`#ph-id`, autocomplete off) + required «Resido en España» (`#ph-resident`, client check:
