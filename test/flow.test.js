@@ -663,7 +663,7 @@ test('checkout copy: Spanish dates, new success title and the boarding pass on t
   assert.equal((html.match(/type="date"[^>]*lang="es"/g) ?? []).length, 2);
   assert.ok(html.includes('¡Todo listo para empezar tu aventura!'));
   assert.ok(!html.includes('Ya puedes irte salvaje'));
-  for (const id of ['done-names', 'done-destination', 'done-departure', 'done-return', 'done-plan', 'policy-number', 'policy-qr', 'pdf-link', 'email-line', 'resend', 'forward-form', 'forward-email', 'send-list', 'start-over']) assert.ok(html.includes(`id="${id}"`), id);
+  for (const id of ['done-names', 'done-destination', 'done-departure', 'done-return', 'done-plan', 'done-holder-id', 'policy-number', 'policy-qr', 'pdf-link', 'email-line', 'resend', 'forward-form', 'forward-email', 'send-list', 'start-over']) assert.ok(html.includes(`id="${id}"`), id);
   // Resend / forward come right under "Descargar mi póliza", before "Calcular otro viaje".
   assert.ok(html.indexOf('id="pdf-link"') < html.indexOf('id="resend"') && html.indexOf('id="forward-form"') < html.indexOf('id="start-over"'));
   assert.ok(html.includes('¿No te ha llegado? Reenviar') && html.includes('Comparte la póliza con quien viaja contigo'));

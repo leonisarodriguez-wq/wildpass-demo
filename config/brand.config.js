@@ -513,6 +513,7 @@ export default {
         departure: 'Salida',
         return: 'Regreso',
         plan: 'Plan',
+        holderId: 'DNI/NIE',
         stamp: 'Cubierto',
         qrLabel: 'Código QR con el enlace a tu póliza en PDF',
         qrNote: 'Escanéalo para abrir tu póliza',

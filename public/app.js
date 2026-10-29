@@ -390,6 +390,8 @@ function renderDoneTrip() {
   $('#done-departure').textContent = dateEs(trip.departure_date);
   $('#done-return').textContent = dateEs(trip.return_date);
   $('#done-plan').textContent = plan.plan_name;
+  // Always masked (*****678Z); without a DNI (agent purchases) the policy status says so.
+  $('#done-holder-id').textContent = state.paid.holder_id_number_masked ?? state.paid.status_text;
   $('#policy-qr').innerHTML = qrSvg(state.paid.pdf_url, { label: B.qrLabel });
 }
 
