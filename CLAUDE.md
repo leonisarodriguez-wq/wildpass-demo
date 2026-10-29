@@ -197,7 +197,7 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
   everything we print ourselves is always dd/mm/aaaa.
 - Cloudflare Quick Tunnel (trycloudflare.com, a Cloudflare-owned zone we cannot configure) blocks AI bots by itself (checked 29 Oct 2026):
   it serves its OWN robots.txt (Disallow for GPTBot, ClaudeBot, ChatGPT-User, Claude-User, OAI-SearchBot, PerplexityBot, Google-Extended…,
-  probably put in front of ours: re-check after deploying ours), answers 403 "Your request was blocked." to GPTBot/ClaudeBot/PerplexityBot user-agents, and adds `x-robots-tag: none`.
+  put in FRONT of ours, confirmed 29 Oct 2026), answers 403 "Your request was blocked." to GPTBot/ClaudeBot/PerplexityBot user-agents, and adds `x-robots-tag: none`.
   Our app answers 200 to all of them (tested in flow.test.js). Fixing it needs a tunnel/host we control (e.g. a named Cloudflare Tunnel on
   our own domain with "Block AI bots" and managed robots.txt switched off).
 - No rate limiting. No real payment (Stripe test mode only) or real insurer. Prices are provisional.
