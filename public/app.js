@@ -423,8 +423,7 @@ function renderStep1() {
     [cmp.adventure, p => (p.adventure_sports_included ? fill(cmp.adventureYes, { rescue: eur(p.search_and_rescue_eur) }) : cmp.adventureNo)],
   ];
 
-  // Phones: a compact switcher on top ("Wild 22 €" / "Wild+ 29,50 €", the whole card is tappable) and, below, one row per
-  // coverage with both values side by side. Wider screens: the two full plan cards. CSS shows one layout or the other.
+  // The same two plan cards at every width: side by side from 600 px, one under the other (full width) on phones.
   // Wild+ says what it costs on top of Wild: "+12,40 € (0,83 € al día)".
   const base = q.plans.find(p => p.plan === 'wild');
   const difference = p => {
@@ -433,25 +432,7 @@ function renderStep1() {
     const values = { diff: eur(diff), perDay: eur(Math.round((diff / q.trip.days) * 100) / 100), plan: base.plan_name };
     return el('p', { class: 'plan-diff' }, el('span', { 'aria-hidden': 'true', text: fill(cmp.difference, values) }), el('span', { class: 'sr-only', text: fill(cmp.differenceLabel, values) }));
   };
-  const buttonClass = p => (p.plan === 'wild_plus' ? 'primary' : 'secondary');
-  const chooseButton = (p, text) => el('button', { type: 'button', class: buttonClass(p), text, 'aria-label': fill(C.choose, { plan: p.plan_name }), onclick: e => choosePlan(p.plan, e.currentTarget) });
-  const switcher = el('div', { class: 'plan-switch', role: 'group', 'aria-label': cmp.switchLabel }, q.plans.map(p => {
-    const button = chooseButton(p, cmp.chooseShort);
-    return el('div', { class: p.plan === 'wild_plus' ? 'switch-card featured' : 'switch-card', 'data-plan-card': p.plan, onclick: e => { if (e.target !== button) markPlan(p.plan); } },
-      el('p', { class: 'switch-name', text: p.plan_name }),
-      el('p', { class: 'switch-price' }, el('span', { class: 'sr-only', text: `${cmp.price}: ` }), eur(p.total_price_eur)),
-      difference(p),
-      button);
-  }));
-  const rows = el('div', { class: 'compare-rows' },
-    el('h3', { class: 'compare-rows-title', text: cmp.compareTitle }),
-    el('p', { class: 'compare-head', 'aria-hidden': 'true' }, q.plans.map(p => el('span', { text: p.plan_name }))),
-    el('dl', {}, features.map(([label, value]) => el('div', { class: 'compare-row' },
-      el('dt', { text: label }),
-      el('dd', {}, q.plans.map(p => el('span', { class: p.plan === 'wild_plus' ? 'featured' : '' }, el('span', { class: 'sr-only', text: `${p.plan_name}: ` }), value(p))))))),
-    el('div', { class: 'compare-choose' }, q.plans.map(p => chooseButton(p, fill(C.choose, { plan: p.plan_name })))));
-
-  $('#compare').replaceChildren(switcher, el('div', { class: 'plan-compare' }, q.plans.map(p => {
+  $('#compare').replaceChildren(el('div', { class: 'plan-compare' }, q.plans.map(p => {
     const featured = p.plan === 'wild_plus';
     const nameId = `plan-${p.plan}-name`;
     // Rows: name, price, one per coverage, button (the CSS subgrid needs the count).
@@ -463,7 +444,7 @@ function renderStep1() {
       el('dl', { style: `grid-row: span ${features.length}` }, features.map(([label, value]) => el('div', { class: 'feature' }, el('dt', { text: label }), el('dd', { text: value(p) })))),
       el('button', { type: 'button', class: featured ? 'primary' : 'secondary', text: fill(C.choose, { plan: p.plan_name }), onclick: e => choosePlan(p.plan, e.currentTarget) }),
     );
-  })), rows);
+  })));
 
   // Exclusions, closed by default: common ones, then each plan's own (Wild: adventure sports; Wild+: its limits).
   const common = q.exclusions_all_plans;
@@ -486,7 +467,7 @@ function markPlan(plan) {
     const on = card.dataset.planCard === plan;
     card.classList.toggle('is-selected', on);
     card.querySelector('.selected-note')?.remove();
-    if (on) card.querySelector('h3, .switch-name').append(el('span', { class: 'selected-note', text: ` · ${C.selectedPlan}` }));
+    if (on) card.querySelector('h3').append(el('span', { class: 'selected-note', text: ` · ${C.selectedPlan}` }));
   }
   updateTotalBar();
 }
@@ -754,7 +735,6 @@ $('#pay').addEventListener('click', async e => {
     $('#email-line').textContent = result.email_status === 'not_configured'
       ? C.emailNotConfigured
       : fill(C.emailSent, { email: state.review.summary.policyholder.email });
-    $('#payment-line').textContent = result.payment_text ?? '';
     renderDoneTrip();
     // The review and order can't be reused after payment: going back starts a new quote.
     history.replaceState({ step: 'landing' }, '', location.pathname);

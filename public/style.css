@@ -282,21 +282,22 @@ select[hidden] { display: none; } /* the plain <select> once the search box repl
 .card-page code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em; font-weight: 700; overflow-wrap: anywhere; }
 
 /* ---------- trust strip: 4 white cards on sky, each icon in a soft mint circle. Phones 2×2 (icon on top, centred,
-   short text, max 2 lines); computers 4 in a row (icon left). ---------- */
+   cards aligned at the top); computers 4 in a row (icon left). Each fact = bold main line + smaller grey second line. ---------- */
 .trust { background: var(--sky); padding: 16px 0; }
 .trust-list { list-style: none; margin: 0 auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.trust-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 14px 10px; background: var(--white); border-radius: 16px; text-align: center; font-size: 0.9rem; font-weight: 700; line-height: 1.3; color: var(--night); }
+.trust-item { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 8px; padding: 14px 10px; background: var(--white); border-radius: 16px; text-align: center; font-size: 0.9rem; font-weight: 700; line-height: 1.3; color: var(--night); }
 .trust-icon { flex: none; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: var(--mint); color: var(--turquoise-text); }
 .trust-icon .icon { width: 26px; height: 26px; }
-.trust-long { display: none; }
+.trust-text { display: grid; gap: 2px; }
+.trust-sub { font-size: 0.8rem; font-weight: 400; line-height: 1.3; color: var(--secondary); }
 @media (max-width: 359px) { .trust-item { padding: 12px 8px; font-size: 0.85rem; } }
-@media (min-width: 600px) { .trust-long { display: inline; } .trust-short { display: none; } }
 @media (min-width: 700px) {
   .trust { padding: 28px 0; }
   .trust-list { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
   .trust-item { flex-direction: row; justify-content: flex-start; gap: 14px; padding: 18px; text-align: left; font-size: 1rem; }
   .trust-icon { width: 56px; height: 56px; }
   .trust-icon .icon { width: 30px; height: 30px; }
+  .trust-sub { font-size: 0.85rem; }
 }
 .plans-more { text-align: center; margin: 18px 0 0; }
 
@@ -420,14 +421,16 @@ html:has(.agent-pill:not([hidden])) .site-footer { padding-bottom: 90px; }
 .trip-item dd { margin: 0; font-weight: 600; }
 .edit-trip { position: absolute; top: 6px; right: 12px; padding: 0 6px; text-decoration: underline; }
 
-/* Plan comparison: two separate cards; subgrid aligns each coverage row across both cards. */
-.plan-compare { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 12px; margin: 22px 0 12px; }
+/* Plan comparison: the SAME two cards at every width. ≥600 px side by side (subgrid aligns each coverage row across both
+   cards); phones one under the other at full width, with room above Wild+ for its badge. No phone-only layout. */
+.plan-compare { display: grid; grid-template-columns: minmax(0, 1fr); row-gap: 24px; margin: 22px 0 12px; }
+@media (min-width: 600px) { .plan-compare { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 12px; row-gap: 0; } }
 .plan-option { position: relative; display: grid; grid-row: span 9; grid-template-rows: subgrid; row-gap: 0; min-width: 0; /* name, price, 6 coverage rows, button */
-  background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 22px 12px 14px; text-align: left; }
-.plan-option.featured { background: var(--mint); border: 2px solid var(--turquoise); padding: 21px 11px 13px; }
+  background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 24px 16px 16px; text-align: left; }
+.plan-option.featured { background: var(--mint); border: 2px solid var(--turquoise); padding: 23px 15px 15px; }
 /* The marked plan (step 1): a thick night ring around its card. */
-.plan-option, .switch-card { cursor: pointer; }
-.plan-option.is-selected, .switch-card.is-selected { box-shadow: 0 0 0 3px var(--night); }
+.plan-option { cursor: pointer; }
+.plan-option.is-selected { box-shadow: 0 0 0 3px var(--night); }
 .selected-note { font-family: var(--font-text); font-size: 0.8rem; font-weight: 700; color: var(--turquoise-text); }
 .plan-option .badge { left: 50%; transform: translate(-50%, -50%); font-size: 0.72rem; padding: 4px 10px; white-space: normal; text-align: center; width: max-content; max-width: calc(100% - 12px); }
 .plan-option h3 { font-size: 1.35rem; margin: 0; }
@@ -438,26 +441,6 @@ html:has(.agent-pill:not([hidden])) .site-footer { padding-bottom: 90px; }
 .plan-option dt { font-size: 0.7rem; font-weight: 700; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.04em; line-height: 1.3; margin-bottom: 2px; }
 .plan-option dd { margin: 0; font-weight: 600; font-size: 0.95rem; line-height: 1.35; overflow-wrap: anywhere; }
 .plan-option .primary, .plan-option .secondary { width: 100%; min-height: 52px; padding: 10px 6px; font-size: 1rem; margin-top: 12px; align-self: end; }
-/* Phones (<600 px): compact switcher on top + one row per coverage (label, then Wild | Wild+). Wider: the two plan cards. */
-.plan-switch { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; margin: 16px 0 22px; }
-.switch-card { display: grid; gap: 2px; align-content: start; padding: 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--white); cursor: pointer; }
-.switch-card.featured { background: var(--mint); border: 2px solid var(--turquoise); padding: 11px; }
-.switch-name, .switch-price { margin: 0; font-family: var(--font-headings); font-weight: 700; }
-.switch-name { font-size: 1.05rem; }
-.switch-price { font-size: 1.5rem; line-height: 1.2; }
-.switch-card button { width: 100%; min-height: 44px; margin-top: 8px; padding: 8px; font-size: 1rem; }
-.compare-rows-title { font-size: 1.15rem; margin: 0 0 4px; }
-.compare-head, .compare-row dd, .compare-choose { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
-.compare-head { margin: 0; padding: 6px 0; font-family: var(--font-headings); font-weight: 700; }
-.compare-head span, .compare-row dd > span { padding: 2px 8px; border-radius: 8px; }
-.compare-head span:last-child, .compare-row dd > .featured { background: var(--mint); }
-.compare-rows dl { margin: 0; }
-.compare-row { padding: 10px 0; border-top: 1px solid var(--border); }
-.compare-row dt { font-size: 0.72rem; font-weight: 700; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.04em; line-height: 1.3; }
-.compare-row dd { margin: 4px 0 0; font-weight: 600; font-size: 0.95rem; line-height: 1.35; overflow-wrap: anywhere; }
-.compare-choose { margin-top: 14px; }
-.compare-choose button { width: 100%; min-height: 52px; padding: 10px 6px; font-size: 1rem; }
-@media (min-width: 600px) { .plan-switch, .compare-rows { display: none; } }
 /* Phones: a compact first screen, so "Ver mi precio" shows without scrolling on a 375×812 phone. The landscape stays
    whole: only flat ground is cropped off its bottom, and the (smaller) route strip covers nothing but sky. */
 @media (max-width: 599px) {
@@ -483,7 +466,6 @@ html:has(.agent-pill:not([hidden])) .site-footer { padding-bottom: 90px; }
   .pp-main { font-size: 1.2rem; }
   .pp-sub { font-size: 0.8rem; line-height: 1.35; }
 }
-@media (max-width: 599px) { .plan-compare { display: none; } }
 
 /* Exclusions: closed by default; one minus icon per line. */
 .exclusions { background: var(--white); border-radius: 16px; margin: 4px 0 16px; }
@@ -727,8 +709,6 @@ html:has(.agent-pill:not([hidden])) .site-footer { padding-bottom: 90px; }
   .boarding-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .boarding-stub { grid-template-areas: "num qr" "note qr"; align-items: start; }
   .boarding-stub .qr-note { align-self: end; }
-  .plan-option { padding: 24px 16px 16px; }
-  .plan-option.featured { padding: 23px 15px 15px; }
 }
 @media (min-width: 700px) and (max-width: 1099px) {
   .from-price { font-size: 1.3rem; }

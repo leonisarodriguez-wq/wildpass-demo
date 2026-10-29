@@ -67,7 +67,7 @@ export function enhanceDestination(select, texts) {
     h.id = `dest-group-${i}`;
     h.setAttribute('role', 'presentation');
     h.textContent = label;
-    g.append(h, ...items.map(optionEl));
+    g.append(h, ...items.map(item => optionEl(item))); // not map(optionEl): the index would become `via`
     return g;
   }
 

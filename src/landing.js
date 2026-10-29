@@ -329,9 +329,9 @@ export function whatIfHtml({ brand, pricing, values }) {
 // Trust strip under the hero: 4 facts, each an icon in a soft circle (values from the pricing config).
 function trustHtml({ brand, values }) {
   const icons = { mail: art.iconMail, cancel: art.iconCancel, mountain: art.iconMountain, doc: art.iconDoc };
-  // Phones show `short` (at most 2 lines in the 2×2 grid), wider screens `text`; CSS shows one of the two.
+  // Main line + smaller second line (`sub`), the same at every width.
   return brand.texts.trust.map(item => `<li class="trust-item"><span class="trust-icon">${icons[item.icon]}</span>`
-    + `<span class="trust-text trust-long">${escapeHtml(fill(item.text, values))}</span><span class="trust-text trust-short">${escapeHtml(fill(item.short, values))}</span></li>`).join('');
+    + `<span class="trust-text"><span class="trust-main">${escapeHtml(fill(item.text, values))}</span><span class="trust-sub">${escapeHtml(fill(item.sub, values))}</span></span></li>`).join('');
 }
 
 // FAQ answers: escaped text, then [text](#quote-form) → a link to the quote form, {contactLink} → a mailto link.

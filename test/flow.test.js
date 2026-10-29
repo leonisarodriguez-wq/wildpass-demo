@@ -468,7 +468,12 @@ test('AI block on the landing: only title, text, the example chat and the compat
   // Trust strip right under the hero: 4 facts, values from the pricing config; no 24 h promise anywhere (not in the terms).
   assert.ok(html.indexOf('class="trust"') > html.indexOf('id="quote-form"') && html.indexOf('class="trust"') < html.indexOf('id="editorial-title"'));
   assert.equal((html.match(/<li class="trust-item">/g) ?? []).length, 4);
-  for (const text of ['Póliza en tu email en 2 min', 'Cancelación hasta 3.000 € con Wild+', 'Deportes de aventura incluidos con Wild+', 'Sin letra pequeña: condiciones claras']) assert.ok(html.includes(text), text);
+  for (const [main, sub] of [['Póliza en tu email en 2 min', 'sin papeleos'], ['Si cancelas, recuperas hasta 3.000 €', 'por viajero, con Wild+'],
+    ['Deportes de aventura incluidos', 'trekking, buceo, esquí… con Wild+'], ['Sin letra pequeña', 'condiciones claras']]) {
+    assert.ok(html.includes(`<span class="trust-main">${main}</span><span class="trust-sub">${sub}</span>`), main);
+  }
+  // The success step shows no payment reference (it stays in the API, the PDF and the email).
+  assert.ok(!html.includes('payment-line'));
   const visibleText = html.replace(/<svg[\s\S]*?<\/svg>/g, '').replace(/<[^>]+>/g, ' ');
   assert.ok(!/\b24 ?h\b|demoras|asistencia 24/i.test(visibleText), 'no promise the terms do not make');
   assert.ok(html.includes('Médicos, dentista urgente, equipaje y retraso de maleta'));

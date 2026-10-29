@@ -72,11 +72,11 @@ export default {
 
     // Trust strip under the hero (white, 4 items with an icon). Only what the product really does: no reviews, no seals.
     trust: [
-      // `short` = phones (<600 px), at most 2 lines in a 2×2 grid down to 320 px.
-      { icon: 'mail', text: 'Póliza en tu email en 2 min', short: 'Póliza en tu email en 2 min' },
-      { icon: 'cancel', text: 'Cancelación hasta {plusCancellation} con Wild+', short: 'Cancelación hasta {plusCancellation}' },
-      { icon: 'mountain', text: 'Deportes de aventura incluidos con Wild+', short: 'Aventura con Wild+' },
-      { icon: 'doc', text: 'Sin letra pequeña: condiciones claras', short: 'Condiciones claras' },
+      // `text` = main line (bold), `sub` = smaller second line in #3C5368. Same on every screen; 2×2 on phones down to 320 px.
+      { icon: 'mail', text: 'Póliza en tu email en 2 min', sub: 'sin papeleos' },
+      { icon: 'cancel', text: 'Si cancelas, recuperas hasta {plusCancellation}', sub: 'por viajero, con Wild+' },
+      { icon: 'mountain', text: 'Deportes de aventura incluidos', sub: 'trekking, buceo, esquí… con Wild+' },
+      { icon: 'doc', text: 'Sin letra pequeña', sub: 'condiciones claras' },
     ],
     trustLabel: 'Por qué Wildpass',
 
@@ -512,10 +512,6 @@ export default {
         bothPlans: 'En los dos planes',
         onlyIn: 'Solo en {plan}',
         limitsOf: 'Límites de {plan}',
-        // Phones: compact switcher on top, then one row per coverage (label, then both values side by side).
-        switchLabel: 'Elige tu plan',
-        chooseShort: 'Elegir',
-        compareTitle: 'Compara las coberturas',
         // Under the Wild+ price: what it costs on top of Wild, for the whole trip and per day.
         difference: '+{diff} ({perDay} al día)',
         differenceLabel: '{diff} más que {plan}, {perDay} al día',

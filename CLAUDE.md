@@ -37,7 +37,7 @@ The owner is not a programmer: explain things simply, report test results honest
   unknown → mountains), a stylised Spain → destination flight path (SMIL animateMotion), a live "Desde X € · plan Wild" preview (debounced get_quote,
   no order), and the AI example chat + the real tools timeline (`showcaseHtml` in landing.js: tool names from webmcp-tools.js, price from the engine
   for `texts.ai.example`, final state server-rendered; each message = one sr-only copy + one aria-hidden typed copy, so screen readers read it once).
-  Landing order: hero + form → trust strip (sky band, 4 white cards, icon in a mint circle, `texts.trust`; phones 2×2 icon on top with `short` text ≤2 lines, ≥700 px 4 in a row) → benefits → ¿Y si…? → destinations → plans (Wild, Wild+) → AI block (chat + ONE discreet link "Cómo funciona para asistentes y desarrolladores →" to /agentes) → FAQ → final CTA → footer.
+  Landing order: hero + form → trust strip (sky band, 4 white cards, icon in a mint circle, `texts.trust`; each fact = bold `text` + smaller #3C5368 `sub` line, same at every width; phones 2×2 icon on top, ≥700 px 4 in a row) → benefits → ¿Y si…? → destinations → plans (Wild, Wild+) → AI block (chat + ONE discreet link "Cómo funciona para asistentes y desarrolladores →" to /agentes) → FAQ → final CTA → footer.
   Header on every page (`headerHtml` + `skipLinkHtml` in landing.js, public/site-nav.js): "Saltar al contenido" (→ #contenido), logo,
   "Preguntas frecuentes" (#preguntas, opens the FAQ), "Agentes", "Condiciones" (<960 px they fold into a "Menú" panel), yellow "Ver mi precio"
   in the bar itself. The header is STICKY under the sticky banner (always compact: never shrinks on scroll, that would be layout shift);
@@ -69,14 +69,14 @@ The owner is not a programmer: explain things simply, report test results honest
   Live price ABOVE the button (#price-preview: .pp-main "Tu precio: desde X €" + .pp-sub "plan Wild · n viajeros"), hidden until
   there IS a price (owner's choice: no placeholder; the button moves down once). Sticky phone bar: hidden only while the form's
   #quote-submit is on screen (and in the checkout); body gets 80 px padding.
-  Checkout step 1 <600 px: .plan-switch (two tappable cards + "Elegir") and .compare-rows (label, then Wild | Wild+); ≥600 px:
-  the two .plan-option cards. Carousel (`carouselHtml` in landing.js, wired in landing-fx.js for every [data-carousel]): destinations only;
+  Checkout step 1 = the SAME two .plan-option cards at every width (owner's rule, 29 Oct 2026: phones replicate desktop, no
+  phone-only design): side by side from 600 px, stacked full width below. Carousel (`carouselHtml` in landing.js, wired in landing-fx.js for every [data-carousel]): destinations only;
   full-width strip whose first card lines up with the content column (--edge), ‹ › buttons ≥700 px (hidden when it all fits), a progress
   line under it, no native scrollbar. Desktop hero: landscape height max(380px, 33.34vw) so it stays 3:1 (sun and pines never cut), hero
   bottom padding = 27 % of it so the card ends above the pines. "Calcula tu precio" = 1.6rem title on a mint stub (--notch-y follows it).
   AI chat: unplayed bubbles take no space, but the white .chat box keeps its final min-height (landing-fx.js), so no turquoise gap and nothing below moves.
 - Destination field: the server renders a `<select id="destination">` ("Destinos populares" optgroup first from `texts.form.popularDestinations`,
-  then A–Z); `public/destination-picker.js` hides it and puts an accessible searchable combobox (`#destination-search`) in front. The select stays
+  then A–Z); `public/destination-picker.js` hides it (bug fixed 29 Oct 2026: `items.map(optionEl)` passed the index as the alias note, so "Italia 1", "Portugal 2"… showed) and puts an accessible searchable combobox (`#destination-search`) in front. The select stays
   the source of truth (`.value` + `change`). Remote territories (AQ BV HM GS TF IO UM) are not in `config/countries.js`.
   `pricing.destinationsNotCovered` = countries with official Spanish "do not travel" advice (checked by the owner at exteriores.gob.es on 29 Oct 2026; RU kept out of prudence):
   options get `data-blocked`, the form says "No podemos asegurar viajes a destinos con recomendación oficial de no viajar.", and get_quote
@@ -171,7 +171,8 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
     success step never showed (policy issued and emailed, page stuck on step 3, every browser). Card payment tested to step 4 in phone emulation.
   - The policy is issued ONLY after Stripe reports `succeeded`. Stripe unreachable → PAYMENT_PROVIDER_UNAVAILABLE (503), no policy, no fallback mid-payment.
     Declines → PAYMENT_DECLINED (402); friendly Spanish texts per decline code in `brand.texts.errors.card`.
-  - `policies.payment_ref` = pi_…; the snapshot gets `payment: { provider, ref, text }`; get_policy, PDF and email show "Pago de prueba Stripe · ref. pi_…".
+  - `policies.payment_ref` = pi_…; the snapshot gets `payment: { provider, ref, text }`; get_policy, confirm_payment's answer, PDF and email show "Pago de prueba Stripe · ref. pi_…"
+    (NOT the success step on the website: removed at the owner's request, 29 Oct 2026).
   - CSP adds only what Stripe needs, and only when Stripe is on: script-src js.stripe.com (+ *.js.stripe.com), frame-src js.stripe.com / hooks.stripe.com, connect-src api.stripe.com + fonts.googleapis.com (Stripe.js fetches the Inter cssSrc for its frame).
     Never use `setAttribute('style', …)` / style="" in generated HTML (CSP blocks it): `el()` sets `style` through CSSOM.
   - Tests: `test/stripe.test.js` mocks Stripe (`stripeFetch`). Test cards: 4242 4242 4242 4242 (ok), 4000 0000 0000 9995 (insufficient funds).
