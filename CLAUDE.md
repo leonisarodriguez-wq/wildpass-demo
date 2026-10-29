@@ -231,6 +231,8 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 - Why not Cloudflare Quick Tunnel any more: trycloudflare.com (a zone we cannot configure) served its OWN robots.txt in front of ours
   (Disallow for GPTBot, ClaudeBot, ChatGPT-User…), answered 403 to GPTBot/ClaudeBot/PerplexityBot and added `x-robots-tag: none` (checked 29 Oct 2026).
   Through Funnel all 8 visitors (7 AI agents + Safari iPhone) get 200 on /, /robots.txt, /llms.txt, /agentes with our robots.txt only (29 Oct 2026).
+  Full agent purchase through the new address, tools only (29 Oct 2026): WILD-2026-3F68AZ, Stripe test pi_… succeeded, email accepted by Brevo,
+  PDF link and terms link on wildpass.taile53924.ts.net (PDF fetched through the public Funnel IP: 200 application/pdf).
 - No rate limiting. No real payment (Stripe test mode only) or real insurer. Prices are provisional.
 - No Stripe webhook: if the browser closes after Stripe succeeded but before finish_card_payment, no policy is issued yet; paying that
   order again (review → Pagar, or confirm_payment) finds the succeeded PaymentIntent and issues the policy without charging again.
