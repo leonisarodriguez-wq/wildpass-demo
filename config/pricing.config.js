@@ -42,10 +42,10 @@ export default {
   },
 
   // Destinations we do NOT insure: the Spanish Ministry of Foreign Affairs advises against ALL travel there.
-  // TO VERIFY against https://www.exteriores.gob.es (Recomendaciones de viaje) before launch: this list changes over time.
+  // Verificado contra exteriores.gob.es (Recomendaciones de viaje) el 29/10/2026. RU se mantiene por prudencia (Exteriores: 'valorar no viajar'). En producción se sincronizaría automáticamente.
   // get_quote refuses them with error_code DESTINATION_NOT_COVERED (website and WebMCP alike).
   destinationsNotCovered: [
-    'AF', 'KP', 'SY', 'YE', 'LY', 'SD', 'SS', 'SO', 'ML', 'NE', 'BF', 'IQ', 'IR', 'UA', 'RU', 'BY', 'HT', 'VE',
+    'AF', 'KP', 'SY', 'YE', 'LY', 'SD', 'SS', 'SO', 'ML', 'NE', 'BF', 'IQ', 'IR', 'UA', 'RU', 'HT', 'LB', 'IL', 'PS',
   ],
 
   // Destination country (ISO 3166-1 alpha-2) → zone. Anything not listed is rest_of_world.

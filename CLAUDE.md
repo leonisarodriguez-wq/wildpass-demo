@@ -51,7 +51,7 @@ The owner is not a programmer: explain things simply, report test results honest
 - Destination field: the server renders a `<select id="destination">` ("Destinos populares" optgroup first from `texts.form.popularDestinations`,
   then A–Z); `public/destination-picker.js` hides it and puts an accessible searchable combobox (`#destination-search`) in front. The select stays
   the source of truth (`.value` + `change`). Remote territories (AQ BV HM GS TF IO UM) are not in `config/countries.js`.
-  `pricing.destinationsNotCovered` = countries with official Spanish "do not travel" advice (TO VERIFY at exteriores.gob.es before launch):
+  `pricing.destinationsNotCovered` = countries with official Spanish "do not travel" advice (checked by the owner at exteriores.gob.es on 29 Oct 2026; RU kept out of prudence):
   options get `data-blocked`, the form says "No podemos asegurar viajes a destinos con recomendación oficial de no viajar.", and get_quote
   refuses them with DESTINATION_NOT_COVERED (website and WebMCP alike; the tool description says so). `prefers-reduced-motion` → no animation, final state shown. Form fields use `--field-border`
   #6F94A7 (3.25:1 on white; #7FA3B5 was asked for but is only 2.69:1); `--border` #C9DCE6 stays for decorative card lines.

@@ -507,6 +507,12 @@ test('destinations: popular first, remote territories gone, "do not travel" coun
     assert.match(r.how_to_fix, /otro destino/);
   }
   assert.ok(!/value="FR"[^>]*data-blocked/.test(html));
+  // List checked 29 Oct 2026: Lebanon refused, Belarus and Venezuela priced again.
+  assert.equal((await call('get_quote', quoteInput({ destination_country: 'LB' }))).error_code, 'DESTINATION_NOT_COVERED');
+  for (const code of ['BY', 'VE']) {
+    const ok = await call('get_quote', quoteInput({ destination_country: code }));
+    assert.ok(ok.ok && ok.plans.length === 2 && ok.plans[0].total_price_eur > 0, code);
+  }
   // The agent is told about the rule in the tool description; the website shows the friendly text.
   const tools = buildTools({ limits: pricing.limits, plans: { wild: 'Wild', wild_plus: 'Wild+' }, brand, payments: { provider: 'simulated' } });
   assert.match(tools[0].description, /DESTINATION_NOT_COVERED/);
