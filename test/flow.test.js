@@ -379,7 +379,7 @@ test('landing: complete server-rendered page with prices from the pricing engine
   assert.ok(html.includes('<a href="#quote-form" data-focus-form>Calcula tu precio</a>'));
   for (const text of ['Ver mi precio', 'Gratis y sin compromiso: para ver tu precio no te pedimos datos personales.',
     'Viajeros y edad el día de la ida', 'La edad influye en el precio.', '+ Añadir viajero',
-    'Tu asistente también puede contratarlo', 'Tú pon la aventura. Nosotros, todo lo demás.', 'Elige cómo quieres viajar',
+    'Tu asistente también puede contratarlo', 'Elige cómo quieres viajar',
     'El favorito de los aventureros', '¿Preparado para empezar tu viaje?', 'Hecho con WebMCP']) {
     assert.ok(html.includes(text.replace('’', "'")) || html.includes(text) || html.includes(text.replace('’', '&#39;')), `missing: ${text}`);
   }
@@ -496,23 +496,24 @@ test('AI block on the landing: only title, text, the example chat and the compat
     assert.ok(b.includes('<span class="bubble-text" aria-hidden="true">'), b);
   }
   assert.ok(bubbles[0].startsWith('<span class="sr-only">Usuario: Necesito un seguro para Tailandia'));
-  // Section order: hero → benefits → ¿Y si…? → destinations → plans → AI → FAQ → final CTA; footer links.
-  const order = ['hero-title', 'editorial-title', 'whatif-title', 'dest-title', 'plans-title', 'ai-title', 'faq-title', 'cta-title'].map(id => html.indexOf(`id="${id}"`));
+  // Section order: hero → benefits strip → plans → ¿Y si…? → destinations → AI → FAQ → final CTA; footer links.
+  const order = ['hero-title', 'plans-title', 'whatif-title', 'dest-title', 'ai-title', 'faq-title', 'cta-title'].map(id => html.indexOf(`id="${id}"`));
   assert.deepEqual([...order].sort((a, b) => a - b), order);
   assert.ok(!order.includes(-1));
   assert.ok(html.includes('<a href="/condiciones">') && html.includes('<a href="/agentes">Para desarrolladores y agentes de IA</a>'));
   // Trust strip right under the hero: 4 facts, values from the pricing config; no 24 h promise anywhere (not in the terms).
-  assert.ok(html.indexOf('class="trust"') > html.indexOf('id="quote-form"') && html.indexOf('class="trust"') < html.indexOf('id="editorial-title"'));
-  assert.equal((html.match(/<li class="trust-item">/g) ?? []).length, 4);
-  for (const [main, sub] of [['Póliza en tu email en 2 min', 'sin papeleos'], ['Si cancelas, recuperas hasta 3.000 €', 'por viajero, con Wild+'],
-    ['Deportes de aventura incluidos', 'trekking, buceo, esquí… con Wild+'], ['Sin letra pequeña', 'condiciones claras']]) {
+  assert.ok(html.indexOf('class="trust"') > html.indexOf('id="quote-form"') && html.indexOf('class="trust"') < html.indexOf('id="plans-title"'));
+  assert.ok(!html.includes('editorial-title') && !html.includes('Tú pon la aventura'), 'the duplicate editorial section is gone');
+  assert.equal((html.match(/<li class="trust-item">/g) ?? []).length, 6);
+  for (const [main, sub] of [['Póliza en tu email en 2 min', 'sin papeleos'], ['Si cancelas, recuperas hasta 3.000 €', 'por viajero, con Wild+ (Wild Max: 5.000 €)'],
+    ['Deportes de aventura incluidos', 'trekking, buceo, esquí… y rescate, con Wild+ y Wild Max'], ['Sin letra pequeña', 'condiciones claras'],
+    ['Lo esencial, bien cubierto', 'médicos, dentista, equipaje y retraso de maleta'], ['Sin franquicia en Wild+ y Wild Max', 'no pagas los primeros euros']]) {
     assert.ok(html.includes(`<span class="trust-main">${main}</span><span class="trust-sub">${sub}</span>`), main);
   }
   // The success step shows no payment reference (it stays in the API, the PDF and the email).
   assert.ok(!html.includes('payment-line'));
   const visibleText = html.replace(/<svg[\s\S]*?<\/svg>/g, '').replace(/<[^>]+>/g, ' ');
   assert.ok(!/\b24 ?h\b|demoras|asistencia 24/i.test(visibleText), 'no promise the terms do not make');
-  assert.ok(html.includes('Médicos, dentista urgente, equipaje y retraso de maleta'));
   // CTAs: plan buttons are secondary and preselect their plan; "Comparar planes" and "Ver qué cubre" are secondary too.
   assert.ok(html.includes('<a class="secondary block card-button" href="#quote-form" data-focus-form data-plan="wild">Elegir Wild</a>'));
   assert.ok(html.includes('<a class="secondary block card-button" href="#quote-form" data-focus-form data-plan="wild_plus">Elegir Wild+</a>'));
@@ -520,7 +521,7 @@ test('AI block on the landing: only title, text, the example chat and the compat
   assert.ok(html.includes('el Kilimanjaro, incluido') && html.includes('Wild Max desde'));
   assert.ok(html.includes('<a class="secondary button-link" href="#planes">Comparar planes</a>') && html.includes('<a class="secondary button-link" href="/condiciones">Ver qué cubre</a>'));
   // Benefits: no AI repeat; plans: three cards.
-  assert.ok(html.includes('Sin franquicia en Wild+') && !html.includes('Contrátalo con tu asistente de IA'));
+  assert.ok(html.includes('Sin franquicia en Wild+ y Wild Max') && !html.includes('Contrátalo con tu asistente de IA'));
   assert.equal((html.match(/<li class="plan-card/g) ?? []).length, 3);
   assert.ok(html.includes('¿Y si me tuerzo el tobillo haciendo trekking?'));
 });

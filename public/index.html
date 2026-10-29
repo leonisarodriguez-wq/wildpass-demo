@@ -88,44 +88,12 @@
       </div>
     </section>
 
-    <!-- 1b. Trust strip: 4 facts, each an icon in a soft circle on a white card -->
+    <!-- 1b. Benefits strip (trust): 6 facts, each an icon in a soft circle on a white card -->
     <section class="trust" aria-label="{{t.trustLabel}}">
       <ul class="wrap trust-list">{{{trust}}}</ul>
     </section>
 
-    <!-- 2. Editorial headline + benefits -->
-    <section class="editorial" aria-labelledby="editorial-title">
-      <div class="wrap">
-        <p class="eyebrow">{{t.editorial.label}}</p>
-        <h2 id="editorial-title" class="big-headline">{{t.editorial.headline}}</h2>
-        <ul class="benefits">{{{benefits}}}</ul>
-      </div>
-    </section>
-
-    <!-- 3. "¿Y si…?" scenarios -->
-    <section class="whatif" id="y-si" aria-labelledby="whatif-title">
-      <div class="wrap">
-        <h2 id="whatif-title">{{t.whatIf.title}}</h2>
-        <p class="section-intro">{{t.whatIf.intro}}</p>
-      </div>
-      {{{whatIf}}}
-      <div class="wrap whatif-foot">
-        <a class="secondary button-link" href="#planes">{{t.whatIf.comparePlans}}</a>
-        <p class="whatif-note">{{t.whatIf.note}} <a href="/condiciones">{{t.whatIf.noteLink}}</a>.</p>
-      </div>
-    </section>
-
-    <!-- 4. Destinations strip -->
-    <section class="destinations" aria-labelledby="dest-title">
-      <div class="wrap">
-        <h2 id="dest-title">{{t.destinations.title}}</h2>
-        <p class="section-intro">{{t.destinations.intro}}</p>
-      </div>
-      {{{destinations}}}
-      <p class="wrap dest-note">{{t.destinations.note}}</p>
-    </section>
-
-    <!-- 5. Plans band -->
+    <!-- 2. Plans band: compare the three plans -->
     <section class="plans-band" id="planes" aria-labelledby="plans-title">
       <div class="wrap">
         <h2 id="plans-title">{{t.plans.title}}</h2>
@@ -153,6 +121,29 @@
         <p class="from-note"><span aria-hidden="true">* </span>{{t.plans.fromNote}}</p>
         <p class="plans-more"><a class="secondary button-link" href="/condiciones">{{t.plans.whatCovers}}</a></p>
       </div>
+    </section>
+
+    <!-- 3. "¿Y si…?" scenarios -->
+    <section class="whatif" id="y-si" aria-labelledby="whatif-title">
+      <div class="wrap">
+        <h2 id="whatif-title">{{t.whatIf.title}}</h2>
+        <p class="section-intro">{{t.whatIf.intro}}</p>
+      </div>
+      {{{whatIf}}}
+      <div class="wrap whatif-foot">
+        <a class="secondary button-link" href="#planes">{{t.whatIf.comparePlans}}</a>
+        <p class="whatif-note">{{t.whatIf.note}} <a href="/condiciones">{{t.whatIf.noteLink}}</a>.</p>
+      </div>
+    </section>
+
+    <!-- 4. Destinations strip -->
+    <section class="destinations" aria-labelledby="dest-title">
+      <div class="wrap">
+        <h2 id="dest-title">{{t.destinations.title}}</h2>
+        <p class="section-intro">{{t.destinations.intro}}</p>
+      </div>
+      {{{destinations}}}
+      <p class="wrap dest-note">{{t.destinations.note}}</p>
     </section>
 
     <!-- 6. AI block: title, short text, the animated example chat, one compatibility line -->

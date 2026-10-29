@@ -42,4 +42,6 @@ export const iconCard = icon('<rect x="2.5" y="5" width="19" height="14" rx="2.5
 export const iconMail = icon('<rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="m3.5 7 8.5 6.5L20.5 7"/>');
 export const iconCancel = icon('<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M9.5 13l5 5M14.5 13l-5 5"/>');
 export const iconMountain = icon('<path d="M2.5 20 9 9l4 6 2.5-3.5L21.5 20z"/><circle cx="17" cy="6" r="2"/>');
+export const iconShield = icon('<path d="M12 3l7.5 2.8v5.7c0 4.5-3.1 8-7.5 9.5-4.4-1.5-7.5-5-7.5-9.5V5.8z"/><path d="m8.8 12.2 2.2 2.2 4.2-4.4"/>');
+export const iconCheck = icon('<circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.2 2.4 2.4 4.6-4.8"/>');
 export const iconDoc = icon('<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>');

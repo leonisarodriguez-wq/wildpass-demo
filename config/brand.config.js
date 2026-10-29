@@ -74,10 +74,13 @@ export default {
 
     // Trust strip under the hero (white, 4 items with an icon). Only what the product really does: no reviews, no seals.
     trust: [
-      // `text` = main line (bold), `sub` = smaller second line in #3C5368. Same on every screen; 2×2 on phones down to 320 px.
+      // `text` = main line (bold), `sub` = smaller second line in #3C5368. Same on every screen: 2 columns on phones, 3 from 700 px.
+      // Merged with the old «Tú pon la aventura…» section: the essentials, no excess, rescue.
       { icon: 'mail', text: 'Póliza en tu email en 2 min', sub: 'sin papeleos' },
-      { icon: 'cancel', text: 'Si cancelas, recuperas hasta {plusCancellation}', sub: 'por viajero, con Wild+' },
-      { icon: 'mountain', text: 'Deportes de aventura incluidos', sub: 'trekking, buceo, esquí… con Wild+' },
+      { icon: 'shield', text: 'Lo esencial, bien cubierto', sub: 'médicos, dentista, equipaje y retraso de maleta' },
+      { icon: 'mountain', text: 'Deportes de aventura incluidos', sub: 'trekking, buceo, esquí… y rescate, con Wild+ y Wild Max' },
+      { icon: 'cancel', text: 'Si cancelas, recuperas hasta {plusCancellation}', sub: 'por viajero, con Wild+ (Wild Max: {maxCancellation})' },
+      { icon: 'check', text: 'Sin franquicia en Wild+ y Wild Max', sub: 'no pagas los primeros euros' },
       { icon: 'doc', text: 'Sin letra pequeña', sub: 'condiciones claras' },
     ],
     trustLabel: 'Por qué Wildpass',
@@ -201,17 +204,6 @@ export default {
       ],
       speakers: { user: 'Usuario', assistant: 'Asistente' },
       replay: 'Repetir',
-    },
-
-    // Landing: editorial headline + benefits
-    editorial: {
-      label: 'Seguro de viaje para los que no se quedan quietos',
-      headline: 'Tú pon la aventura. Nosotros, todo lo demás.',
-      benefits: [
-        { title: 'Lo esencial, bien cubierto', text: 'Médicos, dentista urgente, equipaje y retraso de maleta, en los tres planes.' },
-        { title: 'Aventura cubierta', text: 'Trekking, buceo, esquí, surf… y rescate hasta {rescue} con Wild+, y hasta {maxRescue} con Wild Max.' },
-        { title: 'Sin franquicia en Wild+ y Wild Max', text: 'Si te pasa algo, no pagas los primeros euros.' },
-      ],
     },
 
     // Landing: "¿Y si…?" scenarios. Limits are {placeholders} filled from the pricing config; `figure` = the big number

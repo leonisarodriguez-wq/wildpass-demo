@@ -404,7 +404,7 @@ export function whatIfHtml({ brand, pricing, values }) {
 
 // Trust strip under the hero: 4 facts, each an icon in a soft circle (values from the pricing config).
 function trustHtml({ brand, values }) {
-  const icons = { mail: art.iconMail, cancel: art.iconCancel, mountain: art.iconMountain, doc: art.iconDoc };
+  const icons = { mail: art.iconMail, cancel: art.iconCancel, mountain: art.iconMountain, doc: art.iconDoc, shield: art.iconShield, check: art.iconCheck };
   // Main line + smaller second line (`sub`), the same at every width.
   return brand.texts.trust.map(item => `<li class="trust-item"><span class="trust-icon">${icons[item.icon]}</span>`
     + `<span class="trust-text"><span class="trust-main">${escapeHtml(fill(item.text, values))}</span><span class="trust-sub">${escapeHtml(fill(item.sub, values))}</span></span></li>`).join('');
@@ -477,7 +477,6 @@ export function createLanding({ brand, pricing, business, market, countries, tem
       heroTitle: brand.claim.match(/[^.!?]+[.!?]*/g).map(part => `<span class="claim-part">${escapeHtml(part.trim())}</span>`).join(' '),
       whatIf: whatIfHtml({ brand, pricing, values }),
       destinations: destinationsHtml({ brand, pricing, business, countries }),
-      benefits: t.editorial.benefits.map((b, i) => `<li class="benefit">${[art.globePin, art.mountainRope, art.shieldCheck][i]}<h3>${escapeHtml(b.title)}</h3><p>${escapeHtml(fill(b.text, values))}</p></li>`).join(''),
       faq: faqHtml({ brand, values, contactEmail }),
       trust: trustHtml({ brand, values }),
       travelerRow: firstTravelerRow(t.form, pricing.limits),
