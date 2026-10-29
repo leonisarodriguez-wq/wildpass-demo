@@ -56,6 +56,7 @@ export default {
       faq: 'Preguntas frecuentes',
       agents: 'Agentes',
       terms: 'Condiciones',
+      caso: 'El caso',
       cta: 'Ver mi precio',
     },
     pageTitle: 'Seguros Wildpass · Seguro de viaje con deportes de aventura (demo)',
@@ -344,6 +345,7 @@ export default {
     footerTerms: 'Condiciones del seguro',
     footerWebmcp: 'Hecho con WebMCP',
     footerAgents: 'Para desarrolladores y agentes de IA',
+    footerCaso: 'El caso',
 
     // /llms.txt: plain text for AI agents. Tool lines come from public/webmcp-tools.js (each tool's `es` line).
     llms: {
@@ -619,6 +621,92 @@ export default {
       },
 
       working: 'Un momento…',
+    },
+
+    // /caso: the case study for Tuio (draft). [COMPLETAR] = the owner's own judgement; [DATO A VERIFICAR] = a market figure to check.
+    // Numbers that come from the product (plans, limits, tools, events, scenes) are filled in by the server, never typed here.
+    caso: {
+      title: 'El caso',
+      pageTitle: 'El caso: Seguros Wildpass',
+      lead: 'Cómo pensé Wildpass, cómo lo distribuiría en la era de los agentes de IA y cómo mediría si funciona. Primer borrador.',
+      draftNote: 'Borrador de trabajo: las frases marcadas con [COMPLETAR] y [DATO A VERIFICAR] están pendientes de revisión.',
+      indexLabel: 'En esta página',
+      sections: {
+        reto: 'El reto',
+        quien: 'Para quién',
+        propuesta: 'La propuesta',
+        marca: 'Marca',
+        agentes: 'Distribución en la era de los agentes',
+        medicion: 'Cómo mido',
+        experimentos: 'Experimentos en marcha',
+        ruta: 'Hoja de ruta a 90 días',
+        distinto: 'Con un equipo y un presupuesto reales',
+      },
+      reto: [
+        '[COMPLETAR: el brief de Tuio en dos frases, con sus palabras.]',
+        'Mi lectura: crear desde cero una marca de seguro de viaje que se entienda a la primera, que se pueda contratar en minutos desde el móvil y que tenga un motor de crecimiento medible desde el primer día. [COMPLETAR: confirma o ajusta esta lectura.]',
+      ],
+      quien: [
+        'El viajero de aventura español de 25 a 45 años: hace trekking, bucea, esquía o hace surf en sus viajes, y lo organiza todo desde el móvil.',
+        'Su problema: muchos seguros de viaje básicos excluyen justo lo que va a hacer, y no lo descubre hasta leer la letra pequeña. [DATO A VERIFICAR: qué parte de las pólizas básicas del mercado español excluye deportes de aventura.]',
+        'Tamaño del segmento: [DATO A VERIFICAR: viajes al extranjero de residentes en España con actividades de aventura (fuente: INE/Frontur o Familitur)].',
+        '[COMPLETAR: por qué este segmento y no otro, en tu opinión.]',
+      ],
+      propuesta: [
+        { title: 'Dos planes, no cinco', text: 'Wild cubre lo esencial; Wild+ añade aventura, cancelación hasta {plusCancellation} por viajero, rescate hasta {rescue} y quita la franquicia. Dos opciones se comparan de un vistazo y el plan superior ancla el valor del básico. [COMPLETAR: tu razonamiento sobre el número de planes.]' },
+        { title: 'La aventura como eje', text: 'Es lo que el viajero de aventura no encuentra claro en otros seguros, y lo que más miedo da (un rescate en montaña, una lesión buceando). Wild+ incluye trekking hasta {trekkingAltitude} m, buceo hasta {divingDepth} m, esquí en pista, surf, rafting y barranquismo.' },
+        { title: 'Precio sin datos personales', text: 'Destino, fechas y edades bastan para ver el precio. Nombre, email y fecha de nacimiento solo se piden al contratar, y nunca el DNI. Menos fricción arriba del embudo, y un presupuesto que también puede pedir un asistente de IA. [COMPLETAR: tu hipótesis de conversión.]' },
+      ],
+      marca: [
+        { title: 'Nombre', text: 'Wildpass: «wild» (la aventura) + «pass» (la tarjeta de embarque y el pase que te deja entrar). La confirmación de compra es literalmente una tarjeta de embarque con el sello «Cubierto».' },
+        { title: 'Tono', text: 'Directo, cercano y sin letra pequeña: «Travel wild. We\'ve got you.» y «Viaja salvaje. Nosotros te cubrimos.». Solo prometemos lo que cubren las condiciones, sin reseñas ni cifras inventadas. [COMPLETAR: tu definición del tono.]' },
+        { title: 'Ilustración por destino', text: 'La portada cambia de paisaje según el destino que eliges ({scenes} escenas propias en SVG, con paralaje suave): Tailandia, Japón, Perú, Islandia, México, EE. UU., una ciudad europea y la montaña por defecto. Sin fotos de stock.' },
+        { title: 'Paleta y tipografía', text: 'Cielo, azul noche, turquesa y un amarillo reservado solo a los botones de acción, con contraste AA. Space Grotesk para titulares e Inter para el texto, alojadas en nuestro servidor.' },
+      ],
+      paletteLabel: 'Paleta',
+      paletteNames: { sky: 'Cielo', night: 'Azul noche', turquoise: 'Turquesa', yellow: 'Amarillo (solo botones)', secondary: 'Secundario', mint: 'Menta' },
+      agentes: [
+        { title: 'WebMCP', text: 'La web registra {tools} herramientas WebMCP: un asistente de IA puede cotizar, contratar y consultar la póliza sin leer la pantalla, con las mismas reglas que la web y sin tocar nunca una tarjeta. Nunca paga sin el «sí» expreso de la persona.' },
+        { title: 'llms.txt', text: 'Un resumen en texto plano para modelos de lenguaje: qué es Wildpass, los dos planes y sus límites, cómo cotizar y las reglas de pago.' },
+        { title: 'Datos estructurados', text: 'JSON-LD en la portada (organización, producto con sus dos ofertas, preguntas frecuentes) y en las condiciones (coberturas), y un endpoint público de tarifas: /api/pricing.' },
+        { title: 'Puertas abiertas', text: 'robots.txt permite todos los rastreadores, incluidos los de IA, y un sitemap lista las páginas públicas. [COMPLETAR: por qué crees que este canal importará en Tuio.]' },
+      ],
+      medicion: 'Medición propia, sin cookies ni herramientas de terceros: cada evento lleva un identificador de sesión aleatorio, el canal (web o agente), el dispositivo, el plan y la variante de cada experimento. Nunca nombres, emails ni fechas de nacimiento.',
+      metricsLink: 'Ver las métricas reales de la demo',
+      eventsLabel: 'Eventos que registramos',
+      events: {
+        page_view: 'Alguien abre una página.',
+        destination_selected: 'Elige un destino en el formulario.',
+        quote_viewed: 'Ve el precio de los dos planes.',
+        plan_selected: 'Elige Wild o Wild+.',
+        details_completed: 'Completa los datos de quién viaja.',
+        review_viewed: 'Ve el resumen antes de pagar.',
+        payment_started: 'Pulsa pagar.',
+        policy_issued: 'Se emite la póliza.',
+        quote_emailed: 'Se envía el presupuesto por email.',
+        share_clicked: 'Comparte la web con su acompañante.',
+        referral_used: 'Llega con un código de amigo y lo usa.',
+        policy_resent: 'Reenvía la póliza a su email.',
+        policy_forwarded: 'Envía la póliza a otra persona.',
+      },
+      experimentos: [
+        { title: 'Titular de la portada', text: 'A: «Travel wild. We\'ve got you.». B: «El seguro de viaje que sí cubre tu aventura». Métrica: % de sesiones que eligen destino.', decision: 'Si gana B, el beneficio explícito pesa más que la actitud de marca: lo llevaría a anuncios y a la descripción para buscadores. Si gana A o no hay diferencia, mantengo el claim y pruebo otra cosa más arriba del embudo. [COMPLETAR]' },
+        { title: 'Coste diario de Wild+', text: 'A: solo el total de cada plan. B: «+X € al día por aventura y cancelación» bajo Wild+. Métrica: % de elecciones que son Wild+.', decision: 'Si gana B, expresar la diferencia por día reduce la barrera del plan superior: lo usaría en el email de presupuesto y en la respuesta a los agentes. Si no hay diferencia, el precio diario no es la palanca y probaría con el ejemplo de rescate. [COMPLETAR]' },
+      ],
+      experimentsNote: 'No declaro ganador hasta llegar al mínimo de sesiones por variante que calcula /metricas (95 % de confianza, 80 % de potencia).',
+      ruta: [
+        { when: 'Días 0–30', title: 'Medir y aprender', items: ['Lanzar con la medición actual y fijar la línea base del embudo.', 'Entrevistar a 10 viajeros de aventura. [COMPLETAR]', 'Cerrar los dos experimentos si hay tráfico suficiente.'] },
+        { when: 'Días 30–60', title: 'Activar los bucles', items: ['Presupuesto por email, compartir con acompañantes y código de amigo: medir cuántas compras traen.', 'Contenido por destino y deporte (dónde bucear, qué cubre un rescate). [COMPLETAR]', 'Primeras alianzas con escuelas de buceo o clubes de montaña. [COMPLETAR]'] },
+        { when: 'Días 60–90', title: 'Escalar lo que funciona', items: ['Invertir en el canal con mejor coste por póliza. [DATO A VERIFICAR: objetivo de coste por póliza]', 'Abrir la distribución por agentes a más asistentes y comparadores.', 'Decidir siguiente plan o mercado con los datos. [COMPLETAR]'] },
+      ],
+      distinto: [
+        'Dominio propio en lugar de la dirección de Tailscale.',
+        'Hosting gestionado tipo Render o Railway, con copias de seguridad y monitorización, en lugar de un servidor propio.',
+        'Email desde el dominio propio (SPF, DKIM y DMARC) para llegar a la bandeja de entrada.',
+        'Una aseguradora real detrás: producto registrado, condiciones revisadas por legal y pagos reales.',
+        'Analítica con consentimiento y un almacén de datos para cruzar marketing y siniestralidad.',
+        '[COMPLETAR: equipo y presupuesto que pedirías.]',
+      ],
     },
 
     // /metricas: our own funnel measurement (src/events.js). noindex, not in the sitemap.

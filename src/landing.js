@@ -6,7 +6,8 @@ import { readFileSync } from 'node:fs';
 import { formatEur } from './business.js';
 import { logoHtml } from './logo.js';
 import * as art from './illustrations.js';
-import { heroScene, miniScene, routeStrip, sceneFor, sceneSprite } from './scenes.js';
+import { heroScene, miniScene, routeStrip, sceneFor, sceneSprite, SCENE_IDS } from './scenes.js';
+import { EVENT_NAMES } from './events.js';
 import { quoteCount } from '../config/market-quotes.js';
 
 export const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -28,7 +29,7 @@ function render(template, vars) {
 }
 
 // Values used inside the copy ({rescue}, {wildMedEurope}…), taken from the pricing config.
-function copyValues(pricing, market) {
+export function copyValues(pricing, market) {
   const wild = pricing.plans.wild;
   const plus = pricing.plans.wild_plus;
   return {
@@ -69,7 +70,7 @@ function footerHtml(brand) {
   const t = brand.texts;
   return `<footer class="site-footer"><div class="wrap">
     <p class="footer-legal">${escapeHtml(t.footerLegal)}</p>
-    <p class="footer-links"><a href="/condiciones">${escapeHtml(t.footerTerms)}</a><a href="/agentes">${escapeHtml(t.footerAgents)}</a><span>${escapeHtml(t.footerWebmcp)}</span></p>
+    <p class="footer-links"><a href="/condiciones">${escapeHtml(t.footerTerms)}</a><a href="/agentes">${escapeHtml(t.footerAgents)}</a><a href="/caso">${escapeHtml(t.footerCaso)}</a><span>${escapeHtml(t.footerWebmcp)}</span></p>
   </div></footer>`;
 }
 
@@ -90,7 +91,7 @@ export function headerHtml(brand, { home = false } = {}) {
   // visible, except on landing phones (<700 px), where the bottom sticky bar shows it instead: never two at once.
   return `<header class="site-header${home ? ' is-home' : ''}"><div class="wrap header-bar">${logoHtml()}
   <nav class="site-nav" id="site-nav" aria-label="${escapeHtml(n.label)}">
-    <ul><li><a href="${root}#preguntas" data-open-faq>${escapeHtml(n.faq)}</a></li><li><a href="/agentes">${escapeHtml(n.agents)}</a></li><li><a href="/condiciones">${escapeHtml(n.terms)}</a></li></ul>
+    <ul><li><a href="${root}#preguntas" data-open-faq>${escapeHtml(n.faq)}</a></li><li><a href="/agentes">${escapeHtml(n.agents)}</a></li><li><a href="/condiciones">${escapeHtml(n.terms)}</a></li><li><a href="/caso">${escapeHtml(n.caso)}</a></li></ul>
   </nav>
   <a class="primary nav-cta" href="${root}#quote-form"${home ? ' data-focus-form' : ''}>${escapeHtml(n.cta)}</a>
   <button type="button" class="menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="site-nav" data-open="${escapeHtml(n.menu)}" data-close="${escapeHtml(n.close)}">${escapeHtml(n.menu)}</button>
@@ -246,6 +247,33 @@ export function termsPageBody({ brand, pricing }) {
       <ul>${p.extraExclusions.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>`).join('')}
     <h2 id="exclusiones">${escapeHtml(t.exclusionsTitle)}</h2><ul>${pricing.exclusions.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>
     <div class="page-cta"><p>${escapeHtml(c.ctaText)}</p><a class="primary" href="/#quote-form">${escapeHtml(t.nav.cta)}</a></div>
+    <p><a href="/">← ${escapeHtml(t.back)}</a></p>`;
+}
+
+// /caso: the case study (draft). Product numbers come from the configs; [COMPLETAR] / [DATO A VERIFICAR] are highlighted.
+export function casePageBody({ brand, pricing, market, payments }) {
+  const t = brand.texts;
+  const k = t.caso;
+  const values = { ...copyValues(pricing, market), scenes: SCENE_IDS.length, tools: realTools({ brand, pricing, payments }).length };
+  const text = line => escapeHtml(fill(line, values)).replace(/\[(COMPLETAR|DATO A VERIFICAR)[^\]]*\]/g, m => `<mark class="todo">${m}</mark>`);
+  const cards = list => `<div class="case-cards">${list.map(c => `<div class="case-card"><h3>${escapeHtml(c.title)}</h3><p>${text(c.text)}</p></div>`).join('')}</div>`;
+  const section = (id, inner) => `<section class="case-section" id="${id}" aria-labelledby="${id}-title"><h2 id="${id}-title">${escapeHtml(k.sections[id])}</h2>${inner}</section>`;
+  const swatches = Object.entries(k.paletteNames).map(([key, name]) => `<li><svg class="swatch" viewBox="0 0 28 28" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="27" height="27" rx="8" fill="${brand.colors[key]}" stroke="${brand.colors.border}"/></svg>${escapeHtml(name)} <code>${escapeHtml(brand.colors[key])}</code></li>`).join('');
+  const roadmap = `<ol class="roadmap">${k.ruta.map(phase => `<li class="phase"><p class="phase-when">${escapeHtml(phase.when)}</p><h3>${escapeHtml(phase.title)}</h3><ul>${phase.items.map(i => `<li>${text(i)}</li>`).join('')}</ul></li>`).join('')}</ol>`;
+  return `<h1>${escapeHtml(k.pageTitle)}</h1><p class="case-lead">${escapeHtml(k.lead)}</p>
+    <p class="case-draft">${text(k.draftNote)}</p>
+    <nav class="terms-index" aria-label="${escapeHtml(k.indexLabel)}"><p class="terms-index-label">${escapeHtml(k.indexLabel)}</p>
+      <ol>${Object.entries(k.sections).map(([id, title]) => `<li><a href="#${id}">${escapeHtml(title)}</a></li>`).join('')}</ol></nav>
+    ${section('reto', k.reto.map(p => `<p>${text(p)}</p>`).join(''))}
+    ${section('quien', k.quien.map(p => `<p>${text(p)}</p>`).join(''))}
+    ${section('propuesta', cards(k.propuesta))}
+    ${section('marca', `${cards(k.marca)}<h3>${escapeHtml(k.paletteLabel)}</h3><ul class="swatches">${swatches}</ul>`)}
+    ${section('agentes', `${cards(k.agentes)}<p><a href="/agentes">${escapeHtml(t.nav.agents)}</a> · <a href="/llms.txt">llms.txt</a> · <a href="/api/pricing">/api/pricing</a></p>`)}
+    ${section('medicion', `<p>${text(k.medicion)}</p><p><a class="secondary button-link" href="/metricas">${escapeHtml(k.metricsLink)}</a></p>
+      <h3>${escapeHtml(k.eventsLabel)}</h3><ul class="case-events">${EVENT_NAMES.map(e => `<li><code>${e}</code> ${escapeHtml(k.events[e])}</li>`).join('')}</ul>`)}
+    ${section('experimentos', `${k.experimentos.map(x => `<div class="case-card"><h3>${escapeHtml(x.title)}</h3><p>${text(x.text)}</p><p><strong>${text(x.decision)}</strong></p></div>`).join('')}<p>${text(k.experimentsNote)}</p>`)}
+    ${section('ruta', roadmap)}
+    ${section('distinto', `<ul>${k.distinto.map(i => `<li>${text(i)}</li>`).join('')}</ul>`)}
     <p><a href="/">← ${escapeHtml(t.back)}</a></p>`;
 }
 

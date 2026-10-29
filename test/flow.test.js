@@ -759,3 +759,23 @@ test('quote form helpers: destination aliases point at real, coverable countries
   assert.ok(html.includes('id="details-status" role="status"'));
   assert.equal(brand.texts.checkout.birthDateHint, 'Formato dd/mm/aaaa, por ejemplo 07/03/1990.');
 });
+
+test('/caso: the case page, linked as «El caso» from the menu and the footer, with the 9 parts and the 90-day roadmap', async () => {
+  const res = await fetch(`${base}/caso`);
+  assert.equal(res.status, 200);
+  const html = nbsp(await res.text());
+  assert.ok(html.includes('Demo — no es un seguro real'));
+  const parts = ['El reto', 'Para quién', 'La propuesta', 'Marca', 'Distribución en la era de los agentes', 'Cómo mido', 'Experimentos en marcha', 'Hoja de ruta a 90 días', 'Con un equipo y un presupuesto reales'];
+  const at = parts.map(p => html.indexOf(`-title">${p}</h2>`));
+  assert.ok(!at.includes(-1) && [...at].sort((a, b) => a - b).join() === at.join(), 'all 9 parts, in order');
+  assert.equal((html.match(/<li class="phase">/g) ?? []).length, 3);
+  for (const when of ['Días 0–30', 'Días 30–60', 'Días 60–90']) assert.ok(html.includes(when), when);
+  assert.ok(html.includes('href="/metricas"') && html.includes('<code>policy_forwarded</code>'));
+  assert.ok(html.includes('<mark class="todo">[COMPLETAR') && html.includes('<mark class="todo">[DATO A VERIFICAR'));
+  for (const thing of ['Render', 'Railway', 'Dominio propio', 'aseguradora real']) assert.ok(html.includes(thing), thing);
+  for (const path of ['/', '/agentes', '/condiciones', '/caso']) {
+    const page = await (await fetch(`${base}${path}`)).text();
+    assert.ok(page.includes('<li><a href="/caso">El caso</a></li>'), `menu on ${path}`);
+    assert.ok(page.includes('<a href="/caso">El caso</a><span>'), `footer on ${path}`);
+  }
+});

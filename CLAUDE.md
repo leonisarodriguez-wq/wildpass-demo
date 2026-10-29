@@ -115,6 +115,12 @@ The owner is not a programmer: explain things simply, report test results honest
 - `.env` holds secrets (BREVO_API_KEY, SENDER_EMAIL, STRIPE_PUBLISHABLE_KEY, STRIPE_SECRET_KEY) and CONTACT_EMAIL (FAQ mailto). Never put secrets in code or Git; never print a key (check presence/prefix/length only). `.env.example` has placeholders only.
   The email sender NAME comes from the brand config ("Seguros Wildpass (demo)"), not from `.env`.
 
+## /caso (Block 4, 29 Oct 2026)
+- Case-study page for Tuio (`casePageBody` in landing.js, texts `brand.texts.caso`), linked as «El caso» in the header menu and the footer.
+  A DRAFT: `[COMPLETAR …]` (owner's judgement) and `[DATO A VERIFICAR …]` (market figures) are highlighted with <mark class="todo">.
+  Product numbers (limits, tools, scenes, events) come from the configs. 90-day roadmap = a CSS timeline (`.roadmap`), not a table.
+  Palette swatches are inline SVG (CSS yellow stays reserved to `.primary`).
+
 ## Measurement and experiments (Blocks 2–3, 29 Oct 2026)
 - Own funnel events, no cookies/third parties: `public/track.js` → POST `/api/events` (2 kB body limit) → `src/events.js` → SQLite `events`.
   Fields: event (13 names in `EVENT_NAMES`), random session_id (sessionStorage), channel web|agent, device (width <700 = mobile), page, plan,
