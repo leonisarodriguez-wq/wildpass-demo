@@ -487,7 +487,7 @@ test('/agentes: WebMCP explained, example prompt, the real tools and the confirm
   assert.equal(res.status, 200);
   const html = await res.text();
   assert.ok(html.includes('Demo — no es un seguro real'), 'demo banner');
-  assert.ok(html.includes('<h1>Para desarrolladores y agentes de IA</h1>') && html.includes('Qué es WebMCP'));
+  assert.ok(html.includes('<h1>Asistentes de IA en Wildpass</h1>') && html.includes('Qué es WebMCP'));
   assert.ok(html.includes('Búscame un seguro de viaje para 2 personas de 35 y 38 años, de España a Tailandia, del 10 al 24 de diciembre, y enséñame el resumen antes de pagar.'));
   assert.ok(html.includes('id="copy-prompt"') && html.includes('<script type="module" src="/agentes.js"></script>'));
   assert.equal((await fetch(`${base}/agentes.js`)).status, 200);
@@ -507,7 +507,31 @@ test('/agentes: WebMCP explained, example prompt, the real tools and the confirm
 
 test('/agentes: the tool list comes right under its "Las 6 herramientas" heading', async () => {
   const html = await (await fetch(`${base}/agentes`)).text();
-  assert.match(html, /<h2>Las 6 herramientas<\/h2>\s*<ol class="dev-tool-list">/);
+  assert.match(html, /<h3>Las 6 herramientas, en orden<\/h3>\s*<ol class="dev-tool-list">/);
+});
+
+test('/agentes: two parts, for anyone first, then for developers (flow, browsers, real error codes, copyable examples)', async () => {
+  const html = nbsp(await (await fetch(`${base}/agentes`)).text());
+  const people = html.indexOf('<section class="agents-part" id="personas"');
+  const dev = html.indexOf('<section class="agents-part" id="desarrolladores"');
+  assert.ok(people > 0 && dev > people, 'people part, then developers part');
+  assert.ok(html.includes('<a href="#personas">Para cualquier persona</a><a href="#desarrolladores">Para desarrolladores</a>'));
+  const forPeople = html.slice(people, dev);
+  for (const text of ['Qué puede hacer un asistente aquí', 'Un ejemplo', 'id="copy-prompt"', 'Qué pasa después',
+    'Tu asistente nunca paga sin tu confirmación explícita y nunca toca tu tarjeta']) assert.ok(forPeople.includes(text), text);
+  const forDev = html.slice(dev);
+  for (const text of ['Las 6 herramientas', 'El flujo', 'Reglas de seguridad de confirm_payment', 'Compatibilidad con navegadores', 'id="webmcp-provider"', 'Errores', 'Ejemplos para copiar']) assert.ok(forDev.includes(text), text);
+  // The flow: the tools in order, the user's "yes" right before confirm_payment.
+  assert.match(forDev, /<code>get_quote<\/code> → <code>select_plan<\/code> → <code>set_traveler_details<\/code> → <code>review_order<\/code> → <em>[^<]+<\/em> → <code>confirm_payment<\/code>/);
+  // Every error code listed is one the server really returns.
+  const business = readFileSync(new URL('../src/business.js', import.meta.url), 'utf8');
+  const codes = [...forDev.matchAll(/<ul class="dev-errors">(.*?)<\/ul>/g)][0][1].match(/<code>([A-Z_]+)<\/code>/g).map(c => c.slice(6, -7));
+  assert.ok(codes.length >= 8);
+  for (const c of codes) assert.ok(business.includes(`fail('${c}'`), c);
+  // Three copyable examples, each with its own button; the dates in the get_quote example are in the future.
+  assert.equal((forDev.match(/class="secondary copy-code" data-copy="code-\d"/g) ?? []).length, 3);
+  const [dep] = forDev.match(/departure_date: &#39;(\d{4}-\d{2}-\d{2})&#39;/).slice(1);
+  assert.ok(dep > new Date().toISOString().slice(0, 10), dep);
 });
 
 test('/condiciones: Wild vs Wild+ table first, an index with working anchors, "Ver mi precio" at the end', async () => {

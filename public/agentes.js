@@ -16,7 +16,26 @@ button.addEventListener('click', async () => {
   button.reset = setTimeout(() => { button.textContent = label; status.textContent = ''; }, 2000);
 });
 
-// "WebMCP en tu navegador": native WebMCP or the MCP-B polyfill (which the main page loads when there is none).
+// "Ejemplos para copiar": each code block's own "Copiar" button.
+const codeStatus = document.querySelector('#copy-code-status');
+for (const copy of document.querySelectorAll('.copy-code')) {
+  const original = copy.textContent;
+  copy.addEventListener('click', async () => {
+    const block = document.getElementById(copy.dataset.copy);
+    try {
+      await navigator.clipboard.writeText(block.textContent);
+    } catch {
+      getSelection().selectAllChildren(block);
+      return;
+    }
+    copy.textContent = copy.dataset.copied;
+    codeStatus.textContent = copy.dataset.copied;
+    clearTimeout(copy.reset);
+    copy.reset = setTimeout(() => { copy.textContent = original; codeStatus.textContent = ''; }, 2000);
+  });
+}
+
+// "En tu navegador": native WebMCP or the MCP-B polyfill (which the main page loads when there is none).
 const provider = document.querySelector('#webmcp-provider');
 if (provider) {
   const name = document.modelContext ? 'document.modelContext' : navigator.modelContext ? 'navigator.modelContext' : null;

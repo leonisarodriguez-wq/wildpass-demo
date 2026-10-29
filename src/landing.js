@@ -152,33 +152,68 @@ export function showcaseHtml({ brand, pricing, business }) {
 }
 
 // /agentes: what WebMCP is, the example prompt, the real tools (one plain line each) and confirm_payment's safety rules.
-export function agentsPageBody({ brand, pricing, payments }) {
+export function agentsPageBody({ brand, pricing, payments, now = new Date() }) {
   const t = brand.texts;
   const g = t.agents;
   const tools = realTools({ brand, pricing, payments });
   const pay = tools.find(tool => tool.name === 'confirm_payment');
   const rules = (pay.inputSchema.required ?? []).filter(f => pay.rulesEs[f]);
+  // Copyable examples with dates that are always valid (about six weeks ahead, a 15-day trip).
+  const day = n => new Date(now.getTime() + n * 86400000).toISOString().slice(0, 10);
+  const examples = [
+    [g.exampleCall, `const mc = document.modelContext ?? navigator.modelContext;\nconst quote = await mc.executeTool('get_quote', {\n  origin_country: 'ES', destination_country: 'TH',\n  departure_date: '${day(45)}', return_date: '${day(59)}',\n  traveler_ages: [35, 38],\n});\nconsole.log(quote.plans.map(p => [p.plan_name, p.total_price_eur]));`],
+    [g.exampleError, JSON.stringify({ ok: false, error_code: 'TOTAL_MISMATCH', message: 'El total confirmado no coincide con el total revisado (170,16 €).', how_to_fix: 'Envía confirmed_total_eur como número, exactamente igual al total_eur que devolvió review_order y que el usuario ha aceptado.' }, null, 2)],
+    [g.examplePay, `await mc.executeTool('confirm_payment', {\n  order_id: order.order_id,\n  review_token: review.review_token,\n  accept_terms: true,       // the user accepted the terms\n  user_confirmed: true,     // the user said yes to this total\n  confirmed_total_eur: review.total_eur,\n});`],
+  ];
+  const code = ([label, text], i) => `<figure class="code-card"><figcaption>${escapeHtml(label)}</figcaption><pre id="code-${i}"><code>${escapeHtml(text)}</code></pre>`
+    + `<button type="button" class="secondary copy-code" data-copy="code-${i}" aria-label="${escapeHtml(fill(g.copyCodeLabel, { label }))}" data-copied="${escapeHtml(t.ai.copied)}">${escapeHtml(g.copyCode)}</button></figure>`;
+  const flow = tools.filter(tool => tool.name !== 'get_policy').map(tool => `<code>${escapeHtml(tool.name)}</code>`);
+  flow.splice(flow.length - 1, 0, `<em>${escapeHtml(g.flowUser)}</em>`);
   return `<h1>${escapeHtml(g.title)}</h1>
     <p>${escapeHtml(g.intro)}</p>
-    <p class="agent-no-card"><strong>${escapeHtml(g.noCard)}</strong></p>
-    <h2>${escapeHtml(g.webmcpTitle)}</h2>
-    <p>${escapeHtml(g.webmcpText)}</p>
-    <h2>${escapeHtml(g.promptTitle)}</h2>
-    <figure class="prompt-card">
-      <figcaption class="prompt-label">${escapeHtml(t.ai.promptLabel)}</figcaption>
-      <blockquote class="prompt-text" id="example-prompt">${escapeHtml(t.ai.examplePrompt)}</blockquote>
-      <button type="button" class="secondary copy-prompt" id="copy-prompt" aria-label="${escapeHtml(t.ai.copyLabel)}" data-copied="${escapeHtml(t.ai.copied)}">${escapeHtml(t.ai.copy)}</button>
-      <span class="sr-only" role="status" id="copy-status"></span>
-    </figure>
-    <p class="ai-note">${escapeHtml(t.ai.compatNote)}</p>
-    <h2>${escapeHtml(fill(g.toolsTitle, { count: tools.length }))}</h2>
-    <ol class="dev-tool-list">${tools.map(tool => `<li><code>${escapeHtml(tool.name)}</code> ${escapeHtml(tool.es)}</li>`).join('')}</ol>
-    <p>${escapeHtml(g.where)}</p>
-    <h2>${escapeHtml(g.rulesTitle)}</h2>
-    <p>${escapeHtml(g.rulesIntro)}</p>
-    <ul class="dev-rules">${rules.map(f => `<li><code>${escapeHtml(f)}</code>: ${escapeHtml(pay.rulesEs[f])}</li>`).join('')}</ul>
-    <h2>${escapeHtml(g.providerTitle)}</h2>
-    <p id="webmcp-provider" data-native="${escapeHtml(g.providerNative)}" data-polyfill="${escapeHtml(g.providerPolyfill)}">${escapeHtml(g.providerChecking)}</p>
+    <nav class="agents-index" aria-label="${escapeHtml(g.indexLabel)}"><a href="#personas">${escapeHtml(g.peopleTitle)}</a><a href="#desarrolladores">${escapeHtml(g.devTitle)}</a></nav>
+    <section class="agents-part" id="personas" aria-labelledby="personas-title">
+      <h2 id="personas-title">${escapeHtml(g.peopleTitle)}</h2>
+      <h3>${escapeHtml(g.canTitle)}</h3>
+      <ul class="agents-can">${g.can.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul>
+      <p class="agents-safety">${escapeHtml(g.safety)}</p>
+      <h3>${escapeHtml(g.exampleTitle)}</h3>
+      <ol class="agents-chat">${g.example.map(([who, text]) => `<li class="from-${who}"><strong>${escapeHtml(g[who])}:</strong> ${escapeHtml(text)}</li>`).join('')}</ol>
+      <h3>${escapeHtml(g.promptTitle)}</h3>
+      <figure class="prompt-card">
+        <figcaption class="prompt-label">${escapeHtml(t.ai.promptLabel)}</figcaption>
+        <blockquote class="prompt-text" id="example-prompt">${escapeHtml(t.ai.examplePrompt)}</blockquote>
+        <button type="button" class="secondary copy-prompt" id="copy-prompt" aria-label="${escapeHtml(t.ai.copyLabel)}" data-copied="${escapeHtml(t.ai.copied)}">${escapeHtml(t.ai.copy)}</button>
+        <span class="sr-only" role="status" id="copy-status"></span>
+      </figure>
+      <p class="ai-note">${escapeHtml(t.ai.compatNote)}</p>
+      <h3>${escapeHtml(g.afterTitle)}</h3>
+      <p>${escapeHtml(g.after)}</p>
+    </section>
+    <section class="agents-part" id="desarrolladores" aria-labelledby="desarrolladores-title">
+      <h2 id="desarrolladores-title">${escapeHtml(g.devTitle)}</h2>
+      <p class="agent-no-card"><strong>${escapeHtml(g.noCard)}</strong></p>
+      <h3>${escapeHtml(g.webmcpTitle)}</h3>
+      <p>${escapeHtml(g.webmcpText)}</p>
+      <h3>${escapeHtml(fill(g.toolsTitle, { count: tools.length }))}</h3>
+      <ol class="dev-tool-list">${tools.map(tool => `<li><code>${escapeHtml(tool.name)}</code> ${escapeHtml(tool.es)}</li>`).join('')}</ol>
+      <p>${escapeHtml(g.where)}</p>
+      <h3>${escapeHtml(g.flowTitle)}</h3>
+      <p class="dev-flow">${flow.join(' → ')} · <code>get_policy</code></p>
+      <p>${escapeHtml(g.flowText)}</p>
+      <h3>${escapeHtml(g.rulesTitle)}</h3>
+      <p>${escapeHtml(g.rulesIntro)}</p>
+      <ul class="dev-rules">${rules.map(f => `<li><code>${escapeHtml(f)}</code>: ${escapeHtml(pay.rulesEs[f])}</li>`).join('')}</ul>
+      <h3>${escapeHtml(g.compatTitle)}</h3>
+      <p>${escapeHtml(g.compatText)}</p>
+      <p><strong>${escapeHtml(g.providerTitle)}</strong> <span id="webmcp-provider" data-native="${escapeHtml(g.providerNative)}" data-polyfill="${escapeHtml(g.providerPolyfill)}">${escapeHtml(g.providerChecking)}</span></p>
+      <h3>${escapeHtml(g.errorsTitle)}</h3>
+      <p>${escapeHtml(g.errorsText)}</p>
+      <ul class="dev-errors">${g.errors.map(([codeName, text]) => `<li><code>${escapeHtml(codeName)}</code> ${escapeHtml(text)}</li>`).join('')}</ul>
+      <h3>${escapeHtml(g.examplesTitle)}</h3>
+      ${examples.map(code).join('')}
+      <span class="sr-only" role="status" id="copy-code-status"></span>
+    </section>
     <p><a href="/">← ${escapeHtml(t.back)}</a></p>`;
 }
 

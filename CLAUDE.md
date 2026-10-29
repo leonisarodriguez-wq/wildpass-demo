@@ -47,7 +47,10 @@ The owner is not a programmer: explain things simply, report test results honest
   config — stacked per row on phones <600 px —, each plan's exclusions, common exclusions, "Ver mi precio" at the end) and a branded 404
   (`notFoundBody`, last route in app.js; /api keeps its JSON 404). Link previews: Open Graph + twitter:card in index.html with absolute URLs
   from the request host (`landingHtml({ baseUrl })`), image `public/og-image.png` (1200×630, demo strip included, rendered from the hero
-  scene in headless Chrome: re-render it if the brand changes). On /agentes the tool list comes right under "Las 6 herramientas".
+  scene in headless Chrome: re-render it if the brand changes). /agentes has TWO parts (index buttons on top): "Para cualquier persona" (what an assistant can do, a realistic example
+  chat, the prompt to copy, what happens next, "never pays without your yes, never touches your card") and "Para desarrolladores" (the
+  no-card sentence, WebMCP, the 6 tools in order with the list right under "Las 6 herramientas, en orden", the flow, confirm_payment rules,
+  browser compatibility, error codes = real server codes (tested), 3 copyable code examples with future dates).
   Developer material (WebMCP explained, example prompt + Copiar, the tools and confirm_payment's rules, all from webmcp-tools.js) is on
   `/agentes` (`agentsPageBody` in landing.js, `public/agentes.js`), linked from the header, the footer and ONE discreet link at the end of the AI block
   (`texts.ai.agentsLink`, server-rendered so agents reading the raw HTML find it).

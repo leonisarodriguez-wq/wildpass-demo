@@ -39,7 +39,7 @@ html { scroll-padding-top: calc(var(--sticky-h, 90px) + 8px); }
 .site-nav ul { list-style: none; margin: 0; padding: 0; }
 .site-nav a:not(.primary) { display: flex; align-items: center; min-height: 44px; color: var(--night); text-decoration: none; font-weight: 600; }
 .site-nav a:not(.primary):hover { color: var(--turquoise-text); text-decoration: underline; }
-.nav-cta { flex: none; min-height: 44px; padding: 8px 18px; font-size: 1rem; white-space: nowrap; }
+.header-bar .nav-cta { flex: none; min-height: 44px; padding: 8px 18px; font-size: 1rem; white-space: nowrap; }
 /* Phones and tablets: a simple panel under the header, opened by "Menú". */
 @media (max-width: 959px) {
   .site-nav { display: none; position: absolute; left: 0; right: 0; top: 100%; padding: 8px 16px 16px; background: var(--white); border-top: 1px solid var(--border); box-shadow: 0 12px 24px rgb(11 31 58 / 0.12); }
@@ -50,7 +50,9 @@ html { scroll-padding-top: calc(var(--sticky-h, 90px) + 8px); }
 /* Landing on phones: the bottom sticky bar says "Ver mi precio", so the header doesn't (never two at once). */
 @media (max-width: 699px) {
   .site-header.is-home .nav-cta { display: none; }
-  .nav-cta { min-height: 40px; padding: 6px 14px; font-size: 0.95rem; }
+  .header-bar { gap: 8px; }
+  .header-bar .nav-cta { min-height: 40px; padding: 6px 12px; font-size: 0.9rem; }
+  .site-header:not(.is-home) .menu-toggle { padding: 6px 12px; }
 }
 @media (max-width: 374px) { .site-header:not(.is-home) .logo-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
 @media (min-width: 960px) {
@@ -258,6 +260,24 @@ select[hidden] { display: none; } /* the plain <select> once the search box repl
 .ai-agents a { color: var(--white); font-weight: 600; text-underline-offset: 3px; }
 .card-page .ai-note { margin-left: 0; color: var(--secondary); }
 .dev-tool-list { margin: 0; padding-left: 1.2rem; display: grid; gap: 8px; }
+/* /agentes: an index to the two parts, each part a block with its own heading. */
+.agents-index { display: flex; flex-wrap: wrap; gap: 8px 12px; margin: 12px 0 8px; }
+.agents-index a { display: inline-flex; align-items: center; min-height: 44px; padding: 6px 16px; border: 2px solid var(--night); border-radius: 999px; color: var(--night); font-weight: 700; text-decoration: none; }
+.agents-index a:hover { background: var(--mint); }
+.agents-part { margin-top: 28px; padding-top: 4px; border-top: 2px solid var(--border); }
+.agents-part h3 { font-size: 1.15rem; margin: 22px 0 8px; }
+.agents-can { margin: 0; padding-left: 1.2rem; display: grid; gap: 6px; }
+.agents-safety, .agent-no-card { margin: 16px 0 0; padding: 12px 14px; border-left: 4px solid var(--turquoise); border-radius: 8px; background: var(--mint); color: var(--night); font-weight: 600; }
+.agents-chat { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.agents-chat li { max-width: 34rem; padding: 10px 14px; border-radius: 14px; background: var(--sky); }
+.agents-chat .from-you { justify-self: end; background: var(--mint); }
+.dev-flow { line-height: 1.9; }
+.dev-errors { margin: 6px 0 0; padding-left: 1.2rem; display: grid; gap: 6px; }
+.code-card { margin: 14px 0 0; }
+.code-card figcaption { font-weight: 700; margin-bottom: 6px; }
+.code-card pre { margin: 0 0 8px; padding: 14px; border-radius: 12px; background: var(--night); color: var(--white); overflow-x: auto; font-size: 0.85rem; line-height: 1.5; }
+.card-page .code-card code { font-weight: 400; overflow-wrap: normal; }
+.copy-code { min-height: 44px; padding: 8px 18px; font-size: 0.95rem; }
 .dev-rules { margin: 6px 0 0; padding-left: 1.2rem; display: grid; gap: 4px; }
 .card-page code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em; font-weight: 700; overflow-wrap: anywhere; }
 
