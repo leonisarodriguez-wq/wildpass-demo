@@ -554,3 +554,21 @@ test('landing: what-if scenarios and destination cards use the real limits and e
     assert.ok(html.includes(`data-country="${code}"`) && html.includes(`7 días desde ${wild} €`), `${code} ${wild}`);
   }
 });
+
+test('agents are welcome: robots.txt allows all, /llms.txt lists the 6 tools, the landing says so in its HTML, no user-agent gets 403', async () => {
+  const robots = await fetch(`${base}/robots.txt`);
+  assert.equal(robots.status, 200);
+  assert.equal(await robots.text(), 'User-agent: *\nAllow: /\n');
+  const llms = await (await fetch(`${base}/llms.txt`)).text();
+  assert.ok(llms.startsWith('# Seguros Wildpass') && llms.includes('Demo — no es un seguro real'));
+  const order = ['get_quote', 'select_plan', 'set_traveler_details', 'review_order', 'confirm_payment', 'get_policy'].map((name, i) => llms.indexOf(`${i + 1}. ${name}:`));
+  assert.ok(!order.includes(-1) && [...order].sort((a, b) => a - b).join() === order.join(), llms);
+  assert.ok(llms.includes(`(${base}/agentes)`) && llms.includes('WebMCP'));
+  const html = nbsp(await (await fetch(`${base}/`)).text());
+  assert.ok(html.includes('<p class="ai-agents">Esta web es compatible con agentes de IA mediante WebMCP. Instrucciones: <a href="/agentes">/agentes</a></p>'));
+  for (const ua of ['ChatGPT-User/1.0', 'GPTBot/1.1', 'OAI-SearchBot/1.0', 'ClaudeBot/1.0', 'Claude-User/1.0', 'PerplexityBot/1.0', 'Google-Extended']) {
+    for (const path of ['/', '/robots.txt', '/llms.txt', '/agentes']) {
+      assert.equal((await fetch(`${base}${path}`, { headers: { 'User-Agent': `Mozilla/5.0 (compatible; ${ua})` } })).status, 200, `${ua} ${path}`);
+    }
+  }
+});

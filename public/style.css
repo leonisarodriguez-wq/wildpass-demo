@@ -211,6 +211,8 @@ select[hidden] { display: none; } /* the plain <select> once the search box repl
 .prompt-text::before { content: open-quote; } .prompt-text::after { content: close-quote; }
 .copy-prompt { min-height: 44px; padding: 8px 20px; font-size: 1rem; }
 .ai-note { font-size: 0.95rem; margin: 16px auto 0; max-width: 40rem; }
+.ai-agents { font-size: 0.95rem; margin: 8px auto 0; max-width: 40rem; }
+.ai-agents a { color: var(--white); font-weight: 600; }
 .card-page .ai-note { margin-left: 0; color: var(--secondary); }
 .dev-tool-list { margin: 0; padding-left: 1.2rem; display: grid; gap: 8px; }
 .dev-rules { margin: 6px 0 0; padding-left: 1.2rem; display: grid; gap: 4px; }

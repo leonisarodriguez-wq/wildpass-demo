@@ -10,7 +10,7 @@ import { buildPolicyPdf } from './pdf.js';
 import { createEmailService } from './email.js';
 import { createStripe } from './stripe.js';
 import { faviconSvg } from './logo.js';
-import { agentsPageBody, createLanding, pageShell } from './landing.js';
+import { agentsPageBody, createLanding, llmsTxt, pageShell } from './landing.js';
 import marketQuotes from '../config/market-quotes.js';
 import { COUNTRY_CODES } from '../config/countries.js';
 import brand from '../config/brand.config.js';
@@ -136,6 +136,12 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
   // Developer & AI-agent page, linked only from the footer.
   app.get('/agentes', (req, res) => {
     res.type('html').send(pageShell({ brand, title: brand.texts.agents.title, body: agentsPageBody({ brand, pricing, payments }), scripts: ['/agentes.js'] }));
+  });
+
+  // Every visitor and every agent is welcome: no user-agent is ever blocked (the safety rules live in business.js).
+  app.get('/robots.txt', (req, res) => res.type('text/plain').send('User-agent: *\nAllow: /\n'));
+  app.get('/llms.txt', (req, res) => {
+    res.type('text/plain').send(llmsTxt({ brand, pricing, payments, baseUrl: baseUrl(req) }));
   });
 
   app.get('/condiciones', (req, res) => {

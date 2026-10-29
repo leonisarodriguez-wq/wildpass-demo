@@ -152,6 +152,21 @@ export function agentsPageBody({ brand, pricing, payments }) {
     <p><a href="/">← ${escapeHtml(t.back)}</a></p>`;
 }
 
+// /llms.txt: plain text for AI agents (what Wildpass is, the 6 tools in order, where the instructions are).
+export function llmsTxt({ brand, pricing, payments, baseUrl }) {
+  const l = brand.texts.llms;
+  const tools = realTools({ brand, pricing, payments });
+  const pay = tools.find(tool => tool.name === 'confirm_payment');
+  const rules = (pay.inputSchema.required ?? []).filter(f => pay.rulesEs[f]);
+  return [
+    `# ${brand.name}`, '', `> ${brand.siteBanner}`, '', l.intro, '',
+    `## ${l.howTitle}`, '', fill(l.how, { url: `${baseUrl}/` }), '',
+    ...tools.flatMap((tool, i) => [`${i + 1}. ${tool.name}: ${tool.es}`, ...(tool === pay ? rules.map(f => `   - ${f}: ${pay.rulesEs[f]}`) : [])]), '',
+    l.confirm, '',
+    `## ${l.moreTitle}`, '', `- [${l.agentsLink}](${baseUrl}/agentes)`, `- [${l.termsLink}](${baseUrl}/condiciones)`, '',
+  ].join('\n');
+}
+
 // Destination <select> (the source of truth; public/destination-picker.js turns it into a searchable box):
 // "Destinos populares" first, then all the others A–Z. data-scene = hero illustration (src/scenes.js);
 // data-blocked = official "do not travel" advice (pricing config): the quote is refused, the box says why.

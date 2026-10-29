@@ -96,6 +96,8 @@ export default {
       copied: '¡Copiado!',
       copyLabel: 'Copiar el ejemplo',
       compatNote: 'Funciona con asistentes y navegadores compatibles con WebMCP, un estándar nuevo que se está incorporando a Chrome.',
+      // Visible line in the served HTML (not added by JavaScript) so any agent reading the page finds the instructions.
+      agentsLine: 'Esta web es compatible con agentes de IA mediante WebMCP. Instrucciones:',
       devTitle: 'Para desarrolladores',
       devIntro: 'Esta página ofrece {count} herramientas WebMCP a los asistentes de IA:',
       // Animated example (an illustration, not a live chat). {price}/{plan} come from the pricing engine for `example`.
@@ -199,6 +201,17 @@ export default {
     footerTerms: 'Condiciones del seguro',
     footerWebmcp: 'Hecho con WebMCP',
     footerAgents: 'Para desarrolladores y agentes de IA',
+
+    // /llms.txt: plain text for AI agents. Tool lines come from public/webmcp-tools.js (each tool's `es` line).
+    llms: {
+      intro: 'Wildpass es una web de demostración de un seguro de viaje (planes Wild y Wild+) que pueden usar tanto personas como agentes de IA.',
+      howTitle: 'Cómo comprar (agentes de IA)',
+      how: 'La compra se hace con las herramientas WebMCP que la página principal ({url}) registra en el navegador (document.modelContext). Llámalas en este orden:',
+      confirm: 'Antes de confirm_payment, enseña el resumen y el total a la persona y espera su confirmación explícita.',
+      moreTitle: 'Más información',
+      agentsLink: 'Instrucciones para agentes y desarrolladores',
+      termsLink: 'Condiciones del seguro',
+    },
 
     // /agentes: the developer & AI-agent page (linked only from the footer). Tool lines come from public/webmcp-tools.js.
     agents: {

@@ -28,7 +28,10 @@ The owner is not a programmer: explain things simply, report test results honest
   for `texts.ai.example`, final state server-rendered; each message = one sr-only copy + one aria-hidden typed copy, so screen readers read it once).
   Landing order: hero + form → benefits → ¿Y si…? → destinations → plans (Wild, Wild+) → AI block (chat only) → FAQ → final CTA → footer.
   Developer material (WebMCP explained, example prompt + Copiar, the tools and confirm_payment's rules, all from webmcp-tools.js) is on
-  `/agentes` (`agentsPageBody` in landing.js, `public/agentes.js`), linked ONLY from the footer.
+  `/agentes` (`agentsPageBody` in landing.js, `public/agentes.js`), linked from the footer and from ONE plain line in the AI block
+  (`texts.ai.agentsLine` + link "/agentes", server-rendered so agents reading the raw HTML find it).
+  Agents: `/robots.txt` = `User-agent: *` / `Allow: /`; `/llms.txt` (`llmsTxt` in landing.js, texts `texts.llms`) = what Wildpass is, the 6 tools
+  in order (from webmcp-tools.js) with confirm_payment's rules, links to /agentes and /condiciones. Our app never blocks any user-agent.
   `/agentes` also says which WebMCP the visitor's browser has (native or MCP-B polyfill) — that technical info lives ONLY there.
   Agent activity (public/agent-pill.js, texts `agentPill`): a floating pill "Tu asistente está usando Wildpass", hidden until a WebMCP
   tool is really called; expands to a timed log of FIXED phrases (never names, emails, ids, tokens or links); hides after 2 min idle.
@@ -192,6 +195,11 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
   min-width: 0`, stacked below 360 px. Tested in Chrome's phone emulation only, not on a real iPhone.
 - Native date pickers (Ida/Vuelta) show the BROWSER's date format (dd/mm/aaaa in a Spanish browser, mm/dd/yyyy in an English one);
   everything we print ourselves is always dd/mm/aaaa.
+- Cloudflare Quick Tunnel (trycloudflare.com, a Cloudflare-owned zone we cannot configure) blocks AI bots by itself (checked 29 Oct 2026):
+  it serves its OWN robots.txt (Disallow for GPTBot, ClaudeBot, ChatGPT-User, Claude-User, OAI-SearchBot, PerplexityBot, Google-Extended…,
+  probably put in front of ours: re-check after deploying ours), answers 403 "Your request was blocked." to GPTBot/ClaudeBot/PerplexityBot user-agents, and adds `x-robots-tag: none`.
+  Our app answers 200 to all of them (tested in flow.test.js). Fixing it needs a tunnel/host we control (e.g. a named Cloudflare Tunnel on
+  our own domain with "Block AI bots" and managed robots.txt switched off).
 - No rate limiting. No real payment (Stripe test mode only) or real insurer. Prices are provisional.
 - No Stripe webhook: if the browser closes after Stripe succeeded but before finish_card_payment, no policy is issued yet; paying that
   order again (review → Pagar, or confirm_payment) finds the succeeded PaymentIntent and issues the policy without charging again.
