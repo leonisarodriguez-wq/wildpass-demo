@@ -30,6 +30,9 @@ function emailData({ brand, policy_number, summary, forward = false }) {
       [e.dates, `${dateEs(trip.departure_date)} – ${dateEs(trip.return_date)} (${trip.days} ${e.days})`],
       [e.travelers, travelers.map(t => t.full_name).join(', ')],
       [e.total, `${formatEur(total_eur)} (${summary.payment?.ref ? fill(e.totalNoteStripe, { ref: summary.payment.ref }) : e.totalNote})`],
+      // Policy status and the masked DNI/NIE (never the whole number; not in the copy sent to a companion).
+      ...(summary.status_text ? [[e.statusLabel, summary.status_text]] : []),
+      ...(!forward && policyholder.id_number_masked ? [[e.holderIdLabel, policyholder.id_number_masked]] : []),
     ],
   };
 }
@@ -41,7 +44,7 @@ export function emailSubject({ brand, policy_number, summary, forward = false })
 
 // HTML with inline styles (email clients ignore stylesheets) and table layout (works in Outlook too).
 // Same colour rules as the website. The logo is hosted in our Brevo image gallery (see brand config).
-export function emailHtml({ brand, policy_number, summary, pdf_url, forward = false }) {
+export function emailHtml({ brand, policy_number, summary, pdf_url, forward = false, complete_id_url = null }) {
   const c = brand.colors;
   const { e, headline, intro, rows } = emailData({ brand, policy_number, summary, forward });
   const font = 'Inter, Arial, Helvetica, sans-serif';
@@ -72,7 +75,11 @@ export function emailHtml({ brand, policy_number, summary, pdf_url, forward = fa
     <tr><td align="center" style="padding:24px 28px 6px">
       <a href="${escapeHtml(pdf_url)}" style="display:inline-block;background:${c.yellow};color:${c.night};font-family:${font};font-size:17px;font-weight:bold;text-decoration:none;padding:15px 34px;border-radius:12px;border:0">${escapeHtml(e.button)}</a>
       <p style="font-size:13px;color:${c.secondary};margin:10px 0 0">${escapeHtml(e.attachedNote)}</p>
-    </td></tr>
+    </td></tr>${complete_id_url && !forward ? `
+    <tr><td style="padding:18px 28px 0">
+      <p style="font-size:14px;line-height:1.5;margin:0;padding:14px 16px;border:2px solid ${c.turquoise};border-radius:10px;color:${c.night}">${escapeHtml(e.completeIdText)}<br>
+      <a href="${escapeHtml(complete_id_url)}" style="color:${c.turquoiseText};font-weight:bold">${escapeHtml(e.completeIdLink)}</a></p>
+    </td></tr>` : ''}
     <tr><td style="padding:18px 28px 24px">
       <p style="background:${c.turquoise};color:${c.white};font-size:14px;line-height:1.5;margin:0;padding:14px 16px;border-radius:10px">${escapeHtml(e.emergency)}</p>
     </td></tr>
@@ -83,7 +90,7 @@ export function emailHtml({ brand, policy_number, summary, pdf_url, forward = fa
 }
 
 // Plain-text version (for email apps that don't show HTML, and better for spam filters).
-export function emailText({ brand, policy_number, summary, pdf_url, forward = false }) {
+export function emailText({ brand, policy_number, summary, pdf_url, forward = false, complete_id_url = null }) {
   const { e, headline, intro, rows } = emailData({ brand, policy_number, summary, forward });
   return [
     `*** ${e.demoLine} ***`,
@@ -96,6 +103,7 @@ export function emailText({ brand, policy_number, summary, pdf_url, forward = fa
     '',
     `${e.button}: ${pdf_url}`,
     e.attachedNote,
+    ...(complete_id_url && !forward ? ['', e.completeIdText, `${e.completeIdLink}: ${complete_id_url}`] : []),
     '',
     e.emergency,
     '',
@@ -137,12 +145,12 @@ export function createEmailService({ env, brand, fetchImpl = fetch }) {
   const headers = { 'api-key': env.BREVO_API_KEY, accept: 'application/json' };
 
   // The policy email. forward: the copy for a travel companion (to.full_name may be empty).
-  function send({ to, policy_number, summary, pdfBuffer, pdf_url, forward = false }) {
+  function send({ to, policy_number, summary, pdfBuffer, pdf_url, forward = false, complete_id_url = null }) {
     return sendEmail({
       to: [{ email: to.email, ...(to.full_name && { name: to.full_name }) }],
       subject: emailSubject({ brand, policy_number, summary, forward }),
-      htmlContent: emailHtml({ brand, policy_number, summary, pdf_url, forward }),
-      textContent: emailText({ brand, policy_number, summary, pdf_url, forward }),
+      htmlContent: emailHtml({ brand, policy_number, summary, pdf_url, forward, complete_id_url }),
+      textContent: emailText({ brand, policy_number, summary, pdf_url, forward, complete_id_url }),
       attachment: [{ name: `${policy_number}.pdf`, content: pdfBuffer.toString('base64') }],
     });
   }

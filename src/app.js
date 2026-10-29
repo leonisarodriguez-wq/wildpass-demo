@@ -15,7 +15,7 @@ import { metricsPageBody } from './metrics-page.js';
 import experiments from '../config/experiments.config.js';
 import { timingSafeEqual, createHash } from 'node:crypto';
 import { faviconSvg } from './logo.js';
-import { agentsPageBody, casePageBody, createLanding, llmsTxt, notFoundBody, pageShell, termsPageBody } from './landing.js';
+import { agentsPageBody, casePageBody, completeIdPageBody, createLanding, llmsTxt, notFoundBody, pageShell, termsPageBody } from './landing.js';
 import marketQuotes from '../config/market-quotes.js';
 import { COUNTRY_CODES } from '../config/countries.js';
 import brand from '../config/brand.config.js';
@@ -28,7 +28,7 @@ const STATUS_BY_CODE = {
   ALREADY_PAID: 409, NOT_REVIEWED: 409, INVALID_REVIEW_TOKEN: 409, DETAILS_MISSING: 409,
   PAYMENT_DECLINED: 402, PAYMENT_NOT_COMPLETED: 409, PAYMENT_MISMATCH: 409, CARD_PAYMENT_OFF: 409,
   PAYMENT_ERROR: 502, PAYMENT_PROVIDER_UNAVAILABLE: 503, INTERNAL_ERROR: 500,
-  SEND_LIMIT_REACHED: 429, EMAIL_NOT_CONFIGURED: 409, EMAIL_SEND_FAILED: 502,
+  SEND_LIMIT_REACHED: 429, EMAIL_NOT_CONFIGURED: 409, EMAIL_SEND_FAILED: 502, ID_LINK_INVALID: 404,
 };
 
 // fetchImpl / stripeFetch are only replaced in tests, to simulate Brevo and Stripe without real calls.
@@ -92,6 +92,8 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
   // Website only (success step): resend the policy email, or forward it to a travel companion; their delivery status.
   route('/send_policy_copy', business.sendPolicyCopy);
   route('/policy_sends', business.policySends);
+  // Website only: "Completa tu DNI" page (one-time link from the policy email). The DNI/NIE is never logged.
+  route('/complete_holder_id', business.completeHolderId);
 
   // Public settings for the website and the WebMCP tool schemas (no secrets here).
   api.get('/config', (req, res) => {
@@ -168,8 +170,9 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
     res.type('html').send(pageShell({ brand, title: brand.texts.termsTitle, body: termsPageBody({ brand, pricing }), scripts: ['/page-view.js'] }));
   });
 
+  // Hidden page: noindex, not in the menu; linked only from the footer's «Sobre esta demo».
   app.get('/caso', (req, res) => {
-    res.type('html').send(pageShell({ brand, title: brand.texts.caso.title, body: casePageBody({ brand, pricing, market: marketQuotes, payments }), scripts: ['/page-view.js'] }));
+    res.set('X-Robots-Tag', 'noindex').type('html').send(pageShell({ brand, title: brand.texts.caso.title, body: casePageBody({ brand, pricing, market: marketQuotes, payments }), scripts: ['/page-view.js'], head: '<meta name="robots" content="noindex">' }));
   });
 
   // /metricas: real data of this demo. noindex (meta + header), not in the sitemap, never cached.
@@ -191,6 +194,13 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
     if (req.body.confirm !== 'si') return res.redirect(303, `/metricas?admin=${encodeURIComponent(key)}&confirmar=1`);
     events.reset();
     res.redirect(303, `/metricas?admin=${encodeURIComponent(key)}&borrado=1`);
+  });
+
+  // "Completa tu DNI": one-time link (token) tied to one policy with status «DNI pendiente».
+  app.get('/poliza/completar/:token', (req, res) => {
+    const status = business.idLinkStatus(req.params.token);
+    res.status(status.ok ? 200 : 404).set({ 'X-Robots-Tag': 'noindex', 'Cache-Control': 'private, no-store' }).type('html')
+      .send(pageShell({ brand, title: brand.texts.completeId.title, body: completeIdPageBody({ brand, policy_number: status.ok ? status.policy_number : null }), scripts: status.ok ? ['/complete-id.js'] : [] }));
   });
 
   app.get('/poliza/:file', (req, res) => {

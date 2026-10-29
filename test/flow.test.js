@@ -150,7 +150,8 @@ test('full purchase flow issues a policy with a downloadable PDF', async () => {
 
   const policy = await call('get_policy', { policy_number: paid.policy_number.toLowerCase(), email: 'ANA.PRUEBA@example.com' });
   assert.equal(policy.ok, true);
-  assert.equal(policy.status, 'active');
+  assert.equal(policy.status, 'pending_id'); // no DNI/NIE sent → issued as «DNI pendiente»
+  assert.equal(policy.status_text, 'DNI pendiente');
   assert.equal(policy.coverage_period, 'not_started');
   assert.equal(policy.email_delivery.status, 'not_configured');
   assert.equal(policy.details.travelers.length, 2);
@@ -180,8 +181,11 @@ test('a sold policy keeps its original coverage when the config changes later', 
     assert.equal(policy.ok, true, policy.message);
     assert.equal(policy.coverage_source, 'snapshot_at_sale');
     // What was reviewed, plus how it was paid (Stripe is off in these tests).
-    const { payment, ...sold } = policy.details;
+    // Plus the policy status set at issue (no DNI/NIE sent → «DNI pendiente»).
+    const { payment, id_status, status_text, ...sold } = policy.details;
     assert.deepEqual(sold, review.summary);
+    assert.equal(id_status, 'pending_id');
+    assert.equal(status_text, 'DNI pendiente');
     assert.deepEqual(payment, { provider: 'simulated', ref: null, text: 'Pago simulado' });
     assert.equal(policy.payment, 'Pago simulado');
     assert.equal(policy.details.plan.coverage_limits_eur.baggage_theft_damage_eur, original.baggage);
@@ -342,7 +346,7 @@ test('landing: complete server-rendered page with prices from the pricing engine
   assert.ok(html.includes('id="faq-toggle" aria-expanded="false" aria-controls="faq-list"') && html.includes('<div class="faq-list" id="faq-list" hidden>'));
   assert.ok((html.match(/<details class="faq-item">/g) ?? []).length >= 9);
   assert.ok(html.includes('<a href="#quote-form" data-focus-form>Calcula tu precio</a>'));
-  for (const text of ['Ver mi precio', 'Gratis y sin compromiso: no te pedimos datos personales.',
+  for (const text of ['Ver mi precio', 'Gratis y sin compromiso: para ver tu precio no te pedimos datos personales.',
     'Viajeros y edad el día de la ida', 'La edad influye en el precio.', '+ Añadir viajero',
     'Tu asistente también puede contratarlo', 'Tú pon la aventura. Nosotros, todo lo demás.', 'Elige cómo quieres viajar',
     'El favorito de los aventureros', '¿Preparado para empezar tu viaje?', 'Hecho con WebMCP']) {
@@ -367,11 +371,11 @@ test('landing: complete server-rendered page with prices from the pricing engine
   assert.equal(options[1][3], '1 año');
   assert.equal(options.at(-1)[3], '85 años');
   assert.deepEqual(options.filter(o => o[2]).map(o => o[1]), ['30']);
-  // Checkout steps are in the page; no ID or card fields anywhere.
-  for (const id of ['quote-form', 'trip-card', 'step-1', 'step-2', 'step-3', 'step-4', 'total-bar', 'accept-terms', 'exclusions']) assert.ok(html.includes(`id="${id}"`), id);
-  // (Texts that only SAY there is no DNI, or name the card method shown above Stripe's own frame, are fine.)
-  assert.ok(!/dni|tarjeta de cr|card-number|cc-number/i.test(html.replace(/nada de DNI/gi, '').replace('datos de tarjeta', '').replace('Tarjeta de crédito o débito', '')));
+  // Checkout steps are in the page; no card or passport fields anywhere. ONE DNI/NIE field: the policyholder's, in step 2.
+  for (const id of ['quote-form', 'trip-card', 'step-1', 'step-2', 'step-3', 'step-4', 'total-bar', 'accept-terms', 'exclusions', 'ph-id', 'ph-resident']) assert.ok(html.includes(`id="${id}"`), id);
+  assert.ok(!/tarjeta de cr|card-number|cc-number/i.test(html.replace('datos de tarjeta', '').replace('Tarjeta de crédito o débito', '')));
   assert.ok(!/<input[^>]*(card|dni|passport|cvc)/i.test(html));
+  assert.equal((html.match(/<input id="ph-id"[^>]*autocomplete="off"/g) ?? []).length, 1);
 });
 
 test('landing hero: destination scenes and the AI example use real prices and the real WebMCP tools', async () => {
@@ -662,7 +666,11 @@ test('checkout copy: Spanish dates, new success title and the boarding pass on t
   for (const id of ['done-names', 'done-destination', 'done-departure', 'done-return', 'done-plan', 'policy-number', 'policy-qr', 'pdf-link', 'email-line', 'resend', 'forward-form', 'forward-email', 'send-list', 'start-over']) assert.ok(html.includes(`id="${id}"`), id);
   // Resend / forward come right under "Descargar mi póliza", before "Calcular otro viaje".
   assert.ok(html.indexOf('id="pdf-link"') < html.indexOf('id="resend"') && html.indexOf('id="forward-form"') < html.indexOf('id="start-over"'));
-  assert.ok(html.includes('¿No te ha llegado el email?') && html.includes('Enviar la póliza a quien viaja contigo'));
+  assert.ok(html.includes('¿No te ha llegado? Reenviar') && html.includes('Comparte la póliza con quien viaja contigo'));
+  // ONE forward card; "Reenviar" and "Calcular otro viaje" are links (no card, no yellow).
+  assert.equal((html.match(/class="after-card"/g) ?? []).length, 1);
+  assert.ok(/<button type="button" class="link-button" id="resend">/.test(html) && /<button type="button" class="link-button" id="start-over">/.test(html));
+  assert.ok(/<input id="forward-email" name="companion" type="email" inputmode="email" autocomplete="off"/.test(html), 'companion field is never autofilled with the holder email');
   for (const label of ['Pasajero/a', 'Destino', 'Salida', 'Regreso', 'Cubierto']) assert.ok(html.includes(label), label);
 });
 
@@ -760,9 +768,10 @@ test('quote form helpers: destination aliases point at real, coverable countries
   assert.equal(brand.texts.checkout.birthDateHint, 'Formato dd/mm/aaaa, por ejemplo 07/03/1990.');
 });
 
-test('/caso: the case page, linked as «El caso» from the menu and the footer, with the 9 parts and the 90-day roadmap', async () => {
+test('/caso: hidden case page (noindex, only «Sobre esta demo» in the footer), 9 parts, roadmap, nothing left to fill in', async () => {
   const res = await fetch(`${base}/caso`);
   assert.equal(res.status, 200);
+  assert.equal(res.headers.get('x-robots-tag'), 'noindex');
   const html = nbsp(await res.text());
   assert.ok(html.includes('Demo — no es un seguro real'));
   const parts = ['El reto', 'Para quién', 'La propuesta', 'Marca', 'Distribución en la era de los agentes', 'Cómo mido', 'Experimentos en marcha', 'Hoja de ruta a 90 días', 'Con un equipo y un presupuesto reales'];
@@ -771,11 +780,16 @@ test('/caso: the case page, linked as «El caso» from the menu and the footer, 
   assert.equal((html.match(/<li class="phase">/g) ?? []).length, 3);
   for (const when of ['Días 0–30', 'Días 30–60', 'Días 60–90']) assert.ok(html.includes(when), when);
   assert.ok(html.includes('href="/metricas"') && html.includes('<code>policy_forwarded</code>'));
-  assert.ok(html.includes('<mark class="todo">[COMPLETAR') && html.includes('<mark class="todo">[DATO A VERIFICAR'));
+  assert.ok(html.includes('<meta name="robots" content="noindex">'));
+  assert.ok(!/COMPLETAR|DATO A VERIFICAR|mark class="todo"/.test(html), 'no placeholders left');
+  assert.ok(html.includes('<a href="https://www.ine.es/dyngs/Prensa/ETR4T25.htm" rel="noopener">'));
+  for (const step of ['KYC', 'residentes de otros países', 'JSON-LD', 'email_quote']) assert.ok(html.includes(step), step);
+  assert.ok(html.includes('Los datos sensibles (tarjeta y DNI) los introduce siempre la persona, nunca el agente'));
   for (const thing of ['Render', 'Railway', 'Dominio propio', 'aseguradora real']) assert.ok(html.includes(thing), thing);
   for (const path of ['/', '/agentes', '/condiciones', '/caso']) {
     const page = await (await fetch(`${base}${path}`)).text();
-    assert.ok(page.includes('<li><a href="/caso">El caso</a></li>'), `menu on ${path}`);
-    assert.ok(page.includes('<a href="/caso">El caso</a><span>'), `footer on ${path}`);
+    assert.ok(!page.includes('<li><a href="/caso">'), `not in the menu on ${path}`);
+    assert.ok(page.includes('<a class="footer-quiet" href="/caso">Sobre esta demo</a>'), `footer on ${path}`);
+    assert.ok(!page.includes('href="/metricas"') || path === '/caso', `/metricas only linked from /caso (${path})`);
   }
 });

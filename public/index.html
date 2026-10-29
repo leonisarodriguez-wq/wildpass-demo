@@ -56,6 +56,7 @@
           <h2 class="pass-head" id="quote-title"><span class="pass-title">{{t.form.passLabel}}</span><span class="pass-brand" aria-hidden="true">{{brand.name}}</span></h2>
           <div class="field">
             <label for="destination">{{t.form.destination}}</label>
+            <p class="field-help origin-line">{{t.form.residence}}</p>
             <select id="destination" name="destination" aria-required="true">
               <option value="">{{t.form.destinationPlaceholder}}</option>
               {{{countryOptions}}}
@@ -213,6 +214,8 @@
             <legend>{{t.checkout.policyholder}}</legend>
             <div class="field"><label for="ph-name">{{t.checkout.fullName}}</label><input id="ph-name" autocomplete="name" aria-required="true"></div>
             <div class="field"><label for="ph-email">{{t.checkout.email}}</label><input id="ph-email" type="email" inputmode="email" autocomplete="email" aria-describedby="ph-email-hint" aria-required="true"><p class="hint" id="ph-email-hint">{{t.checkout.emailHint}}</p></div>
+            <div class="field"><label for="ph-id">{{t.checkout.holderId}}</label><p class="hint" id="ph-id-hint">{{t.checkout.holderIdHint}}</p><input id="ph-id" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12" aria-required="true" aria-describedby="ph-id-hint"></div>
+            <label class="check" for="ph-resident"><input type="checkbox" id="ph-resident" aria-required="true"> <span>{{t.checkout.resident}}</span></label>
           </fieldset>
           <div id="travelers"></div>
           <div class="error" role="alert" hidden></div>
@@ -264,35 +267,30 @@
         </article>
         <div class="confetti" id="confetti" aria-hidden="true"></div>
         <a class="primary button-link block" id="pdf-link" target="_blank" rel="noopener">{{t.checkout.download}}</a>
-        <p id="email-line"></p>
-        <div class="after-actions">
-          <section class="after-card" aria-labelledby="resend-title">
-            <h3 id="resend-title">{{t.checkout.after.resendTitle}}</h3>
-            <button type="button" class="secondary" id="resend">{{t.checkout.after.resend}}</button>
-            <p class="send-status" id="resend-status" role="status"></p>
-          </section>
-          <section class="after-card" id="forward-card" aria-labelledby="forward-title">
-            <h3 id="forward-title">{{t.checkout.after.forwardTitle}}</h3>
-            <p class="forward-highlight" id="forward-highlight" hidden></p>
-            <form id="forward-form" novalidate>
-              <div class="field">
-                <label for="forward-email">{{t.checkout.after.forwardLabel}}</label>
-                <p class="hint" id="forward-email-hint">{{t.checkout.after.forwardHint}}</p>
-                <div class="inline-field">
-                  <input id="forward-email" type="email" inputmode="email" autocomplete="off" aria-describedby="forward-email-hint">
-                  <button type="submit" class="secondary" id="forward-send">{{t.checkout.after.forwardButton}}</button>
-                </div>
+        <!-- One line under the main button: where the email went + a discreet "Reenviar" link; its result replaces the link. -->
+        <p class="email-line"><span id="email-line"></span> <span class="resend-slot"><button type="button" class="link-button" id="resend">{{t.checkout.after.resend}}</button><span class="send-status" id="resend-status" role="status"></span></span></p>
+        <p class="complete-id-line" id="complete-id-line" hidden><a id="complete-id-link" href="#">{{t.checkout.after.completeId}}</a></p>
+        <!-- ONE card, full content width: forward the policy to a travel companion, then the log of copies sent. -->
+        <section class="after-card" id="forward-card" aria-labelledby="forward-title">
+          <h3 id="forward-title">{{t.checkout.after.forwardTitle}}</h3>
+          <form id="forward-form" novalidate>
+            <div class="field">
+              <label for="forward-email">{{t.checkout.after.forwardLabel}}</label>
+              <p class="hint" id="forward-email-hint">{{t.checkout.after.forwardHint}}</p>
+              <div class="inline-field">
+                <input id="forward-email" name="companion" type="email" inputmode="email" autocomplete="off" aria-describedby="forward-email-hint">
+                <button type="submit" class="secondary" id="forward-send">{{t.checkout.after.forwardButton}}</button>
               </div>
-              <div class="error" role="alert" hidden></div>
-              <p class="send-status" id="forward-status" role="status"></p>
-            </form>
-          </section>
-          <section class="after-card send-log" id="send-log" aria-labelledby="send-log-title" hidden>
-            <h3 id="send-log-title">{{t.checkout.after.listLabel}}</h3>
-            <ul class="send-list" id="send-list"></ul>
-          </section>
-        </div>
-        <button type="button" class="secondary" id="start-over">{{t.checkout.startOver}}</button>
+            </div>
+            <div class="error" role="alert" hidden></div>
+            <p class="send-status" id="forward-status" role="status"></p>
+          </form>
+          <div class="send-log" id="send-log" hidden>
+            <h4 id="send-log-title">{{t.checkout.after.listLabel}}</h4>
+            <ul class="send-list" id="send-list" aria-labelledby="send-log-title"></ul>
+          </div>
+        </section>
+        <p class="start-over-line"><button type="button" class="link-button" id="start-over">{{t.checkout.startOver}}</button></p>
       </section>
     </div>
 
@@ -309,7 +307,7 @@
   <footer class="site-footer">
     <div class="wrap">
       <p class="footer-legal">{{t.footerLegal}}</p>
-      <p class="footer-links"><a href="/condiciones">{{t.footerTerms}}</a><a href="/agentes">{{t.footerAgents}}</a><a href="/caso">{{t.footerCaso}}</a><span>{{t.footerWebmcp}}</span></p>
+      <p class="footer-links"><a href="/condiciones">{{t.footerTerms}}</a><a href="/agentes">{{t.footerAgents}}</a><a class="footer-quiet" href="/caso">{{t.footerCaso}}</a><span>{{t.footerWebmcp}}</span></p>
     </div>
   </footer>
 

@@ -17,7 +17,7 @@ export function buildTools({ limits, plans, brand, payments }) {
       name: 'get_quote',
       es: 'Calcula el precio de los dos planes para un viaje: destino, fechas y edades.',
       title: 'Get travel insurance quote',
-      description: `Get prices for travel insurance for one trip. Returns a quote_id and BOTH plans, ${planList}, with total price, price per traveller, coverage limits, medical excess and each plan's exclusions. Only Wild+ covers adventure sports (trekking up to 4,000 m, scuba diving up to 30 m, skiing/snowboarding on marked slopes, surf, rafting, canyoning) and search & rescue up to 15,000 EUR; professional sports and extreme activities such as base jumping are excluded in both plans. Only trips starting in Spain (origin_country "ES") are accepted. Destinations where the Spanish Ministry of Foreign Affairs advises against all travel are not covered: get_quote then returns error_code DESTINATION_NOT_COVERED; tell the user and suggest another destination. Dates are YYYY-MM-DD; departure must be after today; the trip may last at most ${limits.maxTripDays} days counting both departure and return day. traveler_ages = each traveller's age ON THE DEPARTURE DATE. Show both plans to the user and let them choose. ${DEMO}`,
+      description: `Get prices for travel insurance for one trip. Returns a quote_id and BOTH plans, ${planList}, with total price, price per traveller, coverage limits, medical excess and each plan's exclusions. Only Wild+ covers adventure sports (trekking up to 4,000 m, scuba diving up to 30 m, skiing/snowboarding on marked slopes, surf, rafting, canyoning) and search & rescue up to 15,000 EUR; professional sports and extreme activities such as base jumping are excluded in both plans. Only trips starting in Spain (origin_country "ES") are accepted, and only for residents of Spain: optional residence_country (default "ES"); any other country returns error_code RESIDENCE_NOT_COVERED (ask the user where they live). Destinations where the Spanish Ministry of Foreign Affairs advises against all travel are not covered: get_quote then returns error_code DESTINATION_NOT_COVERED; tell the user and suggest another destination. Dates are YYYY-MM-DD; departure must be after today; the trip may last at most ${limits.maxTripDays} days counting both departure and return day. traveler_ages = each traveller's age ON THE DEPARTURE DATE. Show both plans to the user and let them choose. ${DEMO}`,
       inputSchema: {
         type: 'object',
         additionalProperties: false,
@@ -32,6 +32,7 @@ export function buildTools({ limits, plans, brand, payments }) {
             items: { type: 'integer', minimum: limits.minAge, maximum: limits.maxAge },
             description: `Age of each traveller on the departure date (${limits.minTravelers}-${limits.maxTravelers} travellers, ages ${limits.minAge}-${limits.maxAge}). Keep this order for set_traveler_details.`,
           },
+          residence_country: { type: 'string', pattern: '^[A-Za-z]{2}$', description: 'Optional. ISO 3166-1 alpha-2 code of the country where the policyholder lives. Default "ES". Wildpass only insures residents of Spain: any other value returns RESIDENCE_NOT_COVERED.' },
         },
       },
       annotations: { readOnlyHint: true },
@@ -53,9 +54,9 @@ export function buildTools({ limits, plans, brand, payments }) {
     },
     {
       name: 'set_traveler_details',
-      es: 'Guarda quién contrata (nombre y email) y el nombre y la fecha de nacimiento de cada viajero; nada más.',
+      es: 'Guarda quién contrata (nombre, email y, si se envía, su DNI/NIE) y el nombre y la fecha de nacimiento de cada viajero. El DNI/NIE es opcional para los agentes. Por privacidad, recomendamos que lo introduzca la propia persona con el enlace que recibe por email.',
       title: 'Set policyholder and traveller details',
-      description: 'Save the policyholder (full name + email, the policy is sent there) and every traveller (full name + birth date). Travellers must be in the SAME ORDER as traveler_ages in the quote, and each birth date must give exactly the quoted age on the departure date. Never ask for or send ID/passport numbers or card numbers. Changing details cancels any earlier review_token.',
+      description: 'Save the policyholder (full name + email, the policy is sent there) and every traveller (full name + birth date). Travellers must be in the SAME ORDER as traveler_ages in the quote, and each birth date must give exactly the quoted age on the departure date. The DNI/NIE is optional for agents (holder_id_number): for privacy we recommend that the person types it in themselves with the link they receive by email; without it the policy is issued with status "DNI pendiente" (pending_id) and the person completes it with that one-time link. If you send it, it must be a valid Spanish DNI (8 digits + letter) or NIE (X/Y/Z + 7 digits + letter) with the correct control letter, otherwise INVALID_ID_NUMBER. Never ask for passport or card numbers. Changing details cancels any earlier review_token.',
       inputSchema: {
         type: 'object',
         additionalProperties: false,
@@ -71,6 +72,7 @@ export function buildTools({ limits, plans, brand, payments }) {
               email: { type: 'string', maxLength: 254, description: 'Where the policy will be emailed.' },
             },
           },
+          holder_id_number: { type: 'string', maxLength: 12, description: 'Optional. The policyholder\'s DNI or NIE (e.g. demo test value "12345678Z"). Recommended: leave it out and let the person type it in with the link in the policy email.' },
           travelers: {
             type: 'array', minItems: limits.minTravelers, maxItems: limits.maxTravelers,
             items: {

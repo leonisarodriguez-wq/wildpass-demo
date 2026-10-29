@@ -56,11 +56,10 @@ export default {
       faq: 'Preguntas frecuentes',
       agents: 'Agentes',
       terms: 'Condiciones',
-      caso: 'El caso',
       cta: 'Ver mi precio',
     },
     pageTitle: 'Seguros Wildpass · Seguro de viaje con deportes de aventura (demo)',
-    metaDescription: 'Demo de seguro de viaje con deportes de aventura. Calcula tu precio sin datos personales.',
+    metaDescription: 'Demo de seguro de viaje con deportes de aventura. Para ver tu precio no te pedimos datos personales.',
     // Link previews (WhatsApp, LinkedIn, X…): Open Graph + twitter:card. Image = public/og-image.png (1200×630).
     og: {
       title: 'Seguros Wildpass · Travel wild. We\'ve got you. (demo)',
@@ -85,6 +84,8 @@ export default {
 
     // Landing: hero + quote form
     form: {
+      idFormat: 'Escribe 8 números y una letra (DNI) o X, Y o Z, 7 números y una letra (NIE).',
+      idLetter: 'La letra no corresponde a esos números. Revisa el DNI o NIE.',
       destination: '¿A dónde vas?',
       destinationPlaceholder: 'Elige un país',
       departure: 'Ida',
@@ -98,7 +99,8 @@ export default {
       addTraveler: '+ Añadir viajero',
       removeTravelerLabel: 'Quitar el viajero {n}',
       submit: 'Ver mi precio',
-      note: 'Gratis y sin compromiso: no te pedimos datos personales.',
+      note: 'Gratis y sin compromiso: para ver tu precio no te pedimos datos personales.',
+      residence: 'Desde España · Para residentes en España',
       loading: 'Calculando…',
       passLabel: 'Calcula tu precio',
       // Live price above "Ver mi precio", from get_quote (cheapest plan, all travellers). Shown ONLY once there is a price.
@@ -350,7 +352,9 @@ export default {
       { q: '¿Esto es un seguro real?', a: 'No. Seguros Wildpass es una demostración: no ofrece ninguna cobertura y ningún pago es real. En la web pagas con la tarjeta de prueba de Stripe 4242 4242 4242 4242 (una simulación: nunca se cobra nada). Los asistentes de IA no introducen ninguna tarjeta. La póliza que recibes es un documento de prueba sin validez.' },
       { q: '¿Qué diferencia hay entre Wild y Wild+?', a: 'Wild cubre gastos médicos hasta {wildMedEurope} en Europa y {wildMedWorld} en el resto del mundo, equipaje hasta {wildBaggage} y tiene una franquicia de {wildExcess} por siniestro médico. No incluye cancelación ni deportes de aventura. Wild+ sube los gastos médicos a {plusMedEurope} y {plusMedWorld}, el equipaje a {plusBaggage}, no tiene franquicia e incluye cancelación hasta {plusCancellation} por viajero, deportes de aventura y rescate hasta {rescue}. [Compara los dos con tu viaje](#quote-form).' },
       { q: '¿Qué deportes de aventura cubre Wild+?', a: 'Wild+ incluye trekking hasta {trekkingAltitude} m, buceo hasta {divingDepth} m, esquí y snowboard en pistas señalizadas, surf, rafting y barranquismo, con búsqueda y rescate hasta {rescue}. No cubre deportes profesionales ni actividades extremas como el salto BASE, ni lo que pase de esos límites.' },
-      { q: '¿Quién puede contratarlo?', a: 'Viajes que salen de España, de hasta {maxTripDays} días, de {minTravelers} a {maxTravelers} viajeros por póliza y de {minAge} a {maxAge} años. Solo te pedimos nombre, email y fecha de nacimiento: nada de DNI. [Calcula tu precio](#quote-form).' },
+      { q: '¿Quién puede contratarlo?', a: 'Residentes en España, para viajes que salen de España, de hasta {maxTripDays} días, de {minTravelers} a {maxTravelers} viajeros por póliza y de {minAge} a {maxAge} años. Para ver el precio no te pedimos datos personales; al contratar te pedimos nombre, email, fecha de nacimiento y el DNI o NIE de quien contrata. [Calcula tu precio](#quote-form).' },
+      { q: '¿Puedo contratarlo si no vivo en España?', a: 'Por ahora no: Wildpass solo asegura a residentes en España que viajan desde España al extranjero. Pronto, más países.' },
+      { q: '¿Por qué me pedís el DNI?', a: 'Para emitir la póliza a tu nombre, como cualquier aseguradora. Solo lo pedimos al contratar, nunca para ver el precio, y lo mostramos siempre enmascarado.' },
       { q: '¿Cómo calculáis el precio?', a: 'El precio depende del destino (Europa, resto del mundo, o EE. UU., Canadá y Japón), de los días de viaje y de la edad de cada viajero. Lo calibramos con {count} presupuestos reales de otras aseguradoras. [Mira cuánto cuesta tu viaje](#quote-form).' },
       { q: '¿Cuánto tarda en llegar la póliza?', a: 'La póliza se emite en cuanto se confirma el pago (de prueba): puedes descargarla al momento y te la enviamos por email, donde suele llegar en un par de minutos. Si no la ves, mira en Spam.' },
       { q: '¿A qué destinos no podéis asegurar?', a: 'A los países donde el Ministerio de Asuntos Exteriores recomienda no viajar. Si eliges uno, el formulario te lo dice al momento.' },
@@ -366,7 +370,7 @@ export default {
     footerTerms: 'Condiciones del seguro',
     footerWebmcp: 'Hecho con WebMCP',
     footerAgents: 'Para desarrolladores y agentes de IA',
-    footerCaso: 'El caso',
+    footerCaso: 'Sobre esta demo', // the only link to /caso (hidden page: noindex, not in the menu)
 
     // /llms.txt: plain text for AI agents. Tool lines come from public/webmcp-tools.js (each tool's `es` line).
     llms: {
@@ -376,9 +380,30 @@ export default {
       confirm: 'Antes de confirm_payment, enseña el resumen y el total a la persona y espera su confirmación explícita.',
       // Same sentence on /agentes (texts.agents.noCard) and, in English, in confirm_payment's description.
       noCard: 'Los agentes no deben introducir datos de tarjeta. Usa las herramientas WebMCP: tras la confirmación explícita del usuario, confirm_payment completa el pago de prueba en el servidor.',
+      whoTitle: 'Quién puede contratar',
+      residence: 'Wildpass solo asegura a residentes en España que viajan desde España al extranjero. get_quote acepta residence_country (opcional, por defecto "ES"); con otro país responde RESIDENCE_NOT_COVERED.',
+      // Same sentence on /agentes (texts.agents.dni) and, in English, in set_traveler_details' description.
+      dni: 'El DNI/NIE es opcional para los agentes. Por privacidad, recomendamos que lo introduzca la propia persona con el enlace que recibe por email.',
+      dniHow: 'set_traveler_details acepta holder_id_number (opcional). Sin él, la póliza se emite con estado «DNI pendiente» y la persona lo completa con un enlace de un solo uso. Siempre se muestra enmascarado (*****678Z).',
+      testId: 'DNI de prueba válido para esta demo (dato de prueba, no es de nadie): 12345678Z.',
       moreTitle: 'Más información',
       agentsLink: 'Instrucciones para agentes y desarrolladores',
       termsLink: 'Condiciones del seguro',
+    },
+
+    // "Completa tu DNI" page (one-time link from the policy email).
+    completeId: {
+      title: 'Completa tu DNI',
+      intro: 'Tu póliza {number} está emitida con estado «DNI pendiente». Escribe aquí el DNI o NIE de quien la contrató para activarla.',
+      label: 'DNI o NIE de quien contrata',
+      help: 'Lo necesitamos para emitir la póliza a tu nombre. Lo mostramos siempre enmascarado.',
+      empty: 'Escribe el DNI o NIE de quien contrata.',
+      button: 'Activar mi póliza',
+      doneTitle: 'Póliza activa',
+      done: 'Listo: la póliza {number} ya está activa con el DNI/NIE {masked}. Te hemos enviado el PDF actualizado por email.',
+      pdf: 'Descargar mi póliza',
+      invalid: 'Este enlace ya no es válido: el DNI ya se completó o el enlace no existe. Si tu póliza sigue con «DNI pendiente», usa el enlace del email más reciente.',
+      home: 'Volver a la portada',
     },
 
     // /agentes: two parts, "Para cualquier persona" then "Para desarrolladores". Tool lines and safety rules come from
@@ -393,7 +418,7 @@ export default {
       can: [
         'Calcular el precio de tu viaje y enseñarte los dos planes, Wild y Wild+.',
         'Ayudarte a elegir: si vas a hacer trekking, buceo o esquí, solo Wild+ lo cubre.',
-        'Guardar tus datos y los de cada viajero: nombre y fecha de nacimiento (nunca DNI, pasaporte ni tarjeta).',
+        'Guardar tus datos y los de cada viajero: nombre y fecha de nacimiento. Tu DNI o NIE lo escribes tú con el enlace que recibes por email, y la tarjeta nunca la toca.',
         'Enseñarte el resumen completo, con el total, antes de pagar.',
         'Pagar (es un pago de prueba) solo cuando tú le digas que sí.',
         'Consultar tu póliza más tarde, con su número y tu email.',
@@ -416,6 +441,10 @@ export default {
       afterTitle: 'Qué pasa después',
       after: 'La póliza se emite en cuanto confirmas: tu asistente te da el número y el enlace al PDF, y te llega por email en un par de minutos (si no la ves, mira en Spam). Es una demo: no se cobra nada y la póliza no tiene validez.',
       noCard: 'Los agentes no deben introducir datos de tarjeta. Usa las herramientas WebMCP: tras la confirmación explícita del usuario, confirm_payment completa el pago de prueba en el servidor.',
+      dni: 'El DNI/NIE es opcional para los agentes. Por privacidad, recomendamos que lo introduzca la propia persona con el enlace que recibe por email.',
+      dniHow: 'set_traveler_details acepta holder_id_number (opcional, DNI u NIE con su letra de control). Sin él, la póliza se emite con estado «DNI pendiente» y la persona lo completa con un enlace de un solo uso; review_order, confirm_payment y get_policy dicen el estado y el DNI siempre enmascarado (*****678Z).',
+      testId: 'DNI de prueba válido para esta demo (dato de prueba, no es de nadie): 12345678Z.',
+      residence: 'Wildpass solo asegura a residentes en España que viajan desde España al extranjero. get_quote acepta residence_country (opcional, por defecto "ES"); con otro país responde RESIDENCE_NOT_COVERED: pregunta a la persona su país de residencia.',
       webmcpTitle: 'Qué es WebMCP',
       webmcpText: 'WebMCP es un estándar web nuevo (en preparación en el W3C y en pruebas en Chrome) que permite a una página ofrecer «herramientas» a los asistentes de IA del navegador: en vez de leer la pantalla y pulsar botones, el asistente llama a funciones con datos claros. La página principal de Wildpass registra sus herramientas al cargarse, y cada una usa las mismas reglas del servidor que la web.',
       toolsTitle: 'Las {count} herramientas, en orden',
@@ -546,7 +575,13 @@ export default {
       selectedPlan: 'elegido',
 
       step2Title: '¿Quién viaja?',
-      step2Line: 'Solo necesitamos nombre y fecha de nacimiento. Nada de DNI.',
+      step2Line: 'Nombre y fecha de nacimiento de cada viajero, y el DNI o NIE solo de quien contrata.',
+      holderId: 'DNI o NIE de quien contrata',
+      holderIdHint: 'Lo necesitamos para emitir la póliza a tu nombre.',
+      holderIdMissing: 'Escribe el DNI o NIE de quien contrata.',
+      holderIdShort: 'DNI/NIE {id}',
+      resident: 'Resido en España',
+      notResident: 'Por ahora solo aseguramos a residentes en España. Pronto, más países.',
       policyholder: 'Quién contrata',
       fullName: 'Nombre y apellidos',
       email: 'Email',
@@ -611,14 +646,15 @@ export default {
       startOver: 'Calcular otro viaje',
       // Under "Descargar mi póliza": resend the email, forward it to a travel companion (max 5 sends per policy).
       after: {
-        resendTitle: '¿No te ha llegado el email?',
-        resend: 'Reenviar póliza',
-        resent: 'Reenviada a {email}. Revisa también la carpeta de spam.',
-        forwardTitle: 'Enviar la póliza a quien viaja contigo',
+        resend: '¿No te ha llegado? Reenviar',
+        resent: 'Reenviada. Revisa también Spam.',
+        completeId: 'Completa tu DNI para activar tu póliza',
+        forwardTitle: 'Comparte la póliza con quien viaja contigo',
         forwardHighlight: 'Viajáis {n}: envíasela a tu acompañante',
         forwardHighlightMany: 'Viajáis {n}: envíasela a tus acompañantes',
         forwardLabel: 'Email de tu acompañante',
-        forwardHint: 'Una dirección cada vez. Le llega la póliza en PDF.',
+        forwardHint: 'Le llega la póliza en PDF. Puedes enviarla a varias personas, una cada vez.',
+        forwardSelf: 'Ese es tu email. Para reenviártela usa «Reenviar».',
         forwardButton: 'Enviar',
         forwarded: 'Enviada a {email}.',
         sendsLeft: 'Te quedan {n} envíos.',
@@ -649,8 +685,7 @@ export default {
     caso: {
       title: 'El caso',
       pageTitle: 'El caso: Seguros Wildpass',
-      lead: 'Cómo pensé Wildpass, cómo lo distribuiría en la era de los agentes de IA y cómo mediría si funciona. Primer borrador.',
-      draftNote: 'Borrador de trabajo: las frases marcadas con [COMPLETAR] y [DATO A VERIFICAR] están pendientes de revisión.',
+      lead: 'Cómo pensé Wildpass, cómo lo distribuiría en la era de los agentes de IA y cómo mediría si funciona.',
       indexLabel: 'En esta página',
       sections: {
         reto: 'El reto',
@@ -664,23 +699,24 @@ export default {
         distinto: 'Con un equipo y un presupuesto reales',
       },
       reto: [
-        '[COMPLETAR: el brief de Tuio en dos frases, con sus palabras.]',
-        'Mi lectura: crear desde cero una marca de seguro de viaje que se entienda a la primera, que se pueda contratar en minutos desde el móvil y que tenga un motor de crecimiento medible desde el primer día. [COMPLETAR: confirma o ajusta esta lectura.]',
+        'Brief de Tuio: «Diseñar y desplegar un seguro de viaje demo que un agente de IA real pueda cotizar y comprar de principio a fin mediante WebMCP, y que envíe la póliza en PDF por email; con URL pública, repositorio y README.»',
+        'Mi lectura del reto: para mí el reto no es solo técnico: es demostrar que una aseguradora puede vender igual de bien a una persona que a su asistente. Eso obliga a que el producto sea fácil de explicar, el precio transparente y cada paso sensible tenga un control claro.',
       ],
       quien: [
         'El viajero de aventura español de 25 a 45 años: hace trekking, bucea, esquía o hace surf en sus viajes, y lo organiza todo desde el móvil.',
-        'Su problema: muchos seguros de viaje básicos excluyen justo lo que va a hacer, y no lo descubre hasta leer la letra pequeña. [DATO A VERIFICAR: qué parte de las pólizas básicas del mercado español excluye deportes de aventura.]',
-        'Tamaño del segmento: [DATO A VERIFICAR: viajes al extranjero de residentes en España con actividades de aventura (fuente: INE/Frontur o Familitur)].',
-        '[COMPLETAR: por qué este segmento y no otro, en tu opinión.]',
+        'Su problema: muchos seguros de viaje básicos excluyen justo lo que va a hacer, y no lo descubre hasta leer la letra pequeña.',
+        'Tamaño del segmento: los residentes en España hicieron unos 22,8 millones de viajes al extranjero en 2025, un 5,2 % más que el año anterior ([INE, Encuesta de Turismo de Residentes/Familitur](https://www.ine.es/dyngs/Prensa/ETR4T25.htm)). Cuántos de ellos incluyen deporte de aventura es una hipótesis que validaría con las entrevistas.',
+        'Por qué este segmento: los viajeros de aventura de 25 a 45 años viajan fuera con frecuencia, contratan online y son justo a quienes los seguros básicos dejan a medias: su actividad principal (trekking, buceo, esquí) suele quedar excluida o ir como extra. Es un dolor concreto, fácil de comunicar y con disposición a pagar.',
       ],
       propuesta: [
-        { title: 'Dos planes, no cinco', text: 'Wild cubre lo esencial; Wild+ añade aventura, cancelación hasta {plusCancellation} por viajero, rescate hasta {rescue} y quita la franquicia. Dos opciones se comparan de un vistazo y el plan superior ancla el valor del básico. [COMPLETAR: tu razonamiento sobre el número de planes.]' },
+        { title: 'Dos planes, no tres', text: 'Wild cubre lo esencial; Wild+ añade aventura, cancelación hasta {plusCancellation} por viajero, rescate hasta {rescue} y quita la franquicia. Dos planes, no tres: uno esencial para entrar con un precio competitivo y otro completo, que es el que de verdad resuelve el problema del segmento. Con dos, la decisión es sencilla y se explica en una frase; un tercero añadiría dudas sin aportar diferencia.' },
         { title: 'La aventura como eje', text: 'Es lo que el viajero de aventura no encuentra claro en otros seguros, y lo que más miedo da (un rescate en montaña, una lesión buceando). Wild+ incluye trekking hasta {trekkingAltitude} m, buceo hasta {divingDepth} m, esquí en pista, surf, rafting y barranquismo.' },
-        { title: 'Precio sin datos personales', text: 'Destino, fechas y edades bastan para ver el precio. Nombre, email y fecha de nacimiento solo se piden al contratar, y nunca el DNI. Menos fricción arriba del embudo, y un presupuesto que también puede pedir un asistente de IA. [COMPLETAR: tu hipótesis de conversión.]' },
+        { title: 'Precio sin datos personales', text: 'Destino, fechas y edades bastan para ver el precio. Nombre, email, fecha de nacimiento y el DNI de quien contrata solo se piden al contratar. Menos fricción arriba del embudo, y un presupuesto que también puede pedir un asistente de IA. Hipótesis: si enseñamos el precio sin pedir datos personales y explicamos la diferencia entre planes en euros al día, más visitantes cotizarán y la mayoría de quienes viajan para hacer deporte elegirá Wild+. Lo mido con el embudo de /metricas y el experimento de upsell.' },
+        { title: 'La persona paga y se identifica', text: 'Los datos sensibles (tarjeta y DNI) los introduce siempre la persona, nunca el agente: el agente cotiza, prepara y pide confirmación; la persona paga y se identifica.' },
       ],
       marca: [
         { title: 'Nombre', text: 'Wildpass: «wild» (la aventura) + «pass» (la tarjeta de embarque y el pase que te deja entrar). La confirmación de compra es literalmente una tarjeta de embarque con el sello «Cubierto».' },
-        { title: 'Tono', text: 'Directo, cercano y sin letra pequeña: «Travel wild. We\'ve got you.» y «Viaja salvaje. Nosotros te cubrimos.». Solo prometemos lo que cubren las condiciones, sin reseñas ni cifras inventadas. [COMPLETAR: tu definición del tono.]' },
+        { title: 'Tono', text: 'Directo, cercano y sin letra pequeña: «Travel wild. We\'ve got you.» y «Viaja salvaje. Nosotros te cubrimos.». Solo prometemos lo que cubren las condiciones, sin reseñas ni cifras inventadas. Cercano, directo y con energía de viaje: hablamos como un amigo que ya ha estado allí, no como una póliza. Cuando se trata de coberturas, límites y precio, la claridad va antes que el ingenio.' },
         { title: 'Ilustración por destino', text: 'La portada cambia de paisaje según el destino que eliges ({scenes} escenas propias en SVG, con paralaje suave): Tailandia, Japón, Perú, Islandia, México, EE. UU., una ciudad europea y la montaña por defecto. Sin fotos de stock.' },
         { title: 'Paleta y tipografía', text: 'Cielo, azul noche, turquesa y un amarillo reservado solo a los botones de acción, con contraste AA. Space Grotesk para titulares e Inter para el texto, alojadas en nuestro servidor.' },
       ],
@@ -689,7 +725,7 @@ export default {
       agentes: [
         { title: 'WebMCP', text: 'La web registra {tools} herramientas WebMCP: un asistente de IA puede cotizar, contratar y consultar la póliza sin leer la pantalla, con las mismas reglas que la web y sin tocar nunca una tarjeta. Nunca paga sin el «sí» expreso de la persona.' },
         { title: 'llms.txt', text: 'Un resumen en texto plano para modelos de lenguaje: qué es Wildpass, las herramientas en orden, las reglas de pago y los enlaces a las condiciones y a /agentes.' },
-        { title: 'Puertas abiertas', text: 'robots.txt permite todos los rastreadores, incluidos los de IA, y no bloqueamos a ningún asistente. [COMPLETAR: por qué crees que este canal importará en Tuio.]' },
+        { title: 'Puertas abiertas', text: 'robots.txt permite todos los rastreadores, incluidos los de IA, y no bloqueamos a ningún asistente. Por qué importará en Tuio: cada vez más gente le pedirá a su asistente «asegúrame este viaje». La aseguradora que exponga su producto de forma fiable y segura a esos agentes tendrá un canal de distribución nuevo y muy eficiente; la que no lo haga, no existirá en esa conversación.' },
       ],
       medicion: 'Medición propia, sin cookies ni herramientas de terceros: cada evento lleva un identificador de sesión aleatorio, el canal (web o agente), el dispositivo, el plan y la variante de cada experimento. Nunca nombres, emails ni fechas de nacimiento.',
       metricsLink: 'Ver las métricas reales de la demo',
@@ -707,14 +743,14 @@ export default {
         policy_forwarded: 'Envía la póliza a otra persona.',
       },
       experimentos: [
-        { title: 'Titular de la portada', text: 'A: «Travel wild. We\'ve got you.». B: «El seguro de viaje que sí cubre tu aventura». Métrica: % de sesiones que eligen destino.', decision: 'Si gana B, el beneficio explícito pesa más que la actitud de marca: lo llevaría a anuncios y a la descripción para buscadores. Si gana A o no hay diferencia, mantengo el claim y pruebo otra cosa más arriba del embudo. [COMPLETAR]' },
-        { title: 'Coste diario de Wild+', text: 'A: solo el total de cada plan. B: «+X € al día por aventura y cancelación» bajo Wild+. Métrica: % de elecciones que son Wild+.', decision: 'Si gana B, expresar la diferencia por día reduce la barrera del plan superior: lo usaría en el email de presupuesto y en la respuesta a los agentes. Si no hay diferencia, el precio diario no es la palanca y probaría con el ejemplo de rescate. [COMPLETAR]' },
+        { title: 'Titular de la portada', text: 'A: «Travel wild. We\'ve got you.». B: «El seguro de viaje que sí cubre tu aventura». Métrica: % de sesiones que eligen destino.', decision: 'Si el titular descriptivo (B) mejora claramente la elección de destino, daría prioridad a la claridad en la cabecera y llevaría el claim de marca a un segundo plano. Si no hay diferencia, mantendría el claim por su valor de marca.' },
+        { title: 'Coste diario de Wild+', text: 'A: solo el total de cada plan. B: «+X € al día por aventura y cancelación» bajo Wild+. Métrica: % de elecciones que son Wild+.', decision: 'Si mostrar el coste diario sube la elección de Wild+, lo llevaría también al email del presupuesto y a las respuestas de los agentes. Si no, probaría otros argumentos, como la cancelación o el rescate.' },
       ],
       experimentsNote: 'No declaro ganador hasta llegar al mínimo de sesiones por variante que calcula /metricas (95 % de confianza, 80 % de potencia).',
       ruta: [
-        { when: 'Días 0–30', title: 'Medir y aprender', items: ['Lanzar con la medición actual y fijar la línea base del embudo.', 'Entrevistar a 10 viajeros de aventura. [COMPLETAR]', 'Cerrar los dos experimentos si hay tráfico suficiente.'] },
-        { when: 'Días 30–60', title: 'Activar los bucles', items: ['Presupuesto por email, compartir con acompañantes y código de amigo: medir cuántas compras traen.', 'Contenido por destino y deporte (dónde bucear, qué cubre un rescate). [COMPLETAR]', 'Primeras alianzas con escuelas de buceo o clubes de montaña. [COMPLETAR]'] },
-        { when: 'Días 60–90', title: 'Escalar lo que funciona', items: ['Invertir en el canal con mejor coste por póliza. [DATO A VERIFICAR: objetivo de coste por póliza]', 'Abrir la distribución por agentes a más asistentes y comparadores.', 'Decidir siguiente plan o mercado con los datos. [COMPLETAR]'] },
+        { when: 'Días 0–30', title: 'Medir y aprender', items: ['Lanzar con la medición actual y fijar la línea base del embudo.', '15 entrevistas con viajeros de aventura y 5 con agencias especializadas para validar coberturas, precio y mensajes.', 'Cerrar los dos experimentos si hay tráfico suficiente.'] },
+        { when: 'Días 30–60', title: 'Activar los bucles', items: ['Presupuesto por email, compartir con acompañantes y código de amigo: medir cuántas compras traen.', 'Contenido por destino y actividad (trekking, buceo, esquí) pensado para buscadores y para asistentes de IA.', 'Alianzas con agencias de aventura, escuelas de buceo y esquí y comunidades outdoor, con códigos de referido.'] },
+        { when: 'Días 60–90', title: 'Escalar lo que funciona', items: ['Invertir en el canal con mejor coste por póliza. El objetivo de coste de adquisición se fijaría con el margen real por póliza de la aseguradora: un canal solo escala si cada póliza se adquiere por debajo de ese margen.', 'Abrir la distribución por agentes a más asistentes y comparadores.', 'Evaluar un Pack Aventura anual para viajeros frecuentes y validar la entrada en un segundo mercado.'] },
       ],
       distinto: [
         'Dominio propio en lugar de la dirección de Tailscale.',
@@ -722,13 +758,15 @@ export default {
         'Email desde el dominio propio (SPF, DKIM y DMARC) para llegar a la bandeja de entrada.',
         'Una aseguradora real detrás: producto registrado, condiciones revisadas por legal y pagos reales.',
         'Analítica con consentimiento y un almacén de datos para cruzar marketing y siniestralidad.',
+        'Siguiente paso: verificación de identidad real, por ejemplo con un proveedor de KYC.',
+        'Siguiente paso: abrir Wildpass a residentes de otros países.',
         'Siguiente paso: datos estructurados JSON-LD (organización, producto con sus dos planes, preguntas frecuentes) para buscadores y asistentes.',
         'Siguiente paso: un endpoint público de precios, con el mismo motor que la web, para comparadores y agentes.',
         'Siguiente paso: enviar el presupuesto por email, con un enlace que lo vuelve a abrir.',
         'Siguiente paso: un botón para compartir la póliza con quien viaja contigo.',
         'Siguiente paso: un programa de referidos con un código de amigo.',
         'Siguiente paso: la herramienta WebMCP email_quote, para que un asistente envíe el presupuesto con el permiso de la persona.',
-        '[COMPLETAR: equipo y presupuesto que pedirías.]',
+        'Equipo y presupuesto: un equipo pequeño: diseño de producto, desarrollo full-stack, growth (performance y contenido) y el apoyo de la aseguradora en producto y siniestros. El presupuesto lo fijaría por fases: una partida pequeña para validar canales en los primeros 90 días y escalar solo los que cumplan el objetivo de coste por póliza.',
       ],
     },
 
@@ -796,6 +834,10 @@ export default {
 
     // Friendly error messages by server error_code ({placeholders} come from limits or the error).
     errors: {
+      INVALID_ID_NUMBER: 'Revisa el DNI o NIE: 8 números y una letra, o X, Y o Z, 7 números y una letra.',
+      RESIDENCE_NOT_COVERED: 'Por ahora solo aseguramos a residentes en España. Pronto, más países.',
+      FORWARD_TO_SELF: 'Ese es tu email. Para reenviártela usa «Reenviar».',
+      ID_LINK_INVALID: 'Este enlace ya no es válido: el DNI ya se completó o el enlace no existe.',
       CONTACT_INVALID: 'Revisa el formulario: falta algún dato o no es correcto.',
       CONTACT_LIMIT_REACHED: 'Ya nos has escrito varias veces. Espera un rato antes de enviar otro mensaje.',
       CONTACT_NOT_AVAILABLE: 'Ahora mismo no podemos recibir mensajes. Inténtalo más tarde.',
@@ -874,9 +916,9 @@ export default {
       noExcess: 'Sin franquicia',
       notIncluded: 'No incluida',
       whoTitle: 'Quién puede contratar',
-      whoText: 'Solo viajes que salen de España, de hasta {maxTripDays} días, de {minTravelers} a {maxTravelers} viajeros de {minAge} a {maxAge} años.',
+      whoText: 'Wildpass solo asegura a residentes en España que viajan desde España al extranjero: viajes de hasta {maxTripDays} días, de {minTravelers} a {maxTravelers} viajeros de {minAge} a {maxAge} años. Al contratar pedimos el DNI o NIE de quien contrata para emitir la póliza a su nombre.',
       planExclusionsTitle: 'Qué no cubre {plan}',
-      ctaText: '¿Lo tienes claro? Calcula el precio de tu viaje: no hace falta ningún dato personal.',
+      ctaText: '¿Lo tienes claro? Calcula el precio de tu viaje: para ver tu precio no hace falta ningún dato personal.',
     },
     // 404 page (any address that does not exist).
     notFound: {
@@ -888,6 +930,9 @@ export default {
     certificateTitle: 'Certificado de seguro de viaje',
     // PDF certificate (src/pdf.js)
     certificate: {
+      statusLabel: 'Estado de la póliza:',
+      holderIdLabel: 'DNI/NIE del tomador:',
+      completeIdNote: 'Completa tu DNI con el enlace del email para activarla.',
       topStrip: 'DEMO — NO ES UN SEGURO REAL · ESTE DOCUMENTO NO TIENE VALIDEZ',
       policyNumberLabel: 'PÓLIZA Nº',
       issuedOn: 'Emitida el',
@@ -922,6 +967,10 @@ export default {
     },
     // Policy email (src/email.js). {name} {destination} {number} are filled in.
     email: {
+      statusLabel: 'Estado',
+      holderIdLabel: 'DNI/NIE',
+      completeIdText: 'Tu póliza está emitida con estado «DNI pendiente». Para activarla, escribe tu DNI o NIE en este enlace (tu asistente no lo hace por ti):',
+      completeIdLink: 'Completa tu DNI para activar tu póliza',
       subject: 'Tu póliza Wildpass {number} · {destination} (demo)',
       demoLine: 'Demo — no es un seguro real. No se ha cobrado nada.',
       headline: '¡Listo, {name}! Tu viaje a {destination} está cubierto',

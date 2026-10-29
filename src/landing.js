@@ -70,7 +70,7 @@ function footerHtml(brand) {
   const t = brand.texts;
   return `<footer class="site-footer"><div class="wrap">
     <p class="footer-legal">${escapeHtml(t.footerLegal)}</p>
-    <p class="footer-links"><a href="/condiciones">${escapeHtml(t.footerTerms)}</a><a href="/agentes">${escapeHtml(t.footerAgents)}</a><a href="/caso">${escapeHtml(t.footerCaso)}</a><span>${escapeHtml(t.footerWebmcp)}</span></p>
+    <p class="footer-links"><a href="/condiciones">${escapeHtml(t.footerTerms)}</a><a href="/agentes">${escapeHtml(t.footerAgents)}</a><a class="footer-quiet" href="/caso">${escapeHtml(t.footerCaso)}</a><span>${escapeHtml(t.footerWebmcp)}</span></p>
   </div></footer>`;
 }
 
@@ -91,7 +91,7 @@ export function headerHtml(brand, { home = false } = {}) {
   // visible, except on landing phones (<700 px), where the bottom sticky bar shows it instead: never two at once.
   return `<header class="site-header${home ? ' is-home' : ''}"><div class="wrap header-bar">${logoHtml()}
   <nav class="site-nav" id="site-nav" aria-label="${escapeHtml(n.label)}">
-    <ul><li><a href="${root}#preguntas" data-open-faq>${escapeHtml(n.faq)}</a></li><li><a href="/agentes">${escapeHtml(n.agents)}</a></li><li><a href="/condiciones">${escapeHtml(n.terms)}</a></li><li><a href="/caso">${escapeHtml(n.caso)}</a></li></ul>
+    <ul><li><a href="${root}#preguntas" data-open-faq>${escapeHtml(n.faq)}</a></li><li><a href="/agentes">${escapeHtml(n.agents)}</a></li><li><a href="/condiciones">${escapeHtml(n.terms)}</a></li></ul>
   </nav>
   <a class="primary nav-cta" href="${root}#quote-form"${home ? ' data-focus-form' : ''}>${escapeHtml(n.cta)}</a>
   <button type="button" class="menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="site-nav" data-open="${escapeHtml(n.menu)}" data-close="${escapeHtml(n.close)}">${escapeHtml(n.menu)}</button>
@@ -100,6 +100,22 @@ export function headerHtml(brand, { home = false } = {}) {
 
 // Shared shell for simple pages (terms, /agentes, 404).
 // head: extra tags (robots meta, JSON-LD…), already-built HTML.
+// "Completa tu DNI": the person types their own DNI/NIE (one-time link from the policy email). No token → "link no longer valid".
+export function completeIdPageBody({ brand, policy_number }) {
+  const k = brand.texts.completeId;
+  const e = escapeHtml;
+  if (!policy_number) return `<div class="complete-id"><h1>${e(k.title)}</h1><p>${e(k.invalid)}</p><p><a href="/">${e(k.home)}</a></p></div>`;
+  return `<div class="complete-id"><h1>${e(k.title)}</h1><p>${e(fill(k.intro, { number: policy_number }))}</p>
+    <form id="complete-id-form" class="complete-id-form" novalidate data-empty="${e(k.empty)}" data-format="${e(brand.texts.form.idFormat)}" data-letter="${e(brand.texts.form.idLetter)}" data-done="${e(k.done)}" data-generic="${e(brand.texts.errors.generic)}">
+      <div class="field"><label for="holder-id">${e(k.label)}</label><p class="hint" id="holder-id-hint">${e(k.help)}</p>
+      <input id="holder-id" name="holder-id" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12" aria-required="true" aria-describedby="holder-id-hint"></div>
+      <p class="error" role="alert" hidden></p>
+      <button type="submit" class="primary" id="complete-id-send">${e(k.button)}</button>
+    </form>
+    <div class="complete-id-done" id="complete-id-done" role="status" tabindex="-1" hidden><h2>${e(k.doneTitle)}</h2><p id="complete-id-done-text"></p><p><a class="secondary button-link" id="complete-id-pdf" href="#">${e(k.pdf)}</a></p></div>
+  </div>`;
+}
+
 export function pageShell({ brand, title, body, scripts = [], head = '' }) {
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(title)} · ${escapeHtml(brand.name)}</title>${head}${iconLinks}${fontPreloads}<link rel="stylesheet" href="/brand.css"><link rel="stylesheet" href="/style.css"></head>
@@ -195,6 +211,9 @@ export function agentsPageBody({ brand, pricing, payments, now = new Date() }) {
     <section class="agents-part" id="desarrolladores" aria-labelledby="desarrolladores-title">
       <h2 id="desarrolladores-title">${escapeHtml(g.devTitle)}</h2>
       <p class="agent-no-card"><strong>${escapeHtml(g.noCard)}</strong></p>
+      <p><strong>${escapeHtml(g.dni)}</strong> ${escapeHtml(g.dniHow)}</p>
+      <p>${escapeHtml(g.testId)}</p>
+      <p>${escapeHtml(g.residence)}</p>
       <h3>${escapeHtml(g.webmcpTitle)}</h3>
       <p>${escapeHtml(g.webmcpText)}</p>
       <h3>${escapeHtml(fill(g.toolsTitle, { count: tools.length }))}</h3>
@@ -255,13 +274,15 @@ export function casePageBody({ brand, pricing, market, payments }) {
   const t = brand.texts;
   const k = t.caso;
   const values = { ...copyValues(pricing, market), scenes: SCENE_IDS.length, tools: realTools({ brand, pricing, payments }).length };
-  const text = line => escapeHtml(fill(line, values)).replace(/\[(COMPLETAR|DATO A VERIFICAR)[^\]]*\]/g, m => `<mark class="todo">${m}</mark>`);
+  // [text](https://…) → an external link (sources); leftover [COMPLETAR…] / [DATO A VERIFICAR…] stay highlighted.
+  const text = line => escapeHtml(fill(line, values))
+    .replace(/\[([^\]]+)\]\((https:\/\/[^)\s]+)\)/g, '<a href="$2" rel="noopener">$1</a>')
+    .replace(/\[(COMPLETAR|DATO A VERIFICAR)[^\]]*\]/g, m => `<mark class="todo">${m}</mark>`);
   const cards = list => `<div class="case-cards">${list.map(c => `<div class="case-card"><h3>${escapeHtml(c.title)}</h3><p>${text(c.text)}</p></div>`).join('')}</div>`;
   const section = (id, inner) => `<section class="case-section" id="${id}" aria-labelledby="${id}-title"><h2 id="${id}-title">${escapeHtml(k.sections[id])}</h2>${inner}</section>`;
   const swatches = Object.entries(k.paletteNames).map(([key, name]) => `<li><svg class="swatch" viewBox="0 0 28 28" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="27" height="27" rx="8" fill="${brand.colors[key]}" stroke="${brand.colors.border}"/></svg>${escapeHtml(name)} <code>${escapeHtml(brand.colors[key])}</code></li>`).join('');
   const roadmap = `<ol class="roadmap">${k.ruta.map(phase => `<li class="phase"><p class="phase-when">${escapeHtml(phase.when)}</p><h3>${escapeHtml(phase.title)}</h3><ul>${phase.items.map(i => `<li>${text(i)}</li>`).join('')}</ul></li>`).join('')}</ol>`;
   return `<h1>${escapeHtml(k.pageTitle)}</h1><p class="case-lead">${escapeHtml(k.lead)}</p>
-    <p class="case-draft">${text(k.draftNote)}</p>
     <nav class="terms-index" aria-label="${escapeHtml(k.indexLabel)}"><p class="terms-index-label">${escapeHtml(k.indexLabel)}</p>
       <ol>${Object.entries(k.sections).map(([id, title]) => `<li><a href="#${id}">${escapeHtml(title)}</a></li>`).join('')}</ol></nav>
     ${section('reto', k.reto.map(p => `<p>${text(p)}</p>`).join(''))}
@@ -296,6 +317,7 @@ export function llmsTxt({ brand, pricing, payments, baseUrl }) {
     `## ${l.howTitle}`, '', `**${l.noCard}**`, '', fill(l.how, { url: `${baseUrl}/` }), '',
     ...tools.flatMap((tool, i) => [`${i + 1}. ${tool.name}: ${tool.es}`, ...(tool === pay ? rules.map(f => `   - ${f}: ${pay.rulesEs[f]}`) : [])]), '',
     l.confirm, '',
+    `## ${l.whoTitle}`, '', l.residence, '', `**${l.dni}**`, '', l.dniHow, '', l.testId, '',
     `## ${l.moreTitle}`, '', `- [${l.agentsLink}](${baseUrl}/agentes)`, `- [${l.termsLink}](${baseUrl}/condiciones)`, '',
   ].join('\n');
 }

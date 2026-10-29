@@ -531,12 +531,23 @@ $('#travelers').addEventListener('input', formatBirthInput);
 
 // Step 2 convenience checks, in reading order (empty or unreadable fields; the server checks everything else).
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// DNI (8 numbers + letter) or NIE (X/Y/Z + 7 numbers + letter) with its mod-23 control letter. The server checks it again.
+const ID_LETTERS = 'TRWAGMYFPDXBNJZSQVHLCKE';
+function idProblem(raw) {
+  const value = raw.toUpperCase().replace(/[\s.-]/g, '');
+  if (!value) return C.holderIdMissing;
+  const m = /^(\d{8}|[XYZ]\d{7})([A-Z])$/.exec(value);
+  if (!m) return T.form.idFormat;
+  return ID_LETTERS[Number(m[1].replace(/^[XYZ]/, ch => String('XYZ'.indexOf(ch)))) % 23] === m[2] ? null : T.form.idLetter;
+}
 function detailChecks() {
   const name = input => [input, () => (input.value.trim() ? null : E.missingName)];
   const fieldsets = [...document.querySelectorAll('#travelers fieldset')];
   return [
     name($('#ph-name')),
     [$('#ph-email'), () => (EMAIL_SHAPE.test($('#ph-email').value.trim()) ? null : friendly({ error_code: 'INVALID_EMAIL' }))],
+    [$('#ph-id'), () => idProblem($('#ph-id').value)],
+    [$('#ph-resident'), () => ($('#ph-resident').checked ? null : C.notResident)],
     ...fieldsets.flatMap(f => {
       const birth = f.querySelector('.t-birth');
       return [name(f.querySelector('.t-name')), [birth, () => (toIsoDate(birth.value) ? null : E.missingBirthDate)]];
@@ -579,9 +590,11 @@ $('#details-form').addEventListener('submit', async e => {
     const result = await callApi('set_traveler_details', {
       order_id: state.orderId,
       policyholder: { full_name: $('#ph-name').value, email: $('#ph-email').value.trim() },
+      holder_id_number: $('#ph-id').value,
       travelers: names.map((n, i) => ({ full_name: n.value, birth_date: toIsoDate(births[i].value) })),
     });
     if (!result.ok) {
+      if (result.error_code === 'INVALID_ID_NUMBER') return showError(form, result.reason === 'letter' ? T.form.idLetter : T.form.idFormat, $('#ph-id'));
       const field = { INVALID_EMAIL: $('#ph-email'), AGE_MISMATCH: births[(result.traveler ?? 1) - 1], INVALID_BIRTH_DATE: births[0] }[result.error_code];
       if (result.error_code === 'AGE_MISMATCH' && field && Number.isInteger(result.age_at_departure)) {
         const index = (result.traveler ?? 1) - 1;
@@ -628,7 +641,7 @@ function renderStep3() {
       row(C.trip, `${s.trip.origin_name} → ${s.trip.destination_name}`),
       row(C.dates, `${rangeEs(s.trip.departure_date, s.trip.return_date)} · ${fill(C.tripCard.days, { days: s.trip.days })}`),
       row(C.plan, plan.plan_name),
-      row(C.whoBuys, `${s.policyholder.full_name} · ${s.policyholder.email}`),
+      row(C.whoBuys, [s.policyholder.full_name, s.policyholder.email, s.policyholder.id_number_masked && fill(C.holderIdShort, { id: s.policyholder.id_number_masked })].filter(Boolean).join(' · ')),
       row(C.travelers, s.travelers.map(t => `${t.full_name} (${t.age_at_departure})`).join(' · ')),
     ),
     el('p', { class: 'review-zone', text: fill(C.zone, { zone: s.trip.zone_name }) }),
@@ -767,11 +780,12 @@ const syncSendButtons = () => { for (const b of [$('#resend'), $('#forward-send'
 
 function renderAfterActions() {
   const n = state.review.summary.travelers.length;
-  const highlight = $('#forward-highlight');
-  highlight.hidden = n < 2;
-  highlight.textContent = n > 1 ? fill(n === 2 ? A().forwardHighlight : A().forwardHighlightMany, { n }) : '';
-  $('#forward-card').classList.toggle('is-highlighted', n > 1);
+  $('#forward-title').textContent = n > 1 ? fill(n === 2 ? A().forwardHighlight : A().forwardHighlightMany, { n }) : A().forwardTitle;
   for (const id of ['#resend-status', '#forward-status']) $(id).textContent = '';
+  $('#resend').hidden = false;
+  // Policy issued without DNI/NIE («DNI pendiente»): the person completes it with the one-time link.
+  $('#complete-id-line').hidden = !state.paid.complete_id_url;
+  if (state.paid.complete_id_url) $('#complete-id-link').href = state.paid.complete_id_url;
   $('#forward-email').value = '';
   setFieldError($('#forward-email'), null);
   showError($('#forward-form'), null);
@@ -789,7 +803,8 @@ function afterSend(result, statusEl, doneText) {
     if (result.error_code === 'SEND_LIMIT_REACHED') sendsBlocked = true;
     return false;
   }
-  statusEl.textContent = `${fill(doneText, { email: result.to_masked })} ${sendsLeftText(result.sends_left)}`;
+  // The one-line resend result stays short; the forward card also says how many sends are left.
+  statusEl.textContent = statusEl.id === 'resend-status' ? fill(doneText, { email: result.to_masked }) : `${fill(doneText, { email: result.to_masked })} ${sendsLeftText(result.sends_left)}`;
   if (result.sends_left === 0) sendsBlocked = true;
   // Brevo reports delivery a few seconds later: ask again a few times.
   sendPoll.forEach(clearTimeout);
@@ -813,8 +828,10 @@ $('#resend').addEventListener('click', async e => {
   await busy(e.currentTarget, C.working, async () => {
     const result = await callApi('send_policy_copy', { ...sendAuth(), kind: 'resend' });
     showError($('#forward-form'), null);
+    // The result takes the link's place on the same line, so nothing below moves.
     if (!afterSend(result, $('#resend-status'), A().resent)) $('#resend-status').textContent = friendly(result);
     else track('policy_resent');
+    $('#resend').hidden = true;
   });
   syncSendButtons();
 });
@@ -822,11 +839,14 @@ $('#resend').addEventListener('click', async e => {
 $('#forward-form').addEventListener('submit', async e => {
   e.preventDefault();
   const input = $('#forward-email');
-  const check = () => (!input.value.trim() ? A().missingEmail : EMAIL_SHAPE.test(input.value.trim()) ? null : friendly({ error_code: 'INVALID_EMAIL' }));
+  const holder = state.review.summary.policyholder.email.toLowerCase();
+  const check = () => (!input.value.trim() ? A().missingEmail
+    : !EMAIL_SHAPE.test(input.value.trim()) ? friendly({ error_code: 'INVALID_EMAIL' })
+      : input.value.trim().toLowerCase() === holder ? A().forwardSelf : null);
   if (!validateAll([[input, check]])) return;
   await busy($('#forward-send'), C.working, async () => {
     const result = await callApi('send_policy_copy', { ...sendAuth(), kind: 'forward', to_email: input.value.trim() });
-    if (!result.ok) return showError($('#forward-form'), friendly(result), result.error_code === 'INVALID_EMAIL' ? input : null);
+    if (!result.ok) return showError($('#forward-form'), friendly(result), ['INVALID_EMAIL', 'FORWARD_TO_SELF'].includes(result.error_code) ? input : null);
     showError($('#forward-form'), null);
     afterSend(result, $('#forward-status'), A().forwarded);
     track('policy_forwarded');

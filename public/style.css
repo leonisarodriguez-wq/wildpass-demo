@@ -694,20 +694,27 @@ html[data-exp-hero="b"] .hero-b { display: inline; }
 @media (min-width: 700px) { .sticky-cta { display: none; } }
 @media (max-width: 699px) { html:has(.sticky-cta:not([hidden])) body { padding-bottom: 80px; } } /* room for the bar: it never covers content */
 #step-4 .primary { margin: 14px 0; }
-/* Success step, under "Descargar mi póliza": resend, forward to a travel companion, and the log of those sends. */
-.after-actions { display: grid; gap: 12px; margin: 4px 0 18px; }
-.after-card { background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 14px 16px; min-width: 0; }
-.after-card h3 { font-size: 1.05rem; margin: 0 0 10px; }
-.after-card.is-highlighted { border: 3px solid var(--turquoise); padding: 12px 14px; }
-.forward-highlight { margin: -4px 0 10px; font-weight: 700; color: var(--turquoise-text); }
+/* Success step, under "Descargar mi póliza": one email line with a discreet "Reenviar" link, ONE forward card at full
+   content width (field + "Enviar" on one row, same height; stacked full width on phones), "Calcular otro viaje" as a link. */
+.email-line { margin: 12px 0 0; color: var(--night); }
+.resend-slot { display: inline-flex; align-items: center; min-height: 44px; }
+.resend-slot .link-button { text-decoration: underline; text-underline-offset: 3px; }
+.resend-slot .send-status:empty { display: none; }
+.resend-slot .send-status { margin: 0; font-weight: 600; color: var(--turquoise-text); }
+.complete-id-line { margin: 4px 0 0; }
+.complete-id-line a { display: inline-flex; align-items: center; min-height: 44px; font-weight: 700; color: var(--turquoise-text); }
+.after-card { background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 20px 16px; margin: 20px 0 0; min-width: 0; }
+.after-card h3 { font-size: 1.15rem; margin: 0 0 12px; }
 .after-card .field { margin-bottom: 0; }
-.after-card .hint { margin: 0 0 6px; }
-.inline-field { display: flex; flex-wrap: wrap; gap: 8px; }
-.inline-field input { flex: 1 1 180px; min-width: 0; }
-.inline-field .secondary { flex: none; min-height: 48px; padding: 8px 20px; }
-.send-status { margin: 8px 0 0; font-size: 0.95rem; font-weight: 600; }
-.send-status:empty { display: none; }
-.after-card .error { margin-top: 8px; }
+.after-card .hint { margin: 0 0 8px; }
+.inline-field { display: grid; gap: 10px; }
+.inline-field input, .inline-field .secondary { min-height: 48px; width: 100%; margin: 0; }
+.inline-field .secondary { padding: 8px 24px; }
+.after-card .error { margin-top: 10px; }
+.after-card .send-status { margin: 10px 0 0; font-weight: 600; color: var(--turquoise-text); }
+.after-card .send-status:empty { display: none; }
+.send-log { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+.send-log h4 { font-size: 0.95rem; margin: 0 0 8px; }
 .send-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .send-list li { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; padding: 8px 0; border-top: 1px solid var(--border); font-size: 0.92rem; }
 .send-list li:first-child { border-top: 0; padding-top: 0; }
@@ -715,7 +722,21 @@ html[data-exp-hero="b"] .hero-b { display: inline; }
 .send-to { font-weight: 600; overflow-wrap: anywhere; }
 .send-state { margin-left: auto; font-weight: 700; color: var(--turquoise-text); }
 .send-state.is-bounced, .send-state.is-blocked, .send-state.is-failed, .send-state.is-marked_as_spam { color: var(--night); }
-@media (min-width: 700px) { .after-actions { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); align-items: start; } .send-log { grid-column: 1 / -1; } }
+.start-over-line { margin: 16px 0 0; }
+.start-over-line .link-button { text-decoration: underline; text-underline-offset: 3px; }
+@media (min-width: 600px) {
+  .after-card { padding: 22px 24px; }
+  .inline-field { grid-template-columns: minmax(0, 1fr) auto; align-items: stretch; }
+  .inline-field .secondary { width: auto; }
+}
+
+/* "Completa tu DNI" page (one-time link). */
+.complete-id-form { display: grid; gap: 12px; max-width: 26rem; margin-top: 16px; }
+.complete-id-form .field { margin: 0; }
+.complete-id-form button { justify-self: start; }
+.complete-id-form[hidden] { display: none; }
+.complete-id-done { margin-top: 16px; }
+.complete-id-done:focus { outline: none; }
 
 /* Action bar (checkout): ONE row, 64 px plus the phone's safe area. Total on the left, the step's button (≥ 44 px) on the right. */
 .total-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: var(--white); border-top: 1px solid var(--border); padding: 0 0 env(safe-area-inset-bottom); }
@@ -884,3 +905,4 @@ mark.todo { background: var(--mint); color: var(--night); font-weight: 700; bord
 .faq-item .contact-status { padding: 0; margin: 0; font-weight: 600; color: var(--turquoise-text); }
 /* Honeypot: off screen for people, still in the form for bots. */
 .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.footer-links a.footer-quiet { font-weight: 400; opacity: 0.85; }

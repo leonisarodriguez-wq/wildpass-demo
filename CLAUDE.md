@@ -281,3 +281,16 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
   fast-forward `live`, push, and tell the owner to restart wildpass-app (they do it themselves). Never touch Tailscale or the README.
 - Delivery scope (owner, 29 Oct 2026): Blocks 1–4 + the contact form. NOT public: Block 5 (JSON-LD, /api/pricing, sitemap… kept on branch `block5-later`),
   «Precio honesto» chart (6.1) and Block 7 (growth loops). /caso lists them as next steps.
+
+## Policyholder DNI/NIE and residence (29 Oct 2026)
+- Step 2 (web): required «DNI o NIE de quien contrata» (`#ph-id`, autocomplete off) + required «Resido en España» (`#ph-resident`, client check:
+  «Por ahora solo aseguramos a residentes en España. Pronto, más países.»). Format + mod-23 letter checked in app.js AND in `checkIdNumber` (business.js).
+- Agents: set_traveler_details' `holder_id_number` is OPTIONAL. Without it the policy is issued with status `pending_id` («DNI pendiente»);
+  confirm_payment/email/success step give a one-time link `/poliza/completar/<token>` (hash in `policies.id_token_hash`); the person types it
+  (`/api/complete_holder_id`), the policy becomes «Activa», the PDF is rebuilt (same link) and emailed again. get_quote's `residence_country`
+  is OPTIONAL (default ES); anything else → RESIDENCE_NOT_COVERED.
+- Privacy: the full DNI is stored ONLY in `policies.holder_id_number` (orders keep it until issue, then it is cleared). Snapshots, answers,
+  PDF and email show `*****678Z`. Never in events, /metricas or logs. Test DNI for the demo: 12345678Z. Tests: `test/dni-residence.test.js`.
+- Success step: «Descargar mi póliza» → email line with a discreet «¿No te ha llegado? Reenviar» link (its result replaces it) → ONE forward
+  card (field + Enviar on one row ≥600 px, stacked below; refuses the holder's own email: FORWARD_TO_SELF) → «Calcular otro viaje» as a link.
+- /caso is hidden: noindex, not in the menu, only the footer link «Sobre esta demo»; /metricas is linked only from /caso.

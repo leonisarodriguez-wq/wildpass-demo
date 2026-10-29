@@ -65,9 +65,16 @@ export function openDb(file) {
   if (!orderColumns.has('review_snapshot_json')) db.exec('ALTER TABLE orders ADD COLUMN review_snapshot_json TEXT');
   // Stripe (test mode): the order's single PaymentIntent, reused so an order is never charged twice.
   if (!orderColumns.has('payment_intent_id')) db.exec('ALTER TABLE orders ADD COLUMN payment_intent_id TEXT');
+  // DNI/NIE given with the traveller details; moved to the policy (and cleared here) when the policy is issued.
+  if (!orderColumns.has('holder_id_number')) db.exec('ALTER TABLE orders ADD COLUMN holder_id_number TEXT');
   if (!existing.has('payment_ref')) db.exec('ALTER TABLE policies ADD COLUMN payment_ref TEXT'); // pi_… or NULL (simulated)
   // Success step: the buyer's browser gets a private token to resend or forward the policy email (hash stored, never the token).
   if (!existing.has('manage_token_hash')) db.exec('ALTER TABLE policies ADD COLUMN manage_token_hash TEXT');
+  // Policyholder DNI/NIE: kept ONLY here (never in events, logs or snapshots, which hold the masked form).
+  // NULL id_status = policy sold before this feature (treated as active). pending_id → the holder completes it with a one-time link.
+  for (const [column, type] of [['holder_id_number', 'TEXT'], ['id_status', 'TEXT'], ['id_token_hash', 'TEXT']]) {
+    if (!existing.has(column)) db.exec(`ALTER TABLE policies ADD COLUMN ${column} ${type}`);
+  }
 
   // Every resend / forward of a policy email (max 5 per policy). Only the masked address is kept (l***@gmail.com).
   db.exec(`

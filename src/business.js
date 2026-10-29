@@ -65,6 +65,26 @@ function checkShape(input, allowed, what = 'input') {
   return null;
 }
 
+// Spanish DNI (8 digits + letter) or NIE (X/Y/Z + 7 digits + letter), with the mod-23 control letter.
+// Returns { value } (normalised, e.g. "12345678Z") or { error: 'format' | 'letter' }.
+const ID_LETTERS = 'TRWAGMYFPDXBNJZSQVHLCKE';
+export function checkIdNumber(raw) {
+  const value = typeof raw === 'string' ? raw.toUpperCase().replace(/[\s.-]/g, '') : '';
+  const m = /^(\d{8}|[XYZ]\d{7})([A-Z])$/.exec(value);
+  if (!m) return { error: 'format' };
+  const digits = Number(m[1].replace(/^[XYZ]/, ch => String('XYZ'.indexOf(ch))));
+  return ID_LETTERS[digits % 23] === m[2] ? { value } : { error: 'letter' };
+}
+// "*****678Z": enough to recognise it, never the whole number.
+export const maskIdNumber = id => (id ? `*****${id.slice(-4)}` : null);
+function idError(kind) {
+  return kind === 'letter'
+    ? fail('INVALID_ID_NUMBER', 'La letra del DNI/NIE no corresponde a sus números.', 'Revisa el DNI/NIE: la letra final se calcula con los números (módulo 23). Ejemplo de prueba de la demo: 12345678Z.', { reason: 'letter' })
+    : fail('INVALID_ID_NUMBER', 'El DNI/NIE no tiene un formato válido.', 'Usa 8 números y una letra (DNI, por ejemplo 12345678Z) o X, Y o Z + 7 números y una letra (NIE). O no lo envíes: la persona podrá completarlo después con el enlace del email.', { reason: 'format' });
+}
+// What the customer and the agent see: "Activa" or "DNI pendiente", plus the masked number.
+const ID_STATUS_TEXT = { active: 'Activa', pending_id: 'DNI pendiente' };
+
 export function cleanName(value) {
   if (typeof value !== 'string') return null;
   const name = value.trim().replace(/\s+/g, ' ');
@@ -193,8 +213,18 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
 
   // ---------- 1. get_quote ----------
   function getQuote(input) {
-    const shapeError = checkShape(input, ['origin_country', 'destination_country', 'departure_date', 'return_date', 'traveler_ages'], 'get_quote');
+    const shapeError = checkShape(input, ['origin_country', 'destination_country', 'departure_date', 'return_date', 'traveler_ages', 'residence_country'], 'get_quote');
     if (shapeError) return shapeError;
+    // Optional; missing = "ES". Only residents of Spain can be insured (same rule as the website's step 2).
+    if (input.residence_country !== undefined) {
+      const residence = typeof input.residence_country === 'string' ? input.residence_country.trim().toUpperCase() : '';
+      if (!COUNTRY_SET.has(residence) && residence !== 'ES') {
+        return fail('INVALID_COUNTRY', 'residence_country no es un código de país válido.', 'Usa un código ISO 3166-1 de 2 letras, por ejemplo "ES" para España.');
+      }
+      if (residence !== 'ES') {
+        return fail('RESIDENCE_NOT_COVERED', 'Por ahora solo aseguramos a residentes en España.', 'Wildpass solo asegura a residentes en España. Pregunta al usuario su país de residencia.', { residence_country: residence });
+      }
+    }
 
     const origin = typeof input.origin_country === 'string' ? input.origin_country.trim().toUpperCase() : '';
     const destination = typeof input.destination_country === 'string' ? input.destination_country.trim().toUpperCase() : '';
@@ -302,7 +332,7 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
 
   // ---------- 3. set_traveler_details ----------
   function setTravelerDetails(input) {
-    const shapeError = checkShape(input, ['order_id', 'policyholder', 'travelers'], 'set_traveler_details');
+    const shapeError = checkShape(input, ['order_id', 'policyholder', 'travelers', 'holder_id_number'], 'set_traveler_details');
     if (shapeError) return shapeError;
     const { order, quote, error } = loadOrder(input.order_id);
     if (error) return error;
@@ -313,6 +343,13 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
     if (!phName) return fail('INVALID_NAME', 'El nombre del tomador no es válido.', 'Indica nombre y apellidos (de 2 a 100 caracteres).');
     const email = cleanEmail(input.policyholder.email);
     if (!email) return fail('INVALID_EMAIL', 'El correo electrónico no es válido.', 'Indica un correo como nombre@ejemplo.com.');
+    // Optional for agents (privacy: better typed by the person with the link in the policy email); required by the website's form.
+    let holderId = null;
+    if (input.holder_id_number !== undefined && input.holder_id_number !== null && input.holder_id_number !== '') {
+      const id = checkIdNumber(input.holder_id_number);
+      if (id.error) return idError(id.error);
+      holderId = id.value;
+    }
 
     const ages = JSON.parse(quote.ages_json);
     if (!Array.isArray(input.travelers) || input.travelers.length !== ages.length) {
@@ -336,8 +373,8 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
     }
 
     // Saving new details always cancels any previous review_token.
-    db.prepare(`UPDATE orders SET policyholder_json = ?, travelers_json = ?, status = 'details_set', review_token_hash = NULL, review_total_cents = NULL, review_snapshot_json = NULL, updated_at = ? WHERE id = ?`)
-      .run(JSON.stringify({ full_name: phName, email }), JSON.stringify(travelers), now().toISOString(), order.id);
+    db.prepare(`UPDATE orders SET policyholder_json = ?, travelers_json = ?, holder_id_number = ?, status = 'details_set', review_token_hash = NULL, review_total_cents = NULL, review_snapshot_json = NULL, updated_at = ? WHERE id = ?`)
+      .run(JSON.stringify({ full_name: phName, email }), JSON.stringify(travelers), holderId, now().toISOString(), order.id);
     return { ok: true, order_id: order.id, status: 'details_set', next_step: 'Call review_order to get the full summary and a review_token.' };
   }
 
@@ -349,7 +386,10 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
     return {
       trip: tripSummary(quote),
       plan: planDetails(order.plan, quote.zone),
-      policyholder: order.policyholder_json ? JSON.parse(order.policyholder_json) : null,
+      policyholder: order.policyholder_json
+        ? { ...JSON.parse(order.policyholder_json), id_number_masked: maskIdNumber(order.holder_id_number), id_status: order.holder_id_number ? 'provided' : 'pending' }
+        : null,
+      policy_status_after_payment: order.holder_id_number ? ID_STATUS_TEXT.active : ID_STATUS_TEXT.pending_id,
       travelers: travelers.map((t, i) => ({ ...t, age_at_departure: ages[i], price_eur: toEur(prices.per_traveler_cents[i]) })),
       total_eur: toEur(order.total_cents),
       exclusions: planDetails(order.plan, quote.zone).exclusions,
@@ -390,6 +430,9 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
           ? `Deportes de aventura ${plan.coverage.adventure_sports}. Búsqueda y rescate hasta ${formatEur(plan.coverage.search_and_rescue_eur)}.`
           : 'Los deportes de aventura NO están incluidos.',
         stripe.enabled ? brand.texts.payment.stripeCondition : brand.texts.payment.simulatedCondition,
+        order.holder_id_number
+          ? `DNI/NIE del tomador: ${maskIdNumber(order.holder_id_number)}. La póliza quedará «${ID_STATUS_TEXT.active}».`
+          : `Sin DNI/NIE del tomador: la póliza se emitirá con estado «${ID_STATUS_TEXT.pending_id}» y la persona lo completará con el enlace que recibe por email.`,
         brand.demoBanner,
       ],
       terms_url: `${ctx.baseUrl ?? ''}/condiciones`,
@@ -526,8 +569,15 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
     const policyholder = JSON.parse(order.policyholder_json);
     // The policy keeps exactly what the customer reviewed and accepted (plus how it was paid), never later config changes.
     const summary = { ...JSON.parse(order.review_snapshot_json), payment: { provider: paymentRef ? 'stripe_test' : 'simulated', ref: paymentRef, text: paymentText(paymentRef) } };
+    // DNI/NIE: given → "Activa"; missing → "DNI pendiente" + a one-time link for the person to type it in.
+    const id_status = order.holder_id_number ? 'active' : 'pending_id';
+    const id_token = id_status === 'pending_id' ? randomBytes(24).toString('base64url') : null;
+    const complete_id_url = id_token ? `${ctx.baseUrl ?? ''}/poliza/completar/${id_token}` : null;
+    summary.policyholder = { ...summary.policyholder, id_number_masked: maskIdNumber(order.holder_id_number) };
+    summary.id_status = id_status;
+    summary.status_text = ID_STATUS_TEXT[id_status];
 
-    const pdfBuffer = await buildPdf({ policy_number, issued_at: issuedAt.toISOString(), summary, brand, terms_url: `${ctx.baseUrl ?? ''}/condiciones` });
+    const pdfBuffer = await buildPdf({ policy_number, issued_at: issuedAt.toISOString(), summary, brand, terms_url: `${ctx.baseUrl ?? ''}/condiciones`, complete_id_url });
     const pdfPath = join(pdfDir, `${pdf_token}.pdf`);
     await writeFile(pdfPath, pdfBuffer);
 
@@ -539,9 +589,9 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
           db.exec('ROLLBACK');
           return false;
         }
-        db.prepare(`INSERT INTO policies (policy_number, order_id, issued_at, pdf_token, email_status, snapshot_json, payment_ref, manage_token_hash) VALUES (?, ?, ?, ?, 'pending', ?, ?, ?)`)
-          .run(policy_number, order.id, issuedAt.toISOString(), pdf_token, JSON.stringify(summary), paymentRef, sha256(manage_token));
-        db.prepare(`UPDATE orders SET status = 'paid', review_token_hash = NULL, updated_at = ? WHERE id = ?`)
+        db.prepare(`INSERT INTO policies (policy_number, order_id, issued_at, pdf_token, email_status, snapshot_json, payment_ref, manage_token_hash, holder_id_number, id_status, id_token_hash) VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?)`)
+          .run(policy_number, order.id, issuedAt.toISOString(), pdf_token, JSON.stringify(summary), paymentRef, sha256(manage_token), order.holder_id_number, id_status, id_token ? sha256(id_token) : null);
+        db.prepare(`UPDATE orders SET status = 'paid', review_token_hash = NULL, holder_id_number = NULL, updated_at = ? WHERE id = ?`)
           .run(issuedAt.toISOString(), order.id);
         db.exec('COMMIT');
         return true;
@@ -557,12 +607,18 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
     }
 
     const pdf_url = `${ctx.baseUrl ?? ''}/poliza/${pdf_token}.pdf`;
-    const email_status = await startEmail({ policy_number, policyholder, summary, pdfBuffer, pdf_url });
+    const email_status = await startEmail({ policy_number, policyholder, summary, pdfBuffer, pdf_url, complete_id_url });
 
     return {
       ok: true,
       policy_number,
-      status: 'active',
+      status: id_status,
+      status_text: ID_STATUS_TEXT[id_status],
+      holder_id_number_masked: maskIdNumber(order.holder_id_number),
+      ...(complete_id_url && {
+        complete_id_url,
+        complete_id_note: 'The policy is issued but its status is "DNI pendiente". Give this link to the user: THEY type their DNI/NIE there (one-time link, also in the policy email). Do not fill it in yourself.',
+      }),
       plan: order.plan,
       paid_total_eur: toEur(order.review_total_cents),
       payment: paymentRef ? 'Stripe test mode — paid with a Stripe test card, nothing real was charged' : 'simulated — nothing was charged',
@@ -578,12 +634,12 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
   }
 
   // Sends the email in the background; payment never waits for it or fails because of it.
-  async function startEmail({ policy_number, policyholder, summary, pdfBuffer, pdf_url }) {
+  async function startEmail({ policy_number, policyholder, summary, pdfBuffer, pdf_url, complete_id_url = null }) {
     const setStatus = (status, errorText = null) => db.prepare('UPDATE policies SET email_status = ?, email_error = ?, email_updated_at = ? WHERE policy_number = ?')
       .run(status, errorText, now().toISOString(), policy_number);
     let sending;
     try {
-      sending = email.send({ to: policyholder, policy_number, summary, pdfBuffer, pdf_url });
+      sending = email.send({ to: policyholder, policy_number, summary, pdfBuffer, pdf_url, complete_id_url });
     } catch (err) {
       setStatus('failed', String(err.message).slice(0, 300));
       return 'failed';
@@ -659,7 +715,10 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
     return {
       ok: true,
       policy_number: policy.policy_number,
-      status: coverage_period === 'ended' ? 'expired' : 'active',
+      status: coverage_period === 'ended' ? 'expired' : (policy.id_status ?? 'active'),
+      status_text: coverage_period === 'ended' ? 'Caducada' : ID_STATUS_TEXT[policy.id_status ?? 'active'],
+      holder_id_number_masked: maskIdNumber(policy.holder_id_number),
+      ...(policy.id_status === 'pending_id' && { complete_id_note: 'DNI/NIE pending: the person completes it with the one-time link in the policy email.' }),
       coverage_period,
       issued_at: policy.issued_at,
       // Always the snapshot saved when the policy was sold. Only test policies issued before
@@ -707,6 +766,9 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
     }
     const to = input.kind === 'resend' ? policyholder.email : cleanEmail(input.to_email);
     if (!to) return fail('INVALID_EMAIL', 'El correo electrónico no es válido.', 'Indica un correo como nombre@ejemplo.com.');
+    if (input.kind === 'forward' && to.toLowerCase() === policyholder.email.toLowerCase()) {
+      return fail('FORWARD_TO_SELF', 'Ese es el email de quien contrató la póliza.', 'Para enviarla a ese email usa kind "resend".');
+    }
     if (!email.configured) return fail('EMAIL_NOT_CONFIGURED', 'El envío por email no está activo en esta demo.', 'Descarga la póliza con el enlace del PDF y compártela tú.');
     const used = sendsOf(policy.policy_number).length;
     if (used >= MAX_POLICY_SENDS) {
@@ -747,6 +809,41 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
     };
   }
 
+  // ---------- "Completa tu DNI": the one-time link from the policy email / success step / confirm_payment ----------
+  const policyByIdToken = token => (typeof token === 'string' && token.length >= 20
+    ? db.prepare("SELECT * FROM policies WHERE id_token_hash = ? AND id_status = 'pending_id'").get(sha256(token)) : undefined);
+  const badIdLink = () => fail('ID_LINK_INVALID', 'Este enlace ya no es válido: el DNI ya se completó o el enlace no existe.', 'Si tu póliza sigue con «DNI pendiente», usa el enlace del email más reciente.');
+
+  function idLinkStatus(token) {
+    const policy = policyByIdToken(token);
+    return policy ? { ok: true, policy_number: policy.policy_number } : badIdLink();
+  }
+
+  async function completeHolderId(input, ctx = {}) {
+    const shapeError = checkShape(input, ['token', 'id_number'], 'complete_holder_id');
+    if (shapeError) return shapeError;
+    const policy = policyByIdToken(input.token);
+    if (!policy) return badIdLink();
+    const id = checkIdNumber(input.id_number);
+    if (id.error) return idError(id.error);
+
+    const summary = JSON.parse(policy.snapshot_json);
+    summary.policyholder = { ...summary.policyholder, id_number_masked: maskIdNumber(id.value) };
+    summary.id_status = 'active';
+    summary.status_text = ID_STATUS_TEXT.active;
+    // One-time link: the UPDATE only succeeds while the policy is still pending with this token.
+    const { changes } = db.prepare("UPDATE policies SET holder_id_number = ?, id_status = 'active', id_token_hash = NULL, snapshot_json = ? WHERE policy_number = ? AND id_token_hash = ?")
+      .run(id.value, JSON.stringify(summary), policy.policy_number, policy.id_token_hash);
+    if (!changes) return badIdLink();
+
+    const pdfBuffer = await buildPdf({ policy_number: policy.policy_number, issued_at: policy.issued_at, summary, brand, terms_url: `${ctx.baseUrl ?? ''}/condiciones` });
+    await writeFile(join(pdfDir, `${policy.pdf_token}.pdf`), pdfBuffer); // same private link, updated certificate
+    const pdf_url = `${ctx.baseUrl ?? ''}/poliza/${policy.pdf_token}.pdf`;
+    const policyholder = JSON.parse(getOrderRow(policy.order_id).policyholder_json);
+    const email_status = await startEmail({ policy_number: policy.policy_number, policyholder, summary, pdfBuffer, pdf_url });
+    return { ok: true, policy_number: policy.policy_number, status: 'active', status_text: ID_STATUS_TEXT.active, holder_id_number_masked: maskIdNumber(id.value), pdf_url, email_status };
+  }
+
   // The resent / forwarded copies of a policy with their real Brevo delivery status (asked at most every 10 s per copy).
   async function policySends(input) {
     const { policy, error } = policyForSending(input, 'policy_sends', []);
@@ -775,5 +872,5 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
     return policy ? { path: join(pdfDir, `${token}.pdf`), policy_number: policy.policy_number } : null;
   }
 
-  return { getQuote, selectPlan, setTravelerDetails, reviewOrder, confirmPayment, startCardPayment, finishCardPayment, getPolicy, sendPolicyCopy, policySends, pdfPathForToken, pricePerTravelerCents };
+  return { getQuote, selectPlan, setTravelerDetails, reviewOrder, confirmPayment, startCardPayment, finishCardPayment, getPolicy, sendPolicyCopy, policySends, idLinkStatus, completeHolderId, pdfPathForToken, pricePerTravelerCents };
 }
