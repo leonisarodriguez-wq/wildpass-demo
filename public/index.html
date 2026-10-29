@@ -43,6 +43,7 @@
       <div class="wrap hero-grid">
         {{{heroScene}}}
         <div class="hero-copy">
+          <span class="hero-claim-b" lang="en">Travel wild. We've got you.</span>
           <h1 id="hero-title"><span class="hero-a" lang="en">{{{heroTitle}}}</span><span class="hero-b">{{t.heroB}}</span></h1>
           <p class="hero-tagline">{{brand.claimEs}}</p>
           <p class="hero-sub">{{t.heroSubtitle}}</p>
@@ -165,6 +166,7 @@
     <section class="faq" id="preguntas" aria-labelledby="faq-title" tabindex="-1">
       <div class="wrap narrow">
         <h2 id="faq-title">{{t.faqTitle}}</h2>
+        <p class="section-intro">{{t.faqIntro}}</p>
         <p class="faq-toggle-row"><button type="button" class="secondary faq-toggle" id="faq-toggle" aria-expanded="false" aria-controls="faq-list" data-show="{{t.faqShow}}" data-hide="{{t.faqHide}}">{{t.faqShow}}</button></p>
         <div class="faq-list" id="faq-list" hidden>{{{faq}}}</div>
       </div>
@@ -274,7 +276,6 @@
         <a class="primary button-link block" id="pdf-link" target="_blank" rel="noopener">{{t.checkout.download}}</a>
         <!-- One line under the main button: where the email went + a discreet "Reenviar" link; its result replaces the link. -->
         <p class="email-line"><span id="email-line"></span> <span class="resend-slot"><button type="button" class="link-button" id="resend">{{t.checkout.after.resend}}</button><span class="send-status" id="resend-status" role="status"></span></span></p>
-        <p class="incident-line"><a href="/si-me-pasa-algo" target="_blank" rel="noopener">{{t.checkout.incidentLink}}</a></p>
         <p class="complete-id-line" id="complete-id-line" hidden><a id="complete-id-link" href="#">{{t.checkout.after.completeId}}</a></p>
         <!-- ONE card, full content width: forward the policy to a travel companion, then the log of copies sent. -->
         <section class="after-card" id="forward-card" aria-labelledby="forward-title">
@@ -297,6 +298,11 @@
           </div>
         </section>
         <p class="start-over-line"><button type="button" class="link-button" id="start-over">{{t.checkout.startOver}}</button></p>
+        <!-- Last thing on the success step: a soft strip, never competing with "Descargar mi póliza". -->
+        <aside class="incident-card" aria-labelledby="incident-card-title">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3l7.5 2.8v5.7c0 4.5-3.1 8-7.5 9.5-4.4-1.5-7.5-5-7.5-9.5V5.8z"/><path d="M12 8.5v4M12 15.5v.01"/></svg>
+          <p class="incident-card-text"><strong id="incident-card-title">{{t.checkout.incidentCardTitle}}</strong> <a href="/si-me-pasa-algo" target="_blank" rel="noopener">{{t.checkout.incidentCardLink}}</a></p>
+        </aside>
       </section>
     </div>
 
@@ -313,7 +319,7 @@
   <footer class="site-footer">
     <div class="wrap">
       <p class="footer-legal">{{t.footerLegal}}</p>
-      <p class="footer-links"><a href="/condiciones">{{t.footerTerms}}</a><a href="/terminos">{{t.footerContracting}}</a><a href="/privacidad">{{t.footerPrivacy}}</a><a href="/si-me-pasa-algo">{{t.footerIncident}}</a><a href="/agentes">{{t.footerAgents}}</a><a class="footer-quiet" href="/caso">{{t.footerCaso}}</a><span>{{t.footerWebmcp}}</span></p>
+      <p class="footer-links"><a href="/condiciones">{{t.footerTerms}}</a><a href="/terminos">{{t.footerContracting}}</a><a href="/privacidad">{{t.footerPrivacy}}</a><a href="/si-me-pasa-algo">{{t.footerIncident}}</a><a href="/agentes">{{t.footerAgents}}</a><a class="footer-quiet" href="/caso">{{t.footerCaso}}</a></p>
     </div>
   </footer>
 

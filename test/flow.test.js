@@ -505,7 +505,7 @@ test('AI block on the landing: only title, text, the example chat and the compat
   assert.ok(html.indexOf('class="trust"') > html.indexOf('id="quote-form"') && html.indexOf('class="trust"') < html.indexOf('id="plans-title"'));
   assert.ok(!html.includes('editorial-title') && !html.includes('Tú pon la aventura'), 'the duplicate editorial section is gone');
   assert.equal((html.match(/<li class="trust-item">/g) ?? []).length, 6);
-  for (const [main, sub] of [['Póliza en tu email en 2 min', 'sin papeleos'], ['Si cancelas, recuperas hasta 3.000 €', 'por viajero, con Wild+ (Wild Max: 5.000 €)'],
+  for (const [main, sub] of [['Póliza en tu email en 2 min', 'sin papeleos'], ['Cancelación hasta 5.000 €', 'por viajero con Wild Max · 3.000 € con Wild+'],
     ['Deportes de aventura incluidos', 'trekking, buceo, esquí… y rescate, con Wild+ y Wild Max'], ['Sin letra pequeña', 'condiciones claras'],
     ['Lo esencial, bien cubierto', 'médicos, dentista, equipaje y retraso de maleta'], ['Sin franquicia en Wild+ y Wild Max', 'no pagas los primeros euros']]) {
     assert.ok(html.includes(`<span class="trust-main">${main}</span><span class="trust-sub">${sub}</span>`), main);
@@ -747,11 +747,11 @@ test('landing: what-if scenarios and destination cards use the real limits and e
   assert.ok(html.includes('Desliza para ver más situaciones') && !html.includes('id="whatif-strip"'));
   // 10 destination cards.
   assert.equal((html.match(/class="dest-card"/g) ?? []).length, 10);
-  // "7 días desde X €" = Wild, 7 days, 1 adult, from the engine for that country's zone.
+  // "Wild desde X €" = Wild, 7 days, 1 adult, from the engine for that country's zone.
   for (const code of ['TH', 'IT', 'US', 'FR', 'MA', 'CA']) {
     const q = await call('get_quote', quoteInput({ destination_country: code, return_date: addDays(DEP, 6), traveler_ages: [35] }));
     const wild = q.plans.find(p => p.plan === 'wild').total_price_eur.toLocaleString('es-ES', { minimumFractionDigits: 2 });
-    assert.ok(html.includes(`data-country="${code}"`) && html.includes(`7 días desde ${wild} €`), `${code} ${wild}`);
+    assert.ok(html.includes(`data-country="${code}"`) && html.includes(`Wild desde ${wild} €`), `${code} ${wild}`);
     const plus = q.plans.find(p => p.plan === 'wild_plus').total_price_eur.toLocaleString('es-ES', { minimumFractionDigits: 2 });
     assert.ok(html.includes(`Wild+ desde ${plus} €`), `${code} Wild+ ${plus}`);
   }

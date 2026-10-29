@@ -79,7 +79,7 @@ export default {
       { icon: 'mail', text: 'Póliza en tu email en 2 min', sub: 'sin papeleos' },
       { icon: 'shield', text: 'Lo esencial, bien cubierto', sub: 'médicos, dentista, equipaje y retraso de maleta' },
       { icon: 'mountain', text: 'Deportes de aventura incluidos', sub: 'trekking, buceo, esquí… y rescate, con Wild+ y Wild Max' },
-      { icon: 'cancel', text: 'Si cancelas, recuperas hasta {plusCancellation}', sub: 'por viajero, con Wild+ (Wild Max: {maxCancellation})' },
+      { icon: 'cancel', text: 'Cancelación hasta {maxCancellation}', sub: 'por viajero con Wild Max · {plusCancellation} con Wild+' },
       { icon: 'check', text: 'Sin franquicia en Wild+ y Wild Max', sub: 'no pagas los primeros euros' },
       { icon: 'doc', text: 'Sin letra pequeña', sub: 'condiciones claras' },
     ],
@@ -296,10 +296,10 @@ export default {
     destinations: {
       title: '¿A dónde te escapas?',
       intro: 'Toca un destino y lo dejamos puesto en el formulario.',
-      price: '7 días desde {price}',
+      price: 'Wild desde {price}',
       pricePlus: 'Wild+ desde {price}',
       priceMax: 'Wild Max desde {price}',
-      note: '7 días, 1 adulto: primer precio con Wild, segundo con Wild+ y tercero con Wild Max.',
+      note: 'Precios para 7 días y 1 adulto.',
       cardLabel: 'Elegir {name}: 7 días desde {price} con Wild, {plusPrice} con Wild+ o {maxPrice} con Wild Max',
       prev: 'Ver destinos anteriores',
       next: 'Ver más destinos',
@@ -347,6 +347,7 @@ export default {
     // Landing: FAQ, closed behind "Ver preguntas frecuentes". Answers use values from the pricing config.
     // [text](#quote-form) becomes a link to the quote form. The contact question shows only when CONTACT_EMAIL is set in .env.
     faqTitle: 'Preguntas frecuentes',
+    faqIntro: 'Respuestas rápidas sobre los planes, la póliza y los asistentes de IA.',
     faqShow: 'Ver preguntas frecuentes',
     faqHide: 'Ocultar preguntas frecuentes',
     faq: [
@@ -367,12 +368,11 @@ export default {
     finalCtaButton: 'Ver mi precio',
 
     // Footer
-    footerLegal: 'Seguros Wildpass es un producto ficticio creado para una demostración. No es un seguro real, no ofrece cobertura y ningún pago es real.',
+    footerLegal: 'Seguros Wildpass es un producto ficticio creado para una demostración. No es un seguro real, no ofrece cobertura y ningún pago es real. Hecho con WebMCP.',
     footerTerms: 'Condiciones del seguro',
     footerContracting: 'Términos de contratación',
     footerPrivacy: 'Privacidad',
     footerIncident: 'Si me pasa algo',
-    footerWebmcp: 'Hecho con WebMCP',
     footerAgents: 'Para desarrolladores y agentes de IA',
     footerCaso: 'Sobre esta demo', // the only link to /caso (hidden page: noindex, not in the menu)
 
@@ -666,12 +666,15 @@ export default {
         // Experiment "upsell": A = only the total; B = this line under the Wild+ price, (Wild+ − Wild) / trip days.
         upsellDaily: '+{perDay} al día por aventura y cancelación',
         upsellDailyLabel: '{perDay} más al día que {plan}, por aventura y cancelación',
+        // Under the Wild Max price (same experiment, same rule): (Wild Max − Wild+) / trip days.
+        upsellDailyMax: '+{perDay} al día más que {plan}, con trekking hasta {altitude} y rescate de {rescue}',
+        upsellDailyMaxLabel: '{perDay} más al día que {plan}, con trekking hasta {altitude} y rescate de {rescue}',
       },
       choose: 'Elegir {plan}',
       selectedPlan: 'elegido',
 
       step2Title: '¿Quién viaja?',
-      step2Line: 'Para emitir la póliza necesitamos el nombre, la fecha de nacimiento y el DNI o NIE de quien contrata.',
+      step2Line: 'Necesitamos el nombre y la fecha de nacimiento de cada viajero, y el email y el DNI o NIE de quien contrata.',
       holderId: 'DNI o NIE de quien contrata',
       holderIdHint: 'Lo necesitamos para emitir la póliza a tu nombre.',
       idTestNote: 'Simulación: puedes usar el DNI de prueba 12345678Z.',
@@ -723,13 +726,15 @@ export default {
       terms: 'Leer las condiciones completas',
       accept: 'Acepto las condiciones del seguro y los términos de contratación',
       incidentLink: 'Qué hacer si me pasa algo',
+      incidentCardTitle: '¿Te pasa algo durante el viaje?',
+      incidentCardLink: 'Qué hacer paso a paso →',
       acceptBefore: 'Acepto las',
       acceptConditions: 'condiciones del seguro',
       acceptAnd: 'y los',
       acceptContracting: 'términos de contratación',
       privacyLink: 'Consulta cómo tratamos tus datos',
       pay: 'Pagar {total} (simulado)',
-      payNote: 'Es una demo: no se cobra nada ni se piden datos de tarjeta.',
+      payNote: 'Es una demo: no se cobra nada. Usa solo la tarjeta de prueba.',
       // Stripe test mode (only when test keys are configured).
       payStripe: 'Pagar {total}',
       cardTitle: 'Pago con tarjeta',
@@ -994,7 +999,7 @@ export default {
     },
 
 
-    back: 'Volver',
+    back: 'Volver a Wildpass',
     // Terms page
     planExclusionsTitle: 'No cubre',
     exclusionsTitle: 'Exclusiones de todos los planes',

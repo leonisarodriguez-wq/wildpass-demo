@@ -83,7 +83,7 @@ function footerHtml(brand) {
   const t = brand.texts;
   return `<footer class="site-footer"><div class="wrap">
     <p class="footer-legal">${escapeHtml(t.footerLegal)}</p>
-    <p class="footer-links"><a href="/condiciones">${escapeHtml(t.footerTerms)}</a><a href="/terminos">${escapeHtml(t.footerContracting)}</a><a href="/privacidad">${escapeHtml(t.footerPrivacy)}</a><a href="/si-me-pasa-algo">${escapeHtml(t.footerIncident)}</a><a href="/agentes">${escapeHtml(t.footerAgents)}</a><a class="footer-quiet" href="/caso">${escapeHtml(t.footerCaso)}</a><span>${escapeHtml(t.footerWebmcp)}</span></p>
+    <p class="footer-links"><a href="/condiciones">${escapeHtml(t.footerTerms)}</a><a href="/terminos">${escapeHtml(t.footerContracting)}</a><a href="/privacidad">${escapeHtml(t.footerPrivacy)}</a><a href="/si-me-pasa-algo">${escapeHtml(t.footerIncident)}</a><a href="/agentes">${escapeHtml(t.footerAgents)}</a><a class="footer-quiet" href="/caso">${escapeHtml(t.footerCaso)}</a></p>
   </div></footer>`;
 }
 
@@ -129,11 +129,11 @@ export function completeIdPageBody({ brand, policy_number }) {
   </div>`;
 }
 
-export function pageShell({ brand, title, body, scripts = [], head = '' }) {
+export function pageShell({ brand, title, body, scripts = [], head = '', pageClass = '' }) {
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(title)} · ${escapeHtml(brand.name)}</title>${head}${iconLinks}${fontPreloads}<link rel="stylesheet" href="/brand.css"><link rel="stylesheet" href="/style.css"></head>
 <body>${skipLinkHtml(brand)}${bannerHtml(brand)}${headerHtml(brand)}
-<main class="page" id="contenido" tabindex="-1"><div class="wrap"><div class="card-page">${body}</div></div></main>
+<main class="page" id="contenido" tabindex="-1"><div class="wrap"><div class="card-page${pageClass ? ` ${pageClass}` : ''}">${body}</div></div></main>
 ${footerHtml(brand)}${['/site-nav.js', ...scripts].map(src => `<script type="module" src="${src}"></script>`).join('')}</body></html>`;
 }
 

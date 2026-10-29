@@ -313,3 +313,9 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 - Success step: «Descargar mi póliza» → email line with a discreet «¿No te ha llegado? Reenviar» link (its result replaces it) → ONE forward
   card (field + Enviar on one row ≥600 px, stacked below; refuses the holder's own email: FORWARD_TO_SELF) → «Calcular otro viaje» as a link.
 - /caso is hidden: noindex, not in the menu, only the footer link «Sobre esta demo»; /metricas is linked only from /caso.
+
+## Final visual touch-ups (30 Oct 2026)
+- Success step: «¿Te pasa algo durante el viaje?» is a soft sky strip (`.incident-card`) at the very end, under «Calcular otro viaje». Step 3 note: «Es una demo: no se cobra nada. Usa solo la tarjeta de prueba.»
+- Step 1 on computers: `.checkout-wrap` 1120 px content, 24 px between cards. Wild Max shows its own daily line (Wild Max − Wild+)/days only when the upsell experiment shows the Wild+ line.
+- Hero variant B keeps the claim in `.hero-claim-b` above the h1 (Space Grotesk 600 face added). Section reveal starts at opacity .55, 150 ms. `pageShell({ pageClass: 'readable' })` limits prose to 75ch on /terminos, /privacidad, /agentes.
+- Footer: «Hecho con WebMCP» now ends the legal sentence. Destination cards: «Wild desde X €» + «Precios para 7 días y 1 adulto.»

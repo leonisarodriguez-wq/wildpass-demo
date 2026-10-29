@@ -81,7 +81,7 @@ test('/si-me-pasa-algo: demo page with the four steps, the demo notice, linked f
     'En un seguro real tendrías aquí un teléfono de asistencia 24 h. Esta demo no ofrece asistencia ni cobertura.']) assert.ok(html.toLowerCase().includes(text.toLowerCase()), text);
   assert.ok(!/\d{3} ?\d{2,3} ?\d{2,3} ?\d{2,3}/.test(html.replace(/<[^>]+>/g, ' ')), 'no phone numbers');
   for (const path of ['/', '/condiciones', '/terminos']) assert.ok((await get(path)).includes('<a href="/si-me-pasa-algo">Si me pasa algo</a>'), `footer on ${path}`);
-  assert.ok((await get('/')).includes('href="/si-me-pasa-algo" target="_blank" rel="noopener">Qué hacer si me pasa algo</a>'), 'link on the success step');
+  assert.ok((await get('/')).includes('href="/si-me-pasa-algo" target="_blank" rel="noopener">Qué hacer paso a paso →</a>'), 'link on the success step');
 });
 
 test('«Probar con un ejemplo»: secondary button in the quote form, example data from the texts, event example_used accepted', async () => {

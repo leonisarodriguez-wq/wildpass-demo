@@ -128,6 +128,7 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
     const face = (family, file, weight) => `@font-face{font-family:"${family}";src:url(/fonts/${file}.woff2) format("woff2");font-weight:${weight};font-style:normal;font-display:swap}`;
     res.type('text/css').send([
       face(brand.fonts.headings, 'space-grotesk-latin-500-normal', 500),
+      face(brand.fonts.headings, 'space-grotesk-latin-600-normal', 600),
       face(brand.fonts.headings, 'space-grotesk-latin-700-normal', 700),
       face(brand.fonts.text, 'inter-latin-400-normal', 400),
       face(brand.fonts.text, 'inter-latin-600-normal', 600),
@@ -140,6 +141,7 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
   // Only these font files are served (from the @fontsource packages).
   const FONT_FILES = {
     'space-grotesk-latin-500-normal.woff2': '@fontsource/space-grotesk/files/space-grotesk-latin-500-normal.woff2',
+    'space-grotesk-latin-600-normal.woff2': '@fontsource/space-grotesk/files/space-grotesk-latin-600-normal.woff2',
     'space-grotesk-latin-700-normal.woff2': '@fontsource/space-grotesk/files/space-grotesk-latin-700-normal.woff2',
     'inter-latin-400-normal.woff2': '@fontsource/inter/files/inter-latin-400-normal.woff2',
     'inter-latin-600-normal.woff2': '@fontsource/inter/files/inter-latin-600-normal.woff2',
@@ -157,7 +159,7 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
 
   // Developer & AI-agent page, linked only from the footer.
   app.get('/agentes', (req, res) => {
-    res.type('html').send(pageShell({ brand, title: brand.texts.agents.title, body: agentsPageBody({ brand, pricing, payments }), scripts: ['/agentes.js', '/page-view.js'] }));
+    res.type('html').send(pageShell({ brand, title: brand.texts.agents.title, body: agentsPageBody({ brand, pricing, payments }), pageClass: 'readable', scripts: ['/agentes.js', '/page-view.js'] }));
   });
 
   // Every visitor and every agent is welcome: no user-agent is ever blocked (the safety rules live in business.js).
@@ -172,7 +174,7 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
 
   for (const [path, kind] of [['/terminos', 'terminos'], ['/privacidad', 'privacidad']]) {
     app.get(path, (req, res) => {
-      res.type('html').send(pageShell({ brand, title: brand.texts.legal[kind].pageTitle, body: legalPageBody({ brand, kind }), scripts: ['/page-view.js'] }));
+      res.type('html').send(pageShell({ brand, title: brand.texts.legal[kind].pageTitle, body: legalPageBody({ brand, kind }), pageClass: 'readable', scripts: ['/page-view.js'] }));
     });
   }
 

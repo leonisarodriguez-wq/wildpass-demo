@@ -300,6 +300,12 @@ select[hidden] { display: none; } /* the plain <select> once the search box repl
   .trust-icon .icon { width: 30px; height: 30px; }
   .trust-sub { font-size: 0.85rem; }
 }
+@media (max-width: 767px) {
+  .trust-list { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .trust-item { flex-direction: row; align-items: center; justify-content: flex-start; gap: 12px; padding: 12px 16px; text-align: left; }
+  .trust-icon { width: 40px; height: 40px; }
+  .trust-icon .icon { width: 22px; height: 22px; }
+}
 .plans-more { text-align: center; margin: 18px 0 0; }
 
 /* ---------- 4. plans band ---------- */
@@ -460,6 +466,10 @@ html:has(.agent-pill:not([hidden])) .site-footer { padding-bottom: 90px; }
 .hero-b { display: none; }
 html[data-exp-hero="b"] .hero-a, html[data-exp-hero="b"] .hero-tagline { display: none; }
 html[data-exp-hero="b"] .hero-b { display: inline; }
+/* Variant B keeps the claim: a small line above the headline (hidden in A). */
+.hero-claim-b { display: none; }
+html[data-exp-hero="b"] .hero-claim-b { display: block; margin-bottom: 8px; font-family: var(--font-headings); font-weight: 600; font-size: 14px; line-height: 1.3; color: var(--turquoise); }
+@media (min-width: 700px) { html[data-exp-hero="b"] .hero-claim-b { font-size: 16px; } }
 
 /* Exclusions: closed by default; one minus icon per line. */
 .exclusions { background: var(--white); border-radius: 16px; margin: 4px 0 16px; }
@@ -535,6 +545,9 @@ html[data-exp-hero="b"] .hero-b { display: inline; }
 /* Step 1: what Wild+ costs on top of Wild. */
 /* Computers: summary on the left, payment on the right, so the card form is on the first screen (1440×900). */
 @media (min-width: 960px) {
+  /* Step 1 only: the three cards get a 1120 px container, 24 px apart (rows stay aligned by subgrid). */
+  html:has(#step-1:not([hidden])) .checkout-wrap { max-width: calc(1120px + 32px); }
+  html:has(#step-1:not([hidden])) .plan-compare { column-gap: 24px; }
   html:has(#step-3:not([hidden])) .checkout-wrap { max-width: 72rem; }
   #step-3:not([hidden]) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 24px; align-items: start; }
   #step-3 > h2 { grid-column: 1 / -1; }
@@ -593,6 +606,7 @@ html[data-exp-hero="b"] .hero-b { display: inline; }
 .whatif-filter[aria-pressed="true"] { color: var(--night); border-bottom-color: var(--turquoise); }
 /* Chips: one row that scrolls sideways on phones and tablets (first chip on the content edge, a fade + a hint say there are
    more); computers show them all, wrapped. */
+@media (max-width: 767px) { .whatif-filters { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; } .whatif-filters::-webkit-scrollbar { display: none; } .whatif-filter { flex: none; white-space: nowrap; } }
 .whatif-tabs-box { position: relative; --edge: max(16px, calc((100% - 72rem) / 2 + 16px)); }
 .whatif-tabs { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; scroll-padding-inline: var(--edge); padding: 2px var(--edge) 8px; scrollbar-width: none; }
 .whatif-tabs::-webkit-scrollbar { display: none; }
@@ -607,7 +621,7 @@ html[data-exp-hero="b"] .hero-b { display: inline; }
 .whatif-hint { margin: 0 auto 10px; font-size: 0.85rem; color: var(--secondary); visibility: hidden; } /* reserved space: no shift */
 .whatif-tabs-box.scrolls + .whatif-hint { visibility: visible; }
 /* ONE card: every panel sits in the same grid cell, so the box keeps the tallest one's height and nothing below moves. */
-.whatif-panels { display: grid; }
+.whatif-panels { display: grid; margin-top: 16px; }
 .whatif-panel { grid-area: 1 / 1; background: var(--white); border-radius: 18px; padding: 20px; }
 .whatif-panel[hidden] { display: block; visibility: hidden; }
 .whatif-panel:not([hidden]) { animation: rise-in 0.35s ease both; }
@@ -629,8 +643,9 @@ html[data-exp-hero="b"] .hero-b { display: inline; }
 .whatif-figure-label { display: block; }
 .whatif-text { margin: 10px 0 0; font-size: 1rem; color: var(--secondary); }
 .verdicts { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.verdict { display: grid; grid-template-columns: 3.6rem auto; justify-content: start; align-items: center; gap: 4px 10px; padding: 8px 12px; border-radius: 10px; background: var(--sky); }
+.verdict { display: grid; grid-template-columns: 84px auto; justify-content: start; align-items: center; gap: 4px 10px; padding: 8px 12px; border-radius: 10px; background: var(--sky); }
 /* Badges as wide as their words, never stretched. */
+.verdict strong { white-space: nowrap; }
 .verdict-state { justify-self: start; font-weight: 700; font-size: 0.85rem; padding: 1px 10px; border-radius: 999px; }
 .verdict.is-ok .verdict-state { background: var(--turquoise); color: var(--white); }
 .verdict.is-no .verdict-state { background: var(--white); color: var(--night); border: 1.5px solid var(--secondary); }
@@ -674,8 +689,9 @@ html[data-exp-hero="b"] .hero-b { display: inline; }
 .dest-note { margin-top: 6px; font-size: 0.85rem; color: var(--secondary); }
 
 /* ---------- scroll reveal + sticky bar ---------- */
-.reveal { transition: opacity 0.7s ease; }
-.reveal:not(.is-in) { opacity: 0; } /* fade only: moving whole sections would count as layout shift */
+.reveal { transition: opacity 150ms ease; }
+.reveal:not(.is-in) { opacity: 0.55; } /* visible from the start (never an empty zone); fade only: moving sections would count as layout shift */
+@media (prefers-reduced-motion: reduce) { .reveal { transition: none; } }
 .sticky-cta { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: var(--white); border-top: 1px solid var(--border);
   animation: slide-up 0.25s ease both; }
 @keyframes slide-up { from { transform: translateY(100%); } }
@@ -820,8 +836,12 @@ html[data-exp-hero="b"] .hero-b { display: inline; }
 .incident-steps h2 { font-size: 1.15rem; margin: 2px 0 4px; }
 .incident-steps p { margin: 0; }
 .incident-callout { margin: 16px 0; padding: 14px; background: var(--mint); border: 2px solid var(--night); border-radius: 12px; font-weight: 600; }
-.incident-line { margin: 4px 0 10px; text-align: center; }
-.incident-line a { color: var(--turquoise-text); font-weight: 600; }
+/* /terminos, /privacidad, /agentes: reading width for prose only (tables, code, chats and containers keep their width). */
+.readable > p, .readable > h2, .readable > h3, .readable > ul, .readable > ol, .readable section > p, .readable section > ul:not(.dev-tool-list), .readable section > ol:not(.dev-tool-list) { max-width: 75ch; }
+.incident-card { display: flex; align-items: center; gap: 14px; margin: 18px 0 0; padding: 14px 16px; background: var(--sky); border: 1px solid var(--border); border-radius: 14px; }
+.incident-card .icon { flex: none; width: 32px; height: 32px; color: var(--turquoise-text); }
+.incident-card-text { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; color: var(--night); }
+.incident-card-text a { color: var(--turquoise-text); font-weight: 700; display: inline-flex; align-items: center; min-height: 44px; }
 
 /* «Probar con un ejemplo» under the quote button, and its question when the form already has data. */
 .example-btn { min-height: 44px; margin-top: 8px; padding-top: 8px; padding-bottom: 8px; }
@@ -917,4 +937,4 @@ mark.todo { background: var(--mint); color: var(--night); font-weight: 700; bord
 .faq-item .contact-status { padding: 0; margin: 0; font-weight: 600; color: var(--turquoise-text); }
 /* Honeypot: off screen for people, still in the form for bots. */
 .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
-.footer-links a.footer-quiet { font-weight: 400; opacity: 0.85; }
+.footer-links a.footer-quiet { opacity: 0.85; }

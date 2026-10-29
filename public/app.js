@@ -395,6 +395,7 @@ function setFaqOpen(open) {
   button.textContent = open ? button.dataset.hide : button.dataset.show;
   $('#faq-list').hidden = !open;
 }
+window.addEventListener('hashchange', () => { if (location.hash === '#preguntas') openFaq(); });
 $('#faq-toggle').addEventListener('click', () => setFaqOpen($('#faq-list').hidden));
 function openFaq({ scroll = true } = {}) {
   if (state.step !== 'landing') render('landing');
@@ -491,6 +492,14 @@ function renderStep1() {
     const values = { perDay: cents(Math.round(((p.total_price_eur - base.total_price_eur) / q.trip.days) * 100) / 100), plan: base.plan_name };
     return el('p', { class: 'plan-diff' }, el('span', { 'aria-hidden': 'true', text: fill(cmp.upsellDaily, values) }), el('span', { class: 'sr-only', text: fill(cmp.upsellDailyLabel, values) }));
   };
+  // Wild Max: the same rule one step up, (Wild Max − Wild+) / trip days, shown only when the experiment shows the Wild+ line.
+  const plus = q.plans.find(p => p.plan === 'wild_plus');
+  const differenceMax = p => {
+    if ((window.__wildpassExp?.upsell ?? 'a') !== 'b' || p.plan !== 'wild_max' || !plus) return null;
+    const values = { perDay: cents(Math.round(((p.total_price_eur - plus.total_price_eur) / q.trip.days) * 100) / 100), plan: plus.plan_name,
+      altitude: `${p.adventure_sports_limits.trekking_max_altitude_m.toLocaleString('es-ES', { useGrouping: 'always' })} m`, rescue: eur(p.search_and_rescue_eur) };
+    return el('p', { class: 'plan-diff' }, el('span', { 'aria-hidden': 'true', text: fill(cmp.upsellDailyMax, values) }), el('span', { class: 'sr-only', text: fill(cmp.upsellDailyMaxLabel, values) }));
+  };
   $('#compare').replaceChildren(el('div', { class: 'plan-compare' }, q.plans.map(p => {
     const featured = p.plan === 'wild_plus';
     const nameId = `plan-${p.plan}-name`;
@@ -499,7 +508,7 @@ function renderStep1() {
       onclick: e => { if (!e.target.closest('button')) markPlan(p.plan); } },
       featured && el('p', { class: 'badge', text: T.plans.wildPlusBadge }),
       el('h3', { id: nameId, text: p.plan_name }),
-      el('div', { class: 'plan-price-box' }, el('p', { class: 'plan-price' }, el('span', { class: 'sr-only', text: `${cmp.price}: ` }), eur(p.total_price_eur)), difference(p)),
+      el('div', { class: 'plan-price-box' }, el('p', { class: 'plan-price' }, el('span', { class: 'sr-only', text: `${cmp.price}: ` }), eur(p.total_price_eur)), difference(p), differenceMax(p)),
       el('dl', { style: `grid-row: span ${features.length}` }, features.map(([label, value]) => el('div', { class: 'feature' }, el('dt', { text: label }), el('dd', { text: value(p) })))),
       el('button', { type: 'button', class: featured ? 'primary' : 'secondary', text: fill(C.choose, { plan: p.plan_name }), onclick: e => choosePlan(p.plan, e.currentTarget) }),
     );
