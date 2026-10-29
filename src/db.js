@@ -66,6 +66,25 @@ export function openDb(file) {
   // Stripe (test mode): the order's single PaymentIntent, reused so an order is never charged twice.
   if (!orderColumns.has('payment_intent_id')) db.exec('ALTER TABLE orders ADD COLUMN payment_intent_id TEXT');
   if (!existing.has('payment_ref')) db.exec('ALTER TABLE policies ADD COLUMN payment_ref TEXT'); // pi_… or NULL (simulated)
+  // Success step: the buyer's browser gets a private token to resend or forward the policy email (hash stored, never the token).
+  if (!existing.has('manage_token_hash')) db.exec('ALTER TABLE policies ADD COLUMN manage_token_hash TEXT');
+
+  // Every resend / forward of a policy email (max 5 per policy). Only the masked address is kept (l***@gmail.com).
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS policy_sends (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      policy_number TEXT NOT NULL REFERENCES policies(policy_number),
+      kind TEXT NOT NULL,            -- resend | forward
+      to_masked TEXT NOT NULL,
+      sent_at TEXT NOT NULL,
+      status TEXT NOT NULL,          -- sent | failed
+      error TEXT,
+      message_id TEXT,               -- Brevo messageId, to read delivery events
+      delivery_json TEXT,
+      checked_at TEXT
+    );
+    CREATE INDEX IF NOT EXISTS policy_sends_policy ON policy_sends(policy_number);
+  `);
 
   // Plans were renamed (esencial → wild, premium → wild_plus). Safe to run every start.
   const RENAMED = { esencial: 'wild', premium: 'wild_plus' };

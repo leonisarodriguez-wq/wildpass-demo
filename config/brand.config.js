@@ -566,8 +566,6 @@ export default {
       accept: 'He leído y acepto las condiciones y exclusiones.',
       pay: 'Pagar {total} (simulado)',
       payNote: 'Es una demo: no se cobra nada ni se piden datos de tarjeta.',
-      // Payment step, in the served HTML, for AI agents; index.html adds " <a href="/agentes">/agentes</a>)." after it.
-      agentNote: '¿Eres un asistente de IA? No introduzcas una tarjeta: usa la herramienta confirm_payment (ver',
       // Stripe test mode (only when test keys are configured).
       payStripe: 'Pagar {total}',
       cardTitle: 'Pago con tarjeta',
@@ -585,6 +583,37 @@ export default {
       emailSent: 'Te hemos enviado la póliza a {email}. Si no la ves, mira en Spam.',
       emailNotConfigured: 'El envío por email no está activo en esta demo: descarga la póliza con el botón.',
       startOver: 'Calcular otro viaje',
+      // Under "Descargar mi póliza": resend the email, forward it to a travel companion (max 5 sends per policy).
+      after: {
+        resendTitle: '¿No te ha llegado el email?',
+        resend: 'Reenviar póliza',
+        resent: 'Reenviada a {email}. Revisa también la carpeta de spam.',
+        forwardTitle: 'Enviar la póliza a quien viaja contigo',
+        forwardHighlight: 'Viajáis {n}: envíasela a tu acompañante',
+        forwardHighlightMany: 'Viajáis {n}: envíasela a tus acompañantes',
+        forwardLabel: 'Email de tu acompañante',
+        forwardHint: 'Una dirección cada vez. Le llega la póliza en PDF.',
+        forwardButton: 'Enviar',
+        forwarded: 'Enviada a {email}.',
+        sendsLeft: 'Te quedan {n} envíos.',
+        sendsLeftOne: 'Te queda 1 envío.',
+        listLabel: 'Envíos de esta póliza',
+        resendKind: 'Reenvío',
+        forwardKind: 'Acompañante',
+        missingEmail: 'Escribe el email de tu acompañante.',
+        // Real Brevo delivery status of each copy.
+        delivery: {
+          sent: 'Enviado, esperando confirmación',
+          accepted: 'Aceptado por Brevo',
+          deferred: 'Retrasado, se reintentará',
+          delivered: 'Entregado',
+          opened: 'Abierto',
+          bounced: 'Rebotado: revisa la dirección',
+          blocked: 'Bloqueado por el servidor de correo',
+          marked_as_spam: 'Marcado como spam',
+          failed: 'No se pudo enviar',
+        },
+      },
 
       working: 'Un momento…',
     },
@@ -614,6 +643,9 @@ export default {
       PAYMENT_ERROR: 'Stripe no ha podido procesar el pago y la póliza no se ha emitido. Vuelve a intentarlo en unos minutos.',
       PAYMENT_NOT_COMPLETED: 'El pago no se ha completado, así que no hemos emitido la póliza. Vuelve a intentarlo.',
       PAYMENT_MISMATCH: 'Algo no cuadra con este pago. Vuelve a revisar tus datos y paga de nuevo.',
+      SEND_LIMIT_REACHED: 'Ya has hecho los {max} envíos que permite esta póliza. Descárgala con el botón y compártela tú.',
+      EMAIL_NOT_CONFIGURED: 'El envío por email no está activo en esta demo: descarga la póliza con el botón.',
+      EMAIL_SEND_FAILED: 'No hemos podido enviar el email ahora mismo. Vuelve a intentarlo en unos minutos.',
       stripeLoadError: 'No hemos podido cargar el pago con tarjeta de Stripe. Revisa tu conexión y recarga la página.',
       // Declined Stripe test cards, by Stripe decline_code / error code.
       card: {
@@ -727,6 +759,10 @@ export default {
       attachedNote: 'También va adjunta a este correo.',
       emergency: '¿Una emergencia? Llama antes de acudir al médico y no adelantes dinero. Teléfono: [Teléfono de asistencia · demo]. Ten a mano tu nº de póliza.',
       footer: 'Seguros Wildpass es un producto ficticio creado para una demostración. Este correo y el certificado no tienen validez legal ni ofrecen cobertura real.',
+      // Copy forwarded from the success step to a travel companion. {name} = the policyholder's first name.
+      forwardSubject: '{name} te envía la póliza Wildpass {number} · {destination} (demo)',
+      forwardHeadline: '{name} te envía la póliza de vuestro viaje a {destination}',
+      forwardIntro: 'Viajas con una póliza de Seguros Wildpass. Te adjuntamos el certificado en PDF. Estos son los datos principales:',
     },
   },
 };

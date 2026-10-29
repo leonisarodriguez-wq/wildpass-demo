@@ -2,7 +2,7 @@
 // The website and the WebMCP tools both reach these functions through the same JSON API.
 // Every function returns { ok: true, ... } or { ok: false, error_code, message, how_to_fix }.
 import { randomUUID, randomBytes, randomInt, createHash, timingSafeEqual } from 'node:crypto';
-import { writeFile, unlink } from 'node:fs/promises';
+import { writeFile, unlink, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { COUNTRY_SET } from '../config/countries.js';
 
@@ -82,6 +82,14 @@ function cleanEmail(value) {
 // ---------- main factory ----------
 
 const DELIVERY_RECHECK_MS = 60_000; // ask Brevo at most once a minute per policy
+const SEND_RECHECK_MS = 10_000; // resent/forwarded copies: the success step shows their status, so a little more often
+const MAX_POLICY_SENDS = 5; // resends + forwards per policy (the automatic first email is not counted)
+
+// "l***@gmail.com": enough to recognise the address, without storing or showing it whole.
+export function maskEmail(email) {
+  const [user, domain] = String(email).split('@');
+  return `${user.slice(0, 1)}***@${domain}`;
+}
 
 // stripe: from createStripe() (src/stripe.js). When it is off, payments are simulated.
 export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, stripe = { enabled: false }, now = () => new Date() }) {
@@ -513,6 +521,8 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
       policy_number = `${brand.policyPrefix}-${year}-${Array.from({ length: 6 }, () => POLICY_ALPHABET[randomInt(POLICY_ALPHABET.length)]).join('')}`;
     } while (db.prepare('SELECT 1 FROM policies WHERE policy_number = ?').get(policy_number));
     const pdf_token = randomBytes(32).toString('base64url');
+    // Kept only in the buyer's browser (success step): it allows resending or forwarding this policy's email.
+    const manage_token = randomBytes(24).toString('base64url');
     const policyholder = JSON.parse(order.policyholder_json);
     // The policy keeps exactly what the customer reviewed and accepted (plus how it was paid), never later config changes.
     const summary = { ...JSON.parse(order.review_snapshot_json), payment: { provider: paymentRef ? 'stripe_test' : 'simulated', ref: paymentRef, text: paymentText(paymentRef) } };
@@ -529,8 +539,8 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
           db.exec('ROLLBACK');
           return false;
         }
-        db.prepare(`INSERT INTO policies (policy_number, order_id, issued_at, pdf_token, email_status, snapshot_json, payment_ref) VALUES (?, ?, ?, ?, 'pending', ?, ?)`)
-          .run(policy_number, order.id, issuedAt.toISOString(), pdf_token, JSON.stringify(summary), paymentRef);
+        db.prepare(`INSERT INTO policies (policy_number, order_id, issued_at, pdf_token, email_status, snapshot_json, payment_ref, manage_token_hash) VALUES (?, ?, ?, ?, 'pending', ?, ?, ?)`)
+          .run(policy_number, order.id, issuedAt.toISOString(), pdf_token, JSON.stringify(summary), paymentRef, sha256(manage_token));
         db.prepare(`UPDATE orders SET status = 'paid', review_token_hash = NULL, updated_at = ? WHERE id = ?`)
           .run(issuedAt.toISOString(), order.id);
         db.exec('COMMIT');
@@ -559,6 +569,8 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
       payment_text: paymentText(paymentRef),
       pdf_url,
       email_status,
+      manage_token,
+      manage_token_note: 'Private. Lets the buyer resend or forward this policy email right after buying; never show it to anyone.',
       disclaimer: brand.demoBanner,
       next_step: 'Tell the user the policy number and give them the pdf_url. They can check the policy later with get_policy (policy number + policyholder email).',
     };
@@ -661,11 +673,106 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
     };
   }
 
+  // ---------- success step: resend the policy email, or forward it to a travel companion ----------
+  // Allowed with the private manage_token from the purchase (the buyer's browser), or with the policy number + the
+  // policyholder's email (same rule as get_policy). At most MAX_POLICY_SENDS per policy; each send is logged.
+  function policyForSending(input, action, extraFields) {
+    const shapeError = checkShape(input, ['policy_number', 'manage_token', 'policyholder_email', ...extraFields], action);
+    if (shapeError) return { error: shapeError };
+    const number = typeof input.policy_number === 'string' ? input.policy_number.trim().toUpperCase() : '';
+    const notFound = fail('POLICY_NOT_FOUND', 'No encontramos esa póliza, o no tienes permiso para enviarla.', 'Usa el enlace de la página de confirmación de la compra, o el número de póliza y el email de quien la contrató.');
+    const policy = db.prepare('SELECT * FROM policies WHERE policy_number = ?').get(number);
+    if (!policy) return { error: notFound };
+    const order = getOrderRow(policy.order_id);
+    const policyholder = JSON.parse(order.policyholder_json);
+    let allowed = false;
+    if (typeof input.manage_token === 'string' && policy.manage_token_hash) {
+      const given = sha256(input.manage_token);
+      allowed = timingSafeEqual(Buffer.from(given), Buffer.from(policy.manage_token_hash));
+    } else if (typeof input.policyholder_email === 'string') {
+      allowed = input.policyholder_email.trim().toLowerCase() === policyholder.email.toLowerCase();
+    }
+    if (!allowed) return { error: notFound };
+    return { policy, order, policyholder };
+  }
+
+  const sendsOf = number => db.prepare('SELECT * FROM policy_sends WHERE policy_number = ? ORDER BY id').all(number);
+
+  async function sendPolicyCopy(input, ctx = {}) {
+    const { policy, policyholder, error } = policyForSending(input, 'send_policy_copy', ['kind', 'to_email']);
+    if (error) return error;
+    if (!['resend', 'forward'].includes(input.kind)) {
+      return fail('INVALID_INPUT', 'kind debe ser "resend" o "forward".', 'Usa kind "resend" para reenviar al titular o "forward" para enviarla a otra persona.');
+    }
+    const to = input.kind === 'resend' ? policyholder.email : cleanEmail(input.to_email);
+    if (!to) return fail('INVALID_EMAIL', 'El correo electrónico no es válido.', 'Indica un correo como nombre@ejemplo.com.');
+    if (!email.configured) return fail('EMAIL_NOT_CONFIGURED', 'El envío por email no está activo en esta demo.', 'Descarga la póliza con el enlace del PDF y compártela tú.');
+    const used = sendsOf(policy.policy_number).length;
+    if (used >= MAX_POLICY_SENDS) {
+      return fail('SEND_LIMIT_REACHED', `Ya se han hecho los ${MAX_POLICY_SENDS} envíos permitidos para esta póliza.`, 'Descarga la póliza con el enlace del PDF y compártela tú.', { max_sends: MAX_POLICY_SENDS });
+    }
+    if (!policy.snapshot_json) return fail('POLICY_NOT_FOUND', 'Esta póliza de prueba es antigua y no se puede reenviar.', 'Descarga la póliza con el enlace del PDF.');
+
+    const summary = JSON.parse(policy.snapshot_json);
+    const pdf_url = `${ctx.baseUrl ?? ''}/poliza/${policy.pdf_token}.pdf`;
+    const forward = input.kind === 'forward';
+    const to_masked = maskEmail(to);
+    let status = 'sent';
+    let messageId = null;
+    let errorText = null;
+    try {
+      const pdfBuffer = await readFile(join(pdfDir, `${policy.pdf_token}.pdf`));
+      const sending = email.send({ to: forward ? { email: to } : policyholder, policy_number: policy.policy_number, summary, pdfBuffer, pdf_url, forward });
+      ({ messageId } = await sending.done); // wait for Brevo to accept it, so the page can say "enviada" truthfully
+    } catch (err) {
+      status = 'failed';
+      errorText = String(err.message).slice(0, 300);
+    }
+    const ts = now().toISOString();
+    const { lastInsertRowid } = db.prepare('INSERT INTO policy_sends (policy_number, kind, to_masked, sent_at, status, error, message_id) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .run(policy.policy_number, input.kind, to_masked, ts, status, errorText, messageId);
+    if (status === 'failed') {
+      return fail('EMAIL_SEND_FAILED', 'No hemos podido enviar el email ahora mismo.', 'Vuelve a intentarlo en unos minutos o descarga la póliza con el enlace del PDF.', { sends_left: MAX_POLICY_SENDS - used - 1 });
+    }
+    return {
+      ok: true,
+      send_id: Number(lastInsertRowid),
+      kind: input.kind,
+      to_masked,
+      sent_at: ts,
+      delivery: { status: 'sent', status_at: ts, source: 'local' },
+      sends_left: MAX_POLICY_SENDS - used - 1,
+      max_sends: MAX_POLICY_SENDS,
+    };
+  }
+
+  // The resent / forwarded copies of a policy with their real Brevo delivery status (asked at most every 10 s per copy).
+  async function policySends(input) {
+    const { policy, error } = policyForSending(input, 'policy_sends', []);
+    if (error) return error;
+    const sends = [];
+    for (const row of sendsOf(policy.policy_number)) {
+      let delivery = row.delivery_json ? JSON.parse(row.delivery_json) : null;
+      if (row.status === 'sent' && row.message_id && (!row.checked_at || now() - new Date(row.checked_at) >= SEND_RECHECK_MS)) {
+        try {
+          const fresh = await email.getDeliveryStatus(row.message_id);
+          if (fresh) delivery = fresh;
+          db.prepare('UPDATE policy_sends SET delivery_json = ?, checked_at = ? WHERE id = ?').run(delivery ? JSON.stringify(delivery) : null, now().toISOString(), row.id);
+        } catch { /* Brevo unreachable: keep the last known status */ }
+      }
+      sends.push({
+        send_id: row.id, kind: row.kind, to_masked: row.to_masked, sent_at: row.sent_at,
+        delivery: row.status === 'failed' ? { status: 'failed' } : delivery ? { status: delivery.status, status_at: delivery.at, source: 'brevo_events' } : { status: 'sent', status_at: row.sent_at, source: 'local' },
+      });
+    }
+    return { ok: true, policy_number: policy.policy_number, sends, sends_left: Math.max(0, MAX_POLICY_SENDS - sends.length), max_sends: MAX_POLICY_SENDS };
+  }
+
   function pdfPathForToken(token) {
     if (typeof token !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(token)) return null;
     const policy = db.prepare('SELECT policy_number FROM policies WHERE pdf_token = ?').get(token);
     return policy ? { path: join(pdfDir, `${token}.pdf`), policy_number: policy.policy_number } : null;
   }
 
-  return { getQuote, selectPlan, setTravelerDetails, reviewOrder, confirmPayment, startCardPayment, finishCardPayment, getPolicy, pdfPathForToken, pricePerTravelerCents };
+  return { getQuote, selectPlan, setTravelerDetails, reviewOrder, confirmPayment, startCardPayment, finishCardPayment, getPolicy, sendPolicyCopy, policySends, pdfPathForToken, pricePerTravelerCents };
 }

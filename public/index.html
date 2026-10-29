@@ -238,7 +238,6 @@
         </div>
         <p class="form-note pay-hint" id="pay-hint">{{t.checkout.acceptToPay}}</p>
         <p class="form-note" id="pay-note">{{t.checkout.payNote}}</p>
-        <p class="form-note agent-pay-note">{{t.checkout.agentNote}} <a href="/agentes">/agentes</a>).</p>
         </div>
       </section>
 
@@ -265,6 +264,33 @@
         <div class="confetti" id="confetti" aria-hidden="true"></div>
         <a class="primary button-link block" id="pdf-link" target="_blank" rel="noopener">{{t.checkout.download}}</a>
         <p id="email-line"></p>
+        <div class="after-actions">
+          <section class="after-card" aria-labelledby="resend-title">
+            <h3 id="resend-title">{{t.checkout.after.resendTitle}}</h3>
+            <button type="button" class="secondary" id="resend">{{t.checkout.after.resend}}</button>
+            <p class="send-status" id="resend-status" role="status"></p>
+          </section>
+          <section class="after-card" id="forward-card" aria-labelledby="forward-title">
+            <h3 id="forward-title">{{t.checkout.after.forwardTitle}}</h3>
+            <p class="forward-highlight" id="forward-highlight" hidden></p>
+            <form id="forward-form" novalidate>
+              <div class="field">
+                <label for="forward-email">{{t.checkout.after.forwardLabel}}</label>
+                <p class="hint" id="forward-email-hint">{{t.checkout.after.forwardHint}}</p>
+                <div class="inline-field">
+                  <input id="forward-email" type="email" inputmode="email" autocomplete="off" aria-describedby="forward-email-hint">
+                  <button type="submit" class="secondary" id="forward-send">{{t.checkout.after.forwardButton}}</button>
+                </div>
+              </div>
+              <div class="error" role="alert" hidden></div>
+              <p class="send-status" id="forward-status" role="status"></p>
+            </form>
+          </section>
+          <section class="after-card send-log" id="send-log" aria-labelledby="send-log-title" hidden>
+            <h3 id="send-log-title">{{t.checkout.after.listLabel}}</h3>
+            <ul class="send-list" id="send-list"></ul>
+          </section>
+        </div>
         <button type="button" class="secondary" id="start-over">{{t.checkout.startOver}}</button>
       </section>
     </div>

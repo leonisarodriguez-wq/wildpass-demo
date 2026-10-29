@@ -14,13 +14,16 @@ const fill = (template, values) => template.replace(/\{(\w+)\}/g, (_, key) => va
 const firstName = fullName => fullName.trim().split(/\s+/)[0];
 
 // The key data shown in both versions of the email.
-function emailData({ brand, policy_number, summary }) {
+// forward = the copy a policyholder sends to a travel companion from the success step (different headline and intro).
+function emailData({ brand, policy_number, summary, forward = false }) {
   const e = brand.texts.email;
   const { trip, plan, travelers, policyholder, total_eur } = summary;
   const values = { name: firstName(policyholder.full_name), destination: trip.destination_name, number: policy_number };
   return {
     e,
     values,
+    headline: fill(forward ? e.forwardHeadline : e.headline, values),
+    intro: forward ? e.forwardIntro : e.intro,
     rows: [
       [e.policyNumber, policy_number],
       [e.plan, plan.plan_name],
@@ -31,21 +34,22 @@ function emailData({ brand, policy_number, summary }) {
   };
 }
 
-export function emailSubject({ brand, policy_number, summary }) {
-  return fill(brand.texts.email.subject, { number: policy_number, destination: summary.trip.destination_name });
+export function emailSubject({ brand, policy_number, summary, forward = false }) {
+  const e = brand.texts.email;
+  return fill(forward ? e.forwardSubject : e.subject, { number: policy_number, destination: summary.trip.destination_name, name: firstName(summary.policyholder.full_name) });
 }
 
 // HTML with inline styles (email clients ignore stylesheets) and table layout (works in Outlook too).
 // Same colour rules as the website. The logo is hosted in our Brevo image gallery (see brand config).
-export function emailHtml({ brand, policy_number, summary, pdf_url }) {
+export function emailHtml({ brand, policy_number, summary, pdf_url, forward = false }) {
   const c = brand.colors;
-  const { e, values, rows } = emailData({ brand, policy_number, summary });
+  const { e, headline, intro, rows } = emailData({ brand, policy_number, summary, forward });
   const font = 'Inter, Arial, Helvetica, sans-serif';
   const heading = "'Space Grotesk', Arial, Helvetica, sans-serif";
   const dataRows = rows.map(([label, value], i) => `
           <tr><td style="padding:9px 0;color:${c.secondary};font-size:14px;width:120px;vertical-align:top;${i ? `border-top:1px solid ${c.border};` : ''}">${escapeHtml(label)}</td>
           <td style="padding:9px 0;color:${c.night};font-size:14px;font-weight:bold;text-align:right;${i ? `border-top:1px solid ${c.border};` : ''}">${escapeHtml(value)}</td></tr>`).join('');
-  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(emailSubject({ brand, policy_number, summary }))}</title></head>
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(emailSubject({ brand, policy_number, summary, forward }))}</title></head>
 <body style="margin:0;padding:0;background:${c.sky}">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${c.sky};font-family:${font};color:${c.night}"><tr><td align="center" style="padding:24px 12px">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:${c.white};border-radius:14px;overflow:hidden">
@@ -60,8 +64,8 @@ export function emailHtml({ brand, policy_number, summary, pdf_url }) {
       </tr></table>
     </td></tr>
     <tr><td style="padding:16px 28px 0">
-      <h1 style="font-family:${heading};font-size:24px;line-height:1.25;margin:0 0 10px;color:${c.night}">${escapeHtml(fill(e.headline, values))}</h1>
-      <p style="font-size:15px;line-height:1.5;margin:0 0 8px;color:${c.night}">${escapeHtml(e.intro)}</p>
+      <h1 style="font-family:${heading};font-size:24px;line-height:1.25;margin:0 0 10px;color:${c.night}">${escapeHtml(headline)}</h1>
+      <p style="font-size:15px;line-height:1.5;margin:0 0 8px;color:${c.night}">${escapeHtml(intro)}</p>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">${dataRows}
       </table>
     </td></tr>
@@ -79,14 +83,14 @@ export function emailHtml({ brand, policy_number, summary, pdf_url }) {
 }
 
 // Plain-text version (for email apps that don't show HTML, and better for spam filters).
-export function emailText({ brand, policy_number, summary, pdf_url }) {
-  const { e, values, rows } = emailData({ brand, policy_number, summary });
+export function emailText({ brand, policy_number, summary, pdf_url, forward = false }) {
+  const { e, headline, intro, rows } = emailData({ brand, policy_number, summary, forward });
   return [
     `*** ${e.demoLine} ***`,
     '',
-    fill(e.headline, values),
+    headline,
     '',
-    e.intro,
+    intro,
     '',
     ...rows.map(([label, value]) => `${label}: ${value}`),
     '',
@@ -132,20 +136,28 @@ export function createEmailService({ env, brand, fetchImpl = fetch }) {
   const configured = Boolean(env.BREVO_API_KEY && env.SENDER_EMAIL);
   const headers = { 'api-key': env.BREVO_API_KEY, accept: 'application/json' };
 
-  function send({ to, policy_number, summary, pdfBuffer, pdf_url }) {
-    if (!configured) return { status: 'not_configured' };
+  // The policy email. forward: the copy for a travel companion (to.full_name may be empty).
+  function send({ to, policy_number, summary, pdfBuffer, pdf_url, forward = false }) {
+    return sendEmail({
+      to: [{ email: to.email, ...(to.full_name && { name: to.full_name }) }],
+      subject: emailSubject({ brand, policy_number, summary, forward }),
+      htmlContent: emailHtml({ brand, policy_number, summary, pdf_url, forward }),
+      textContent: emailText({ brand, policy_number, summary, pdf_url, forward }),
+      attachment: [{ name: `${policy_number}.pdf`, content: pdfBuffer.toString('base64') }],
+    });
+  }
 
+  // Any email through Brevo (policy, quote, contact form). Returns { status: 'not_configured' } or
+  // { status: 'sending', done } where done resolves to { messageId } once Brevo has accepted it.
+  function sendEmail({ to, subject, htmlContent, textContent, attachment, replyTo }) {
+    if (!configured) return { status: 'not_configured' };
     const body = {
       // The sender name comes from the brand config (not .env), so it always matches the brand.
       sender: { email: env.SENDER_EMAIL, name: brand.emailSenderName },
-      to: [{ email: to.email, name: to.full_name }],
-      subject: emailSubject({ brand, policy_number, summary }),
-      htmlContent: emailHtml({ brand, policy_number, summary, pdf_url }),
-      textContent: emailText({ brand, policy_number, summary, pdf_url }),
-      attachment: [{ name: `${policy_number}.pdf`, content: pdfBuffer.toString('base64') }],
+      to, subject, htmlContent, textContent,
+      ...(attachment && { attachment }),
+      ...(replyTo && { replyTo }),
     };
-
-    // Resolves to { messageId } once Brevo has accepted the email.
     const done = fetchImpl(`${BREVO}/smtp/email`, {
       method: 'POST',
       headers: { ...headers, 'content-type': 'application/json' },
@@ -169,5 +181,5 @@ export function createEmailService({ env, brand, fetchImpl = fetch }) {
     return deliveryStatusFromEvents(json.events ?? []);
   }
 
-  return { send, getDeliveryStatus };
+  return { configured, send, sendEmail, getDeliveryStatus };
 }

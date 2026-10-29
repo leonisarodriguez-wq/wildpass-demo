@@ -85,8 +85,10 @@ async function buyPolicy() {
   assert.equal(paid.ok, true, paid.message);
   assert.equal(paid.email_status, 'pending');
   await new Promise(resolve => setTimeout(resolve, 50)); // let the background send finish
+  lastPaid = paid;
   return paid.policy_number;
 }
+let lastPaid;
 
 const policyStatus = async number => (await call('get_policy', { policy_number: number, email: 'eva@example.com' })).email_delivery;
 
@@ -185,4 +187,50 @@ test('if Brevo refuses the send, the policy is still issued and the email shows 
 test('the API key never appears in any answer', () => {
   assert.ok(responses.length > 10);
   for (const text of responses) assert.ok(!text.includes(FAKE_KEY), 'API key leaked in a response');
+});
+
+test('success step: resend and forward the policy (manage_token or number + email), max 5 sends, real delivery status', async () => {
+  const number = await buyPolicy();
+  const token = lastPaid.manage_token;
+  assert.ok(typeof token === 'string' && token.length >= 32, 'the payment answer carries the private manage_token');
+  const sentBodies = () => brevo.calls.filter(c => c.url.endsWith('/v3/smtp/email')).map(c => JSON.parse(c.body));
+  const before = sentBodies().length;
+
+  // Strangers can't send: wrong token, wrong email, unknown policy (same answer, nothing sent).
+  for (const auth of [{ manage_token: 'x'.repeat(32) }, { policyholder_email: 'otra@example.com' }, {}]) {
+    const r = await call('send_policy_copy', { policy_number: number, ...auth, kind: 'resend' });
+    assert.equal(r.error_code, 'POLICY_NOT_FOUND');
+  }
+  assert.equal(sentBodies().length, before);
+
+  // Resend: to the policyholder, the same policy email with the PDF.
+  const resent = await call('send_policy_copy', { policy_number: number, manage_token: token, kind: 'resend' });
+  assert.equal(resent.ok, true, resent.message);
+  assert.deepEqual([resent.to_masked, resent.sends_left], ['e***@example.com', 4]);
+  let mail = sentBodies().at(-1);
+  assert.equal(mail.to[0].email, 'eva@example.com');
+  assert.ok(mail.subject.startsWith('Tu póliza Wildpass'));
+  assert.equal(mail.attachment[0].name, `${number}.pdf`);
+
+  // Forward: a companion's address is validated, gets its own headline and the PDF; number + holder email also works.
+  assert.equal((await call('send_policy_copy', { policy_number: number, manage_token: token, kind: 'forward', to_email: 'no-es-un-email' })).error_code, 'INVALID_EMAIL');
+  const fwd = await call('send_policy_copy', { policy_number: number, policyholder_email: 'EVA@example.com', kind: 'forward', to_email: 'luis@example.com' });
+  assert.equal(fwd.ok, true, fwd.message);
+  mail = sentBodies().at(-1);
+  assert.equal(mail.to[0].email, 'luis@example.com');
+  assert.ok(mail.subject.startsWith('Eva te envía la póliza Wildpass'), mail.subject);
+  assert.ok(mail.htmlContent.includes('Demo — no es un seguro real') && mail.textContent.includes('Eva te envía la póliza de vuestro viaje a Francia'));
+
+  // Each send is logged (masked address only) with Brevo's real delivery status.
+  brevo.events = [{ event: 'delivered', date: '2026-10-28T12:00:06+01:00', messageId: MESSAGE_ID }];
+  clockOffsetMs += 11_000;
+  const log = await call('policy_sends', { policy_number: number, manage_token: token });
+  assert.deepEqual(log.sends.map(x => [x.kind, x.to_masked, x.delivery.status]), [['resend', 'e***@example.com', 'delivered'], ['forward', 'l***@example.com', 'delivered']]);
+  assert.ok(!JSON.stringify(log).includes('luis@example.com'), 'the full address is never stored or returned');
+
+  // Max 5 per policy, then a clear refusal.
+  for (let i = 0; i < 3; i++) assert.equal((await call('send_policy_copy', { policy_number: number, manage_token: token, kind: 'forward', to_email: `amigo${i}@example.com` })).ok, true);
+  const limit = await call('send_policy_copy', { policy_number: number, manage_token: token, kind: 'resend' });
+  assert.deepEqual([limit.error_code, limit.max_sends], ['SEND_LIMIT_REACHED', 5]);
+  assert.ok(limit.how_to_fix);
 });

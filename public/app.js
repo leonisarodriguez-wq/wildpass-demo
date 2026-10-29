@@ -65,7 +65,7 @@ const addDays = (iso, n) => new Date(Date.parse(`${iso}T00:00:00Z`) + n * 86_400
 function friendly(result) {
   const template = E[result.error_code];
   if (!template) return result.message || E.generic;
-  return fill(template, { ...limits, traveler: result.traveler, quotedAge: result.quoted_age, actualAge: result.age_at_departure });
+  return fill(template, { ...limits, traveler: result.traveler, quotedAge: result.quoted_age, actualAge: result.age_at_departure, max: result.max_sends });
 }
 
 // ONE error component per field: the message right under its field (Ida/Vuelta: under the whole row), linked with
@@ -736,6 +736,7 @@ $('#pay').addEventListener('click', async e => {
       ? C.emailNotConfigured
       : fill(C.emailSent, { email: state.review.summary.policyholder.email });
     renderDoneTrip();
+    renderAfterActions();
     // The review and order can't be reused after payment: going back starts a new quote.
     history.replaceState({ step: 'landing' }, '', location.pathname);
     render('4');
@@ -743,6 +744,84 @@ $('#pay').addEventListener('click', async e => {
   });
   syncPay();
 });
+
+// ---------- success step: resend the email, forward it to a travel companion ----------
+// Only for the policy just bought in this tab: the server checks the private manage_token from the payment answer.
+// At most 5 sends per policy (the server counts them); each copy shows its real Brevo delivery status.
+const A = () => C.after;
+const sendAuth = () => ({ policy_number: state.paid.policy_number, manage_token: state.paid.manage_token });
+let sendPoll = [];
+let sendsBlocked = false; // email off, or the 5 sends used: both buttons stay disabled
+const syncSendButtons = () => { for (const b of [$('#resend'), $('#forward-send')]) b.disabled = sendsBlocked; };
+
+function renderAfterActions() {
+  const n = state.review.summary.travelers.length;
+  const highlight = $('#forward-highlight');
+  highlight.hidden = n < 2;
+  highlight.textContent = n > 1 ? fill(n === 2 ? A().forwardHighlight : A().forwardHighlightMany, { n }) : '';
+  $('#forward-card').classList.toggle('is-highlighted', n > 1);
+  for (const id of ['#resend-status', '#forward-status']) $(id).textContent = '';
+  $('#forward-email').value = '';
+  setFieldError($('#forward-email'), null);
+  showError($('#forward-form'), null);
+  $('#send-list').replaceChildren();
+  $('#send-log').hidden = true;
+  sendsBlocked = state.paid.email_status === 'not_configured';
+  syncSendButtons();
+  sendPoll.forEach(clearTimeout);
+}
+
+const sendsLeftText = n => (n === 1 ? A().sendsLeftOne : fill(A().sendsLeft, { n }));
+function afterSend(result, statusEl, doneText) {
+  if (!result.ok) {
+    statusEl.textContent = '';
+    if (result.error_code === 'SEND_LIMIT_REACHED') sendsBlocked = true;
+    return false;
+  }
+  statusEl.textContent = `${fill(doneText, { email: result.to_masked })} ${sendsLeftText(result.sends_left)}`;
+  if (result.sends_left === 0) sendsBlocked = true;
+  // Brevo reports delivery a few seconds later: ask again a few times.
+  sendPoll.forEach(clearTimeout);
+  sendPoll = [3000, 12000, 30000, 70000].map(ms => setTimeout(refreshSends, ms));
+  refreshSends();
+  return true;
+}
+
+async function refreshSends() {
+  if (!state.paid?.manage_token) return;
+  const result = await callApi('policy_sends', sendAuth());
+  if (!result.ok || state.step !== '4') return;
+  $('#send-log').hidden = result.sends.length === 0;
+  $('#send-list').replaceChildren(...result.sends.map(s => el('li', {},
+    el('span', { class: 'send-kind', text: s.kind === 'resend' ? A().resendKind : A().forwardKind }),
+    el('span', { class: 'send-to', text: s.to_masked }),
+    el('span', { class: `send-state is-${s.delivery.status}`, text: A().delivery[s.delivery.status] ?? s.delivery.status }))));
+}
+
+$('#resend').addEventListener('click', async e => {
+  await busy(e.currentTarget, C.working, async () => {
+    const result = await callApi('send_policy_copy', { ...sendAuth(), kind: 'resend' });
+    showError($('#forward-form'), null);
+    if (!afterSend(result, $('#resend-status'), A().resent)) $('#resend-status').textContent = friendly(result);
+  });
+  syncSendButtons();
+});
+
+$('#forward-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const input = $('#forward-email');
+  const check = () => (!input.value.trim() ? A().missingEmail : EMAIL_SHAPE.test(input.value.trim()) ? null : friendly({ error_code: 'INVALID_EMAIL' }));
+  if (!validateAll([[input, check]])) return;
+  await busy($('#forward-send'), C.working, async () => {
+    const result = await callApi('send_policy_copy', { ...sendAuth(), kind: 'forward', to_email: input.value.trim() });
+    if (!result.ok) return showError($('#forward-form'), friendly(result), result.error_code === 'INVALID_EMAIL' ? input : null);
+    showError($('#forward-form'), null);
+    afterSend(result, $('#forward-status'), A().forwarded);
+    input.value = ''; // one address at a time: ready for the next one
+  });
+  syncSendButtons();
+});
+liveCheck($('#forward-form'), () => [[$('#forward-email'), () => (EMAIL_SHAPE.test($('#forward-email').value.trim()) ? null : A().missingEmail)]]);
 
 // ---------- navigation ----------
 for (const b of document.querySelectorAll('[data-go]')) {

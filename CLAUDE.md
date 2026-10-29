@@ -19,7 +19,7 @@ The owner is not a programmer: explain things simply, report test results honest
   Pagar and "Póliza al instante en tu email" beside it; ≥960 px review left + payment right, so the card form and Pagar are on the
   first screen at 1440×900 (phones: payment after one scroll). Quote form: one row per traveller, "Viajero N" + age dropdown
   (0–85, "Menos de 1 año"; first row rendered by the server with 30, others copied by app.js with no age), max 8; sends the same `traveler_ages`.
-  Step 1: Wild and Wild+ as two separate cards; CSS subgrid aligns each coverage row across both cards; exclusions in a
+  Step 1: Wild and Wild+ as two separate WHITE cards (soft border + light shadow; Wild+ = 3 px turquoise border + turquoise top band with the badge, Wild starts one band lower ≥600 px); CSS subgrid aligns each coverage row across both cards; exclusions in a
   closed-by-default `<details>` ("En los dos planes", "Solo en Wild", "Límites de Wild+"). Friendly error texts: `brand.texts.errors`, keyed by the server's `error_code`
   (+ client-only keys like `missingDeparture`). Field errors (app.js `setFieldError`): ONE `.field-error` per field, right under it
   (Ida/Vuelta: under the whole row), aria-invalid + aria-describedby, removed as soon as the field is valid again (`liveCheck`);
@@ -92,6 +92,10 @@ The owner is not a programmer: explain things simply, report test results honest
   the form; the contact question shows only if CONTACT_EMAIL is in .env, so the owner's address stays out of Git) is closed behind
   "Ver preguntas frecuentes"; each answer opens smoothly via `::details-content` (Chrome/Safari; others
   open at once); phones get a sticky "Ver mi precio" bar once the hero is off screen (inside #landing, so never in the checkout).
+- Success step, under "Descargar mi póliza": "Reenviar póliza" and "Enviar la póliza a quien viaja contigo" (highlighted when >1 traveller).
+  `/api/send_policy_copy` + `/api/policy_sends` (website only, not WebMCP): allowed with the private `manage_token` from the payment answer
+  (hash in `policies.manage_token_hash`) or policy number + holder email; max 5 sends per policy; each logged in `policy_sends` with the MASKED
+  address only; real Brevo delivery status per copy (re-asked at most every 10 s). Forwarded copy has its own subject/headline (`texts.email.forward*`).
 - Success step = boarding pass (names, destination, dates, plan, policy number, "CUBIERTO" stamp, one confetti burst in brand colours, never
   with reduced motion) with a QR code of the PDF link made in the browser by `public/qr.js` (hand-written encoder, byte mode, level M,
   versions 1–10; checked with an independent reader, jsQR, outside the repo). No external QR service.
@@ -154,7 +158,7 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 - Changing traveller details or calling review_order again invalidates the previous review_token.
 - Agents must show the summary to the user and get explicit confirmation BEFORE confirm_payment (stated in the tool description).
 - Agents never type a card: the sentence "Los agentes no deben introducir datos de tarjeta…" is on /agentes (`texts.agents.noCard`), /llms.txt
-  (`texts.llms.noCard`), in English in confirm_payment's description, and a discreet line in the payment step's served HTML (`texts.checkout.agentNote`).
+  (`texts.llms.noCard`) and in English in confirm_payment's description. The payment step's own agent line was REMOVED from the page (owner, 29 Oct 2026; tested).
 - Errors are never bare throws: every API/tool result is `{ ok: true, ... }` or `{ ok: false, error_code, message, how_to_fix }`.
 - Payment (`src/stripe.js`, Stripe TEST MODE ONLY, REST API via fetch, no npm package): at start-up only pk_test_/sk_test_ keys turn Stripe on;
   a live key, a missing key or anything else → Stripe OFF, simulated payment, one warning in the log (never the key).

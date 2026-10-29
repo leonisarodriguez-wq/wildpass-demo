@@ -23,6 +23,7 @@ const STATUS_BY_CODE = {
   ALREADY_PAID: 409, NOT_REVIEWED: 409, INVALID_REVIEW_TOKEN: 409, DETAILS_MISSING: 409,
   PAYMENT_DECLINED: 402, PAYMENT_NOT_COMPLETED: 409, PAYMENT_MISMATCH: 409, CARD_PAYMENT_OFF: 409,
   PAYMENT_ERROR: 502, PAYMENT_PROVIDER_UNAVAILABLE: 503, INTERNAL_ERROR: 500,
+  SEND_LIMIT_REACHED: 429, EMAIL_NOT_CONFIGURED: 409, EMAIL_SEND_FAILED: 502,
 };
 
 // fetchImpl / stripeFetch are only replaced in tests, to simulate Brevo and Stripe without real calls.
@@ -80,6 +81,9 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
   route('/start_card_payment', business.startCardPayment);
   route('/finish_card_payment', business.finishCardPayment);
   route('/get_policy', business.getPolicy);
+  // Website only (success step): resend the policy email, or forward it to a travel companion; their delivery status.
+  route('/send_policy_copy', business.sendPolicyCopy);
+  route('/policy_sends', business.policySends);
 
   // Public settings for the website and the WebMCP tool schemas (no secrets here).
   api.get('/config', (req, res) => {

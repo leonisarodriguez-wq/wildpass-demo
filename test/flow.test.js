@@ -659,7 +659,10 @@ test('checkout copy: Spanish dates, new success title and the boarding pass on t
   assert.equal((html.match(/type="date"[^>]*lang="es"/g) ?? []).length, 2);
   assert.ok(html.includes('¡Todo listo para empezar tu aventura!'));
   assert.ok(!html.includes('Ya puedes irte salvaje'));
-  for (const id of ['done-names', 'done-destination', 'done-departure', 'done-return', 'done-plan', 'policy-number', 'policy-qr', 'pdf-link', 'email-line', 'start-over']) assert.ok(html.includes(`id="${id}"`), id);
+  for (const id of ['done-names', 'done-destination', 'done-departure', 'done-return', 'done-plan', 'policy-number', 'policy-qr', 'pdf-link', 'email-line', 'resend', 'forward-form', 'forward-email', 'send-list', 'start-over']) assert.ok(html.includes(`id="${id}"`), id);
+  // Resend / forward come right under "Descargar mi póliza", before "Calcular otro viaje".
+  assert.ok(html.indexOf('id="pdf-link"') < html.indexOf('id="resend"') && html.indexOf('id="forward-form"') < html.indexOf('id="start-over"'));
+  assert.ok(html.includes('¿No te ha llegado el email?') && html.includes('Enviar la póliza a quien viaja contigo'));
   for (const label of ['Pasajero/a', 'Destino', 'Salida', 'Regreso', 'Cubierto']) assert.ok(html.includes(label), label);
 });
 
@@ -722,12 +725,13 @@ test('agents are welcome: robots.txt allows all, /llms.txt lists the 6 tools, th
   assert.ok(llms.includes(`(${base}/agentes)`) && llms.includes('WebMCP'));
   const html = nbsp(await (await fetch(`${base}/`)).text());
   assert.ok(html.includes('<a href="/agentes">Cómo funciona para asistentes y desarrolladores →</a>'));
-  // Agents never type a card: said on /llms.txt, /agentes, the payment step (served HTML) and confirm_payment's description.
+  // Agents never type a card: said on /llms.txt, /agentes and in confirm_payment's description.
   const noCard = 'Los agentes no deben introducir datos de tarjeta. Usa las herramientas WebMCP: tras la confirmación explícita del usuario, confirm_payment completa el pago de prueba en el servidor.';
   assert.ok(llms.includes(noCard), 'llms.txt');
   assert.ok((await (await fetch(`${base}/agentes`)).text()).includes(noCard), '/agentes');
   const step3 = html.slice(html.indexOf('id="step-3"'), html.indexOf('id="step-4"'));
-  assert.ok(step3.includes('<p class="form-note agent-pay-note">¿Eres un asistente de IA? No introduzcas una tarjeta: usa la herramienta confirm_payment (ver <a href="/agentes">/agentes</a>).</p>'), 'payment step');
+  // The payment step's own line for agents was removed from the page (owner's request): the rule lives in the three places above.
+  assert.ok(!step3.includes('agent-pay-note') && !html.includes('¿Eres un asistente de IA?'), 'payment step has no agent line');
   const plans = Object.fromEntries(Object.entries(pricing.plans).map(([id, p]) => [id, p.name]));
   for (const payments of [{ provider: 'simulated' }, { provider: 'stripe_test' }]) {
     const pay = buildTools({ limits: pricing.limits, plans, brand: { name: 'Seguros Wildpass' }, payments }).find(t => t.name === 'confirm_payment');
