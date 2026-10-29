@@ -213,7 +213,7 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 - Tools register a moment after page load (they wait for /api/config); an agent listing tools instantly may see none yet.
 - Agent testing: Claude Code MCP server `chrome-devtools` (Google's chrome-devtools-mcp 1.10.1, headless Chrome for Testing 156, `--enable-features=WebMCP`). `@mcp-b/chrome-devtools-mcp` 3.0.0 is broken (empty package) — don't use it.
 
-## Running (24/7: systemd service + Tailscale Funnel — files in `deploy/`, installed with `sudo sh deploy/install.sh`)
+## Running (24/7: one systemd service + Tailscale Funnel — files in `deploy/`, installed with `sudo sh deploy/install.sh`)
 - `wildpass-app.service`: `node server.js` as user leonisa_prueba, ONLY on 127.0.0.1:3000, starts at boot, `Restart=always`.
   Hardened: may only write `data/` (database + policy PDFs). Logs: `journalctl -u wildpass-app`.
 - **Public address (fixed): https://wildpass.taile53924.ts.net** — Tailscale Funnel (since 29 Oct 2026). Tailscale installed from its apt repo,
@@ -226,7 +226,8 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
   DNS-over-HTTPS (`cloudflare-dns.com/dns-query?name=…&type=A`) and use `curl --resolve wildpass.taile53924.ts.net:443:<ip>`.
 - Exposed to the internet: ONLY the website through Funnel (plus SSH, unchanged). No database, dev tools or browser debugging port.
   Don't start hand-run copies (`npm start`) next to the service: port 3000 would clash.
-- The old Cloudflare Quick Tunnel (`wildpass-tunnel.service`, `cloudflared`, `wildpass-save-url`) is being retired: it stays on until the owner says so.
+- The old Cloudflare Quick Tunnel (`wildpass-tunnel.service`, `cloudflared`, `wildpass-save-url`) was retired on 29 Oct 2026: files removed from `deploy/`,
+  service stopped and disabled by the owner. Its trycloudflare.com address no longer works.
 - `npm test` → automated tests (Node's built-in test runner, temporary database, port chosen automatically: safe while the service runs).
 - The test browser (chrome-devtools MCP) is only started by Claude Code when testing; it uses a pipe, not a network port.
 - Supply-chain rule: only install package versions at least 2 weeks old; pin exact versions.
