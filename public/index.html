@@ -204,9 +204,9 @@
       </section>
 
       <section class="step" id="step-3" hidden aria-labelledby="step-3-title">
-        <button type="button" class="link-button" data-go="2">{{t.checkout.editDetails}}</button>
         <h2 id="step-3-title" tabindex="-1">{{t.checkout.step3Title}}</h2>
         <div id="review"></div>
+        <div class="pay-col">
         <div class="card-payment" id="card-payment" hidden>
           <h3 class="card-title">{{{iconCard}}}{{t.checkout.cardTitle}}</h3>
           <p class="pay-method"><span class="pay-radio" aria-hidden="true"></span>{{{iconCard}}}<span class="pay-method-name">{{t.checkout.cardMethod}}</span><span class="pay-method-state">{{t.checkout.cardMethodSelected}}</span></p>
@@ -215,8 +215,13 @@
         </div>
         <label class="check" for="accept-terms"><input type="checkbox" id="accept-terms"> <span>{{t.checkout.accept}}</span></label>
         <div class="error" role="alert" hidden></div>
-        <button type="button" class="primary block" id="pay" disabled></button>
+        <div class="pay-row">
+          <button type="button" class="primary" id="pay" disabled aria-describedby="pay-hint"></button>
+          <p class="pay-instant">{{t.checkout.instantPolicy}}</p>
+        </div>
+        <p class="form-note pay-hint" id="pay-hint">{{t.checkout.acceptToPay}}</p>
         <p class="form-note" id="pay-note">{{t.checkout.payNote}}</p>
+        </div>
       </section>
 
       <section class="step" id="step-4" hidden aria-labelledby="step-4-title">
@@ -247,8 +252,12 @@
       </section>
     </div>
 
-    <div class="total-bar" id="total-bar" aria-live="polite">
-      <div class="wrap narrow"><span id="total-label"></span><strong id="total-value"></strong></div>
+    <!-- Fixed action bar: the total on the left, the current step's button on the right (same action as the step's own button). -->
+    <div class="total-bar" id="total-bar">
+      <div class="wrap narrow bar-inner">
+        <p class="bar-total" aria-live="polite"><span id="total-label"></span> <strong id="total-value"></strong></p>
+        <button type="button" class="primary bar-action" id="bar-action" hidden></button>
+      </div>
     </div>
   </main>
   </div>

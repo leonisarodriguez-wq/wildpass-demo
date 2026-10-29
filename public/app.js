@@ -124,15 +124,20 @@ function showError(scope, message, field) {
   box.hidden = false;
 }
 
+// While a request runs, its button says so and the action bar's button waits too (no double sends).
 async function busy(button, label, fn) {
   const original = button.textContent;
+  const bar = $('#bar-action');
   button.disabled = true;
+  bar.disabled = true;
   button.setAttribute('aria-busy', 'true');
   button.textContent = label;
   try { await fn(); } finally {
     button.disabled = false;
+    bar.disabled = false;
     button.removeAttribute('aria-busy');
     button.textContent = original;
+    updateTotalBar();
   }
 }
 
@@ -144,7 +149,7 @@ function render(step, { push = true, focus = true } = {}) {
   const inCheckout = step !== 'landing';
   $('#landing').hidden = inCheckout;
   $('#checkout').hidden = !inCheckout;
-  $('#trip-card').hidden = !inCheckout || step === '4';
+  $('#trip-card').hidden = !inCheckout || step === '3' || step === '4'; // step 3 has its own summary card
   if (inCheckout && step !== '4') renderTripCard();
   for (const s of STEPS) $(`#step-${s}`).hidden = s !== step;
   if (push) history.pushState({ step }, '', inCheckout ? `#paso-${step}` : location.pathname);
@@ -172,7 +177,30 @@ window.addEventListener('popstate', e => {
   render(canShow(step) ? step : 'landing', { push: false });
 });
 
+// The fixed bar: total on the left, the step's action on the right. The button only triggers the step's own button
+// or form, so both always do exactly the same thing.
+function barAction() {
+  const B = C.bar;
+  const step = state.step;
+  if (step === '1') {
+    const p = state.selected && state.quote.plans.find(x => x.plan === state.selected);
+    return p ? { text: fill(B.continueWith, { plan: p.plan_name }), run: button => choosePlan(p.plan, button) }
+      : { text: B.pickPlan, run: () => { $('#compare').scrollIntoView({ behavior: smooth(), block: 'start' }); [...document.querySelectorAll('#compare button')].find(b => b.offsetParent)?.focus({ preventScroll: true }); } };
+  }
+  if (step === '2') return { text: B.continue, run: () => $('#details-form').requestSubmit() };
+  if (step === '3') {
+    return $('#pay').disabled
+      ? { text: B.goToPay, run: () => { $('#accept-terms').scrollIntoView({ behavior: smooth(), block: 'center' }); $('#accept-terms').focus({ preventScroll: true }); } }
+      : { text: fill(B.pay, { total: eur(state.review.total_eur) }), run: () => $('#pay').click() };
+  }
+  return null;
+}
+$('#bar-action').addEventListener('click', e => barAction()?.run(e.currentTarget));
+
 function updateTotalBar() {
+  const action = state.step !== 'landing' && barAction();
+  $('#bar-action').hidden = !action;
+  if (action && !$('#bar-action').disabled) $('#bar-action').textContent = action.text;
   const label = $('#total-label');
   const value = $('#total-value');
   if (state.paid) {
@@ -394,6 +422,14 @@ function renderStep1() {
 
   // Phones: a compact switcher on top ("Wild 22 €" / "Wild+ 29,50 €", the whole card is tappable) and, below, one row per
   // coverage with both values side by side. Wider screens: the two full plan cards. CSS shows one layout or the other.
+  // Wild+ says what it costs on top of Wild: "+12,40 € (0,83 € al día)".
+  const base = q.plans.find(p => p.plan === 'wild');
+  const difference = p => {
+    if (p.plan === 'wild' || !base) return null;
+    const diff = Math.round((p.total_price_eur - base.total_price_eur) * 100) / 100;
+    const values = { diff: eur(diff), perDay: eur(Math.round((diff / q.trip.days) * 100) / 100), plan: base.plan_name };
+    return el('p', { class: 'plan-diff' }, el('span', { 'aria-hidden': 'true', text: fill(cmp.difference, values) }), el('span', { class: 'sr-only', text: fill(cmp.differenceLabel, values) }));
+  };
   const buttonClass = p => (p.plan === 'wild_plus' ? 'primary' : 'secondary');
   const chooseButton = (p, text) => el('button', { type: 'button', class: buttonClass(p), text, 'aria-label': fill(C.choose, { plan: p.plan_name }), onclick: e => choosePlan(p.plan, e.currentTarget) });
   const switcher = el('div', { class: 'plan-switch', role: 'group', 'aria-label': cmp.switchLabel }, q.plans.map(p => {
@@ -401,6 +437,7 @@ function renderStep1() {
     return el('div', { class: p.plan === 'wild_plus' ? 'switch-card featured' : 'switch-card', 'data-plan-card': p.plan, onclick: e => { if (e.target !== button) markPlan(p.plan); } },
       el('p', { class: 'switch-name', text: p.plan_name }),
       el('p', { class: 'switch-price' }, el('span', { class: 'sr-only', text: `${cmp.price}: ` }), eur(p.total_price_eur)),
+      difference(p),
       button);
   }));
   const rows = el('div', { class: 'compare-rows' },
@@ -419,7 +456,7 @@ function renderStep1() {
       onclick: e => { if (!e.target.closest('button')) markPlan(p.plan); } },
       featured && el('p', { class: 'badge', text: T.plans.wildPlusBadge }),
       el('h3', { id: nameId, text: p.plan_name }),
-      el('p', { class: 'plan-price' }, el('span', { class: 'sr-only', text: `${cmp.price}: ` }), eur(p.total_price_eur)),
+      el('div', { class: 'plan-price-box' }, el('p', { class: 'plan-price' }, el('span', { class: 'sr-only', text: `${cmp.price}: ` }), eur(p.total_price_eur)), difference(p)),
       el('dl', { style: `grid-row: span ${features.length}` }, features.map(([label, value]) => el('div', { class: 'feature' }, el('dt', { text: label }), el('dd', { text: value(p) })))),
       el('button', { type: 'button', class: featured ? 'primary' : 'secondary', text: fill(C.choose, { plan: p.plan_name }), onclick: e => choosePlan(p.plan, e.currentTarget) }),
     );
@@ -574,30 +611,38 @@ $('#details-form').addEventListener('submit', async e => {
 });
 
 // ---------- step 3: review + payment (Stripe test mode, or simulated when Stripe is off) ----------
+// Compact: one summary card (trip, dates, plan, who buys + "Editar"), the price zone, the travellers on one line,
+// three key chips, two closed lists ("Todas las coberturas", "Qué no cubre") and the total; then the payment.
 function renderStep3() {
   const r = state.review;
   const s = r.summary;
+  const plan = s.plan;
+  const K = C.chips;
   const row = (label, value) => el('div', { class: 'row' }, el('dt', { text: label }), el('dd', { text: value }));
-  $('#review').replaceChildren(el('div', { class: 'summary' },
+  const chips = [
+    fill(K.medical, { amount: eur(plan.medical_limit_for_this_trip_eur) }),
+    plan.excess_per_medical_claim_eur > 0 ? fill(K.excess, { amount: eur(plan.excess_per_medical_claim_eur) }) : K.noExcess,
+    plan.adventure_sports_included ? K.adventure
+      : plan.cancellation_included ? fill(K.cancellation, { amount: eur(plan.coverage_limits_eur.cancellation_per_traveler_eur) }) : K.noCancellation,
+  ];
+  const folded = (title, items, extra) => el('details', { class: 'review-more' }, el('summary', { text: title }),
+    el('ul', {}, items.map(x => el('li', { text: x }))), extra);
+  $('#review').replaceChildren(el('section', { class: 'summary review-card', 'aria-labelledby': 'review-title' },
+    el('div', { class: 'review-head' },
+      el('h3', { id: 'review-title', text: C.reviewTitle }),
+      el('button', { type: 'button', class: 'link-button', text: C.editReview, 'aria-label': C.editReviewLabel, onclick: () => render('2') })),
     el('dl', {},
-      row(C.trip, `${s.trip.origin_name} → ${s.trip.destination_name} (${s.trip.zone_name})`),
-      row(C.dates, fill(C.tripLine, { from: dateEs(s.trip.departure_date), to: dateEs(s.trip.return_date), days: s.trip.days, n: s.travelers.length, travelersWord: travelersWord(s.travelers.length) })),
-      row(C.plan, s.plan.plan_name),
+      row(C.trip, `${s.trip.origin_name} → ${s.trip.destination_name}`),
+      row(C.dates, `${rangeEs(s.trip.departure_date, s.trip.return_date)} · ${fill(C.tripCard.days, { days: s.trip.days })}`),
+      row(C.plan, plan.plan_name),
       row(C.whoBuys, `${s.policyholder.full_name} · ${s.policyholder.email}`),
+      row(C.travelers, s.travelers.map(t => `${t.full_name} (${t.age_at_departure})`).join(' · ')),
     ),
-    el('h3', { text: C.travelers }),
-    el('table', { class: 'people' },
-      el('tbody', {}, s.travelers.map(t => el('tr', {},
-        el('td', { text: t.full_name }),
-        el('td', { text: `${dateEs(t.birth_date)} · ${fill(C.ageYears, { age: t.age_at_departure })}` }),
-        el('td', { class: 'num', text: eur(t.price_eur) }))))),
-    el('h3', { text: C.keyConditions }),
-    el('ul', {}, r.key_conditions.map(c => el('li', { text: datesEs(c) }))),
-    el('h3', { text: C.coverage }),
-    el('ul', {}, s.plan.coverage_summary.map(c => el('li', { text: c }))),
-    el('h3', { text: C.exclusions }),
-    el('ul', {}, s.exclusions.map(x => el('li', { text: x }))),
-    el('p', {}, el('a', { href: r.terms_url, target: '_blank', rel: 'noopener', text: C.terms })),
+    el('p', { class: 'review-zone', text: fill(C.zone, { zone: s.trip.zone_name }) }),
+    el('ul', { class: 'chips' }, chips.map(c => el('li', { class: 'chip', text: c }))),
+    folded(C.allCoverage, [...plan.coverage_summary, ...r.key_conditions.map(datesEs)],
+      el('p', {}, el('a', { href: r.terms_url, target: '_blank', rel: 'noopener', text: C.terms }))),
+    folded(C.notCovered, s.exclusions),
     el('div', { class: 'total-row' }, el('span', { text: C.totalLabel }), el('strong', { text: eur(r.total_eur) })),
   ));
   $('#accept-terms').checked = false;
@@ -610,7 +655,12 @@ function renderStep3() {
 }
 
 // "Pagar" stays disabled until the terms box is ticked.
-function syncPay() { $('#pay').disabled = !$('#accept-terms').checked; }
+// Under the disabled button: "Acepta las condiciones para pagar". The bar's button follows ("Ir al pago" → "Pagar X €").
+function syncPay() {
+  $('#pay').disabled = !$('#accept-terms').checked;
+  $('#pay-hint').hidden = !$('#pay').disabled;
+  updateTotalBar();
+}
 $('#accept-terms').addEventListener('change', syncPay);
 
 function loadScript(src) {

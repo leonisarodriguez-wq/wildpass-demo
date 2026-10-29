@@ -411,6 +411,14 @@ export default {
       totalPaidLabel: 'Pagado (simulado)',
       choosePlan: 'Elige un plan',
       priceRange: '{min} – {max}',
+      // Fixed action bar (total on the left, the step's button on the right): the same action as the step's own button.
+      bar: {
+        pickPlan: 'Ver planes',
+        continueWith: 'Continuar con {plan}',
+        continue: 'Continuar',
+        goToPay: 'Ir al pago',
+        pay: 'Pagar {total}',
+      },
 
       step1Title: 'Tu viaje a {destination}, cubierto',
       step1Line: 'Precio total para {n} {travelersWord}. Sin sorpresas después.',
@@ -435,6 +443,9 @@ export default {
         switchLabel: 'Elige tu plan',
         chooseShort: 'Elegir',
         compareTitle: 'Compara las coberturas',
+        // Under the Wild+ price: what it costs on top of Wild, for the whole trip and per day.
+        difference: '+{diff} ({perDay} al día)',
+        differenceLabel: '{diff} más que {plan}, {perDay} al día',
       },
       choose: 'Elegir {plan}',
       selectedPlan: 'elegido',
@@ -456,6 +467,24 @@ export default {
       continue: 'Continuar',
 
       step3Title: 'Revisa antes de pagar',
+      reviewTitle: 'Tu seguro',
+      editReview: 'Editar',
+      editReviewLabel: 'Editar los datos de quién contrata y de los viajeros',
+      zone: 'Zona de precio: {zone}',
+      allCoverage: 'Todas las coberturas',
+      notCovered: 'Qué no cubre',
+      // Three key facts as chips (from the reviewed plan).
+      chips: {
+        medical: 'Médicos hasta {amount}',
+        excess: 'Franquicia {amount}',
+        noExcess: 'Sin franquicia',
+        adventure: 'Aventura incluida',
+        noAdventure: 'Sin deportes de aventura',
+        cancellation: 'Cancelación hasta {amount}',
+        noCancellation: 'Sin cancelación',
+      },
+      acceptToPay: 'Acepta las condiciones para pagar',
+      instantPolicy: 'Póliza al instante en tu email',
       trip: 'Viaje',
       dates: 'Fechas',
       plan: 'Plan',

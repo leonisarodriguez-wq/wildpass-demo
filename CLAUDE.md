@@ -11,8 +11,13 @@ The owner is not a programmer: explain things simply, report test results honest
   `{{{name}}}` = built HTML block; an unknown key throws (so a typo fails at once). Pages arrive complete: no text pops in, no layout shift.
   The template is read at start-up: restart the server after editing it. Never write triple braces inside an HTML comment there.
   `public/app.js` runs the quote form and the 4-step checkout (Paso X de 4: compare plans → who travels → review + pay (Stripe test mode, or simulated when Stripe is off) → done),
-  with browser history per step, a trip summary card (steps 1–3, "Editar" goes back to the form) and a fixed total bar
-  ("Elige un plan" + price range until a plan is chosen). Quote form: one row per traveller, "Viajero N" + age dropdown
+  with browser history per step, a trip summary card (steps 1–2, "Editar" goes back to the form) and a fixed 64 px action bar
+  ("Elige un plan" + price range until a plan is chosen; its yellow button = the step's action, `barAction()` in app.js:
+  "Ver planes"/"Continuar con X" → "Continuar" → "Ir al pago" (focuses the terms box) → "Pagar {total}").
+  Step 1: Wild+ shows "+X € (Y € al día)" over Wild. Step 3 = compact review card ("Tu seguro" + Editar, one-line rows,
+  "Zona de precio", 3 chips, coverage/exclusions in closed `<details>`), "Acepta las condiciones para pagar" under the disabled
+  Pagar and "Póliza al instante en tu email" beside it; ≥960 px review left + payment right, so the card form and Pagar are on the
+  first screen at 1440×900 (phones: payment after one scroll). Quote form: one row per traveller, "Viajero N" + age dropdown
   (0–85, "Menos de 1 año"; first row rendered by the server with 30, others copied by app.js with no age), max 8; sends the same `traveler_ages`.
   Step 1: Wild and Wild+ as two separate cards; CSS subgrid aligns each coverage row across both cards; exclusions in a
   closed-by-default `<details>` ("En los dos planes", "Solo en Wild", "Límites de Wild+"). Friendly error texts: `brand.texts.errors`, keyed by the server's `error_code`
@@ -51,8 +56,8 @@ The owner is not a programmer: explain things simply, report test results honest
   Phones: compact first screen — on 375×812 "Ver mi precio" is visible without scrolling (re-check after any hero/form change).
   Headline = two .claim-part blocks ("Travel wild." / "We've got you.") on an h1 with lang="en"; the Spanish subtitle explains the offer; form and headline have NO entrance animation.
   Live price ABOVE the button (#price-preview: .pp-main "Tu precio: desde X €" + .pp-sub "plan Wild · n viajeros"), hidden until
-  there IS a price (owner's choice: no placeholder; the button moves down once). Sticky phone bar: visible only while no other form CTA
-  (#quote-submit, [data-focus-form]) is on screen; hidden near .final-cta/footer and in the checkout; body gets 80 px padding.
+  there IS a price (owner's choice: no placeholder; the button moves down once). Sticky phone bar: hidden only while the form's
+  #quote-submit is on screen (and in the checkout); body gets 80 px padding.
   Checkout step 1 <600 px: .plan-switch (two tappable cards + "Elegir") and .compare-rows (label, then Wild | Wild+); ≥600 px:
   the two .plan-option cards. Carousels (`carouselHtml` in landing.js, wired in landing-fx.js for every [data-carousel]): "¿Y si…?" and destinations;
   full-width strip whose first card lines up with the content column (--edge), ‹ › buttons ≥700 px (hidden when it all fits), a progress
@@ -101,6 +106,7 @@ The owner is not a programmer: explain things simply, report test results honest
   `POST /v3/emailCampaigns/images`): Gmail blocks SVG and Brevo does NOT support CID-embedded images (confirmed by Brevo staff, Oct 2025).
 - Claim "Travel wild. We've got you." + hero subtitle (`texts.heroSubtitle`) + Spanish line "Viaja salvaje. Nosotros te cubrimos."
 - Website banner (`brand.siteBanner`, sticky red strip on every page): "Demo — no es un seguro real. Ningún pago es real."
+  Phones (<600 px) show the one-line `brand.siteBannerShort` "Demo · sin pagos reales"
 - Colours (`brand.colors`, exposed as CSS variables in /brand.css): sky #E3F4FB page background; white cards; night #0B1F3A main text; secondary #3C5368;
   turquoise #0E7C86 for highlighted sections (white text) and the logo mountain; turquoiseText #0B6770 for small turquoise text on light backgrounds;
   yellow #FFC21A ONLY for clickable primary buttons (bold night text, large, NO border, NO shadow) — badges and labels NEVER use yellow

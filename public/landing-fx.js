@@ -247,19 +247,11 @@ if (!reduced.matches && 'IntersectionObserver' in window) {
 }
 
 // ---------- phones: sticky "Ver mi precio" bar ----------
-// Shown only while NO other "Ver mi precio" button is on screen, hidden near the final CTA and the footer, never in the
-// checkout (it lives inside #landing). The page gets bottom padding while it shows (CSS), so it never hides content.
+// Hidden only while the form's own button is on screen (and in the checkout: it lives inside #landing).
+// The page gets bottom padding while it shows (CSS), so it never hides content.
 const sticky = $('#sticky-cta');
-const onScreen = new Set();
-const syncSticky = () => { sticky.hidden = onScreen.size > 0 || $('#landing').hidden; };
-const watch = (targets, margin = '0px') => {
-  const io = new IntersectionObserver(entries => {
-    for (const e of entries) e.isIntersecting ? onScreen.add(e.target) : onScreen.delete(e.target);
-    syncSticky();
-  }, { rootMargin: margin });
-  for (const t of targets) io.observe(t);
-};
-watch([$('#quote-submit'), ...[...document.querySelectorAll('[data-focus-form]')].filter(a => !sticky.contains(a))]);
-watch([$('.final-cta'), $('.site-footer')], '0px 0px 240px 0px'); // "near": starts hiding 240 px before they scroll in
+let submitOnScreen = true;
+const syncSticky = () => { sticky.hidden = submitOnScreen || $('#landing').hidden; };
+new IntersectionObserver(([entry]) => { submitOnScreen = entry.isIntersecting; syncSticky(); }).observe($('#quote-submit'));
 
 loadConfig().then(config => { T = config.brand.texts; routeLabel(); if (formReady()) updatePrice(); }).catch(() => {});
