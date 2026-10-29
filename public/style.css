@@ -99,6 +99,15 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 
 /* Errors: red border, text stays night blue on white. */
 .error { background: var(--white); border: 2px solid var(--red); border-left-width: 8px; color: var(--night); font-weight: 600; padding: 10px 12px; margin: 10px 0; border-radius: 10px; }
+/* One per field, right under it (Ida/Vuelta: under the whole row). Same look, a little smaller. */
+.field-error { background: var(--white); border: 2px solid var(--red); border-left-width: 6px; color: var(--night); font-weight: 600; font-size: 0.92rem; line-height: 1.4;
+  padding: 8px 10px; margin: 6px 0 10px; border-radius: 10px; }
+.field-error .error-action { display: inline; min-height: 44px; text-align: left; text-decoration: underline; }
+.travelers .field-error { margin: 0; }
+.field-hint { margin: -2px 0 6px; }
+.max-travelers { margin: 6px 0 0; font-weight: 600; }
+.details-status:empty { display: none; }
+.details-status { text-align: left; color: var(--night); font-weight: 600; margin: 0 0 12px; }
 
 /* ---------- 1. hero + quote form ---------- */
 .hero { position: relative; overflow: hidden; padding: 10px 0 32px; }
@@ -185,6 +194,7 @@ select[hidden] { display: none; } /* the plain <select> once the search box repl
 .combo-option:hover { background: var(--sky); }
 .combo-option.is-active { background: var(--mint); outline: 2px solid var(--turquoise); outline-offset: -2px; }
 .combo-option[aria-selected="true"] { font-weight: 700; }
+.combo-alias { margin-left: 6px; font-size: 0.85rem; font-weight: 400; color: var(--secondary); }
 .combo-empty { padding: 12px 14px; color: var(--secondary); }
 .travelers { display: grid; gap: 8px; }
 /* "Viajero N" | age dropdown | remove button (rows 2+; row 1 keeps the column empty so dropdowns line up) */

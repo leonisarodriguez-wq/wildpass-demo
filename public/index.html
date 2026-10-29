@@ -58,6 +58,7 @@
             <p class="field-help" id="ages-help">{{t.form.agesHelp}}</p>
             <div class="travelers" id="ages">{{{travelerRow}}}</div>
             <button type="button" class="add-traveler" id="add-age">{{t.form.addTraveler}}</button>
+            <p class="field-help max-travelers" id="max-travelers" hidden>{{{maxTravelersNote}}}</p>
             <template id="remove-icon">{{{iconRemove}}}</template>
           </fieldset>
           <div class="error" id="quote-error" role="alert" hidden></div>
@@ -191,6 +192,7 @@
           </fieldset>
           <div id="travelers"></div>
           <div class="error" role="alert" hidden></div>
+          <p class="form-note details-status" id="details-status" role="status"></p>
           <button type="submit" class="primary block">{{t.checkout.continue}}</button>
         </form>
       </section>

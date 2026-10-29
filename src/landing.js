@@ -287,6 +287,7 @@ export function createLanding({ brand, pricing, business, market, countries, tem
       benefits: t.editorial.benefits.map((b, i) => `<li class="benefit">${[art.globePin, art.mountainRope, art.shieldCheck][i]}<h3>${escapeHtml(b.title)}</h3><p>${escapeHtml(fill(b.text, values))}</p></li>`).join(''),
       faq: faqHtml({ brand, values, contactEmail }),
       travelerRow: firstTravelerRow(t.form, pricing.limits),
+      maxTravelersNote: escapeHtml(fill(t.form.maxTravelersNote, pricing.limits)),
       iconPin: art.iconPin, iconCalendar: art.iconCalendar, iconPeople: art.iconPeople, iconRemove: art.iconRemove, iconCard: art.iconCard,
     };
     return render(template, {

@@ -87,7 +87,8 @@ function formReady() {
   const dep = $('#departure').value;
   const ret = $('#return').value;
   const blocked = destination.selectedOptions[0]?.dataset.blocked === 'true'; // refused anyway: don't ask
-  return destination.value && !blocked && dep && ret && ret > dep && dep >= $('#departure').min && document.querySelectorAll('#ages .age').length > 0;
+  const ages = [...document.querySelectorAll('#ages .age')];
+  return destination.value && !blocked && dep && ret && ret > dep && dep >= $('#departure').min && ages.length > 0 && ages.every(a => a.value !== '');
 }
 async function updatePrice() {
   if (!formReady() || !T) return showPrice('');

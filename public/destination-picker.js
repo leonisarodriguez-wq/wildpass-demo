@@ -4,12 +4,19 @@
 // Keyboard: type to filter, ↓/↑ to move, Enter to choose, Esc to close (or clear), Tab leaves.
 // Screen readers: aria-activedescendant follows the highlighted option and a polite live region says how many match.
 
-const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[.\s]+/g, ' ').trim();
+
+// "España", "Madrid", "Canarias"…: the trip has to leave Spain (texts.homeAliases). Used by the form's check too.
+export const isHomeQuery = (text, texts) => {
+  const q = norm(text ?? '');
+  return q.length >= 3 && texts.homeAliases.some(a => norm(a) === q || (q.length >= 4 && norm(a).startsWith(q)));
+};
 
 export function enhanceDestination(select, texts) {
   const groups = [...select.querySelectorAll('optgroup')].map(g => ({
     label: g.label,
-    items: [...g.querySelectorAll('option')].map(o => ({ code: o.value, name: o.textContent, key: norm(o.textContent) })),
+    items: [...g.querySelectorAll('option')].map(o => ({ code: o.value, name: o.textContent, key: norm(o.textContent),
+      aliases: (texts.destinationAliases?.[o.value] ?? []).map(a => ({ text: a, key: norm(a) })) })),
   }));
   const all = groups.flatMap(g => g.items).sort((a, b) => a.name.localeCompare(b.name, 'es'));
   const byCode = new Map(all.map(item => [item.code, item]));
@@ -34,7 +41,8 @@ export function enhanceDestination(select, texts) {
   let options = []; // the option elements currently shown, in order
   let active = -1;
 
-  function optionEl(item) {
+  // `via` = the other name that matched ("Nueva York"), shown small after the country.
+  function optionEl(item, via) {
     const li = document.createElement('div');
     li.className = 'combo-option';
     li.id = `dest-opt-${item.code}`;
@@ -42,6 +50,12 @@ export function enhanceDestination(select, texts) {
     li.setAttribute('aria-selected', String(item.code === select.value));
     li.dataset.code = item.code;
     li.textContent = item.name;
+    if (via) {
+      const note = document.createElement('span');
+      note.className = 'combo-alias';
+      note.textContent = via;
+      li.append(' ', note);
+    }
     return li;
   }
   function groupEl(label, items, i) {
@@ -64,22 +78,26 @@ export function enhanceDestination(select, texts) {
     const selected = byCode.get(select.value);
     const showGroups = !q || (selected && input.value === selected.name);
     list.replaceChildren();
+    let message = texts.noResults;
     if (showGroups) groups.forEach((g, i) => list.append(groupEl(g.label, g.items, i)));
     else {
+      // Names first (starting with the text, then containing it), then other names: "usa", "tokio", "nueva york"…
       const starts = all.filter(item => item.key.startsWith(q));
       const contains = all.filter(item => !item.key.startsWith(q) && item.key.includes(q));
-      const found = [...starts, ...contains];
-      if (found.length) list.append(...found.map(optionEl));
+      const byName = new Set([...starts, ...contains]);
+      const byAlias = all.filter(item => !byName.has(item)).map(item => [item, item.aliases.find(a => a.key.startsWith(q)) ?? (q.length >= 3 ? item.aliases.find(a => a.key.includes(q)) : null)]).filter(([, a]) => a);
+      if (byName.size || byAlias.length) list.append(...[...byName].map(item => optionEl(item)), ...byAlias.map(([item, a]) => optionEl(item, a.text)));
       else {
+        if (isHomeQuery(input.value, texts)) message = texts.homeMessage;
         const none = document.createElement('div');
         none.className = 'combo-empty';
-        none.textContent = texts.noResults;
+        none.textContent = message;
         list.append(none);
       }
     }
     options = [...list.querySelectorAll('[role=option]')];
     const n = showGroups ? all.length : options.length;
-    count.textContent = n === 0 ? texts.noResults : n === 1 ? texts.resultsOne : texts.resultsCount.replace('{n}', n);
+    count.textContent = n === 0 ? message : n === 1 ? texts.resultsOne : texts.resultsCount.replace('{n}', n);
     setActive(-1);
   }
   function setActive(i) {
@@ -137,7 +155,8 @@ export function enhanceDestination(select, texts) {
   });
   // Leaving the box: an exact name typed counts as a choice; otherwise show the current choice again.
   input.addEventListener('blur', () => {
-    const exact = all.find(item => item.key === norm(input.value));
+    const q = norm(input.value);
+    const exact = all.find(item => item.key === q) ?? all.find(item => item.aliases.some(a => a.key === q));
     if (exact && exact.code !== select.value) choose(exact.code);
     else { close(); input.value = byCode.get(select.value)?.name ?? (input.value && !exact ? input.value : ''); }
   });

@@ -3,7 +3,7 @@
 // the WebMCP tools use. Error texts are friendly versions (brand config `texts.errors`) of the server's codes.
 import { callApi, loadConfig } from './api.js';
 import { qrSvg } from './qr.js';
-import { enhanceDestination } from './destination-picker.js';
+import { enhanceDestination, isHomeQuery } from './destination-picker.js';
 
 const $ = sel => document.querySelector(sel);
 // The destination field people see: the searchable box once it exists, else the plain <select>.
@@ -67,22 +67,60 @@ function friendly(result) {
   return fill(template, { ...limits, traveler: result.traveler, quotedAge: result.quoted_age, actualAge: result.age_at_departure });
 }
 
-// Shows a message in the box of `scope` and marks/focuses the field it is about (if any).
+// ONE error component per field: the message right under its field (Ida/Vuelta: under the whole row), linked with
+// aria-describedby + aria-invalid. It disappears as soon as the field is valid again (checked on input/change).
+const errorSlot = field => field.closest('.field-row') ?? field.closest('.traveler-row, .field, .check') ?? field;
+function setFieldError(field, message, action) {
+  const id = `${field.id}-error`;
+  let box = document.getElementById(id);
+  const described = (field.getAttribute('aria-describedby') ?? '').split(' ').filter(x => x && x !== id);
+  if (!message) {
+    box?.remove();
+    field.removeAttribute('aria-invalid');
+    if (described.length) field.setAttribute('aria-describedby', described.join(' ')); else field.removeAttribute('aria-describedby');
+    return;
+  }
+  if (!box) {
+    box = el('p', { class: 'field-error', id });
+    // Both dates wrong: the Ida message comes first, like the fields.
+    (field.id === 'return' && document.getElementById('departure-error')) ? $('#departure-error').after(box) : errorSlot(field).after(box);
+  }
+  box.replaceChildren(message, ...(action ? [' ', action] : []));
+  field.setAttribute('aria-invalid', 'true');
+  field.setAttribute('aria-describedby', [id, ...described].join(' '));
+}
+
+// Checks every field of a form (validators: [field, () => message | null]), shows each error under its field in
+// reading order and focuses the first one. Returns true when all are fine.
+function validateAll(checks) {
+  let first = null;
+  for (const [field, check] of checks) {
+    const message = check();
+    setFieldError(field, message);
+    if (message && !first) first = field;
+  }
+  first?.focus();
+  return !first;
+}
+
+// While a field shows an error, re-check it on every change: the message goes away as soon as the field is valid.
+function liveCheck(form, checksFor) {
+  const recheck = e => {
+    for (const [field, check] of checksFor()) {
+      if (field === e.target && field.getAttribute('aria-invalid') === 'true' && !check()) setFieldError(field, null);
+    }
+  };
+  form.addEventListener('input', recheck);
+  form.addEventListener('change', recheck);
+}
+
+// Messages that are not about one field (network, payment…): the form's own box.
 function showError(scope, message, field) {
-  const box = scope.querySelector('.error');
-  for (const f of scope.querySelectorAll('[aria-invalid]')) { f.removeAttribute('aria-invalid'); f.removeAttribute('aria-errormessage'); }
+  if (field) { setFieldError(field, message); field.focus(); return; }
+  const box = scope.querySelector(':scope > .error, form > .error');
   if (!message) { box.hidden = true; box.textContent = ''; return; }
-  box.id ||= `${scope.id || 'form'}-error`;
   box.textContent = message;
   box.hidden = false;
-  // Show the message right below the field it is about (so it's on screen), else in its usual place.
-  if (!box.home) { box.home = document.createComment('error'); box.before(box.home); }
-  if (field) (field.closest('.field, .check') ?? field).after(box); else box.home.after(box);
-  if (field) {
-    field.setAttribute('aria-invalid', 'true');
-    field.setAttribute('aria-errormessage', box.id);
-    field.focus();
-  }
 }
 
 async function busy(button, label, fn) {
@@ -166,13 +204,17 @@ function relabelAges() {
     row.querySelector('select').id = `age-${n}`;
     row.querySelector('.remove-age')?.setAttribute('aria-label', fill(T.form.removeTravelerLabel, { n }));
   });
-  $('#add-age').hidden = ageInputs().length >= limits.maxTravelers;
+  const full = ageInputs().length >= limits.maxTravelers;
+  $('#add-age').hidden = full;
+  $('#max-travelers').hidden = !full;
 }
 
 function addTraveler() {
   const first = ageInputs()[0];
-  const select = el('select', { class: 'age', name: 'age' }, [...first.options].map(o => el('option', { value: o.value, text: o.textContent })));
-  select.value = String(T.form.defaultAge);
+  // New travellers have no age yet: it has to be chosen (no silent default).
+  const select = el('select', { class: 'age', name: 'age', 'aria-required': 'true' },
+    el('option', { value: '', text: T.form.chooseAge, disabled: true, selected: true }),
+    [...first.options].map(o => el('option', { value: o.value, text: o.textContent })));
   const remove = el('button', { type: 'button', class: 'remove-age', onclick: () => {
     row.remove();
     relabelAges();
@@ -180,35 +222,50 @@ function addTraveler() {
   } });
   remove.append($('#remove-icon').content.cloneNode(true));
   const row = el('div', { class: 'traveler-row' }, el('label'), select, remove);
+  remove.addEventListener('click', () => document.getElementById(`${select.id}-error`)?.remove());
   $('#ages').append(row);
   relabelAges();
   return select;
 }
 
 $('#add-age').addEventListener('click', () => addTraveler().focus());
+// Convenience checks for the quote form (the server decides; these only spare a round trip).
+// Trip length counts both days, like the server: the latest return is departure + (maxTripDays − 1).
+const tripDaysOf = (dep, ret) => Math.round((Date.parse(ret) - Date.parse(dep)) / 86_400_000) + 1;
+function quoteChecks() {
+  const dep = $('#departure').value;
+  const ret = $('#return').value;
+  return [
+    [destField(), () => (destBlocked() ? E.DESTINATION_NOT_COVERED : $('#destination').value ? null
+      : isHomeQuery(destField().value, T.form) ? T.form.homeMessage : E.missingDestination)],
+    [$('#departure'), () => (dep ? null : E.missingDeparture)],
+    [$('#return'), () => (!ret ? E.missingReturn : dep && ret <= dep ? friendly({ error_code: 'RETURN_BEFORE_DEPARTURE' })
+      : dep && tripDaysOf(dep, ret) > limits.maxTripDays ? friendly({ error_code: 'TRIP_TOO_LONG' }) : null)],
+    ...ageInputs().map((a, i) => [a, () => (a.value === '' ? fill(E.missingAge, { n: i + 1 }) : null)]),
+  ];
+}
+liveCheck($('#quote-form'), quoteChecks);
+const checkOne = field => { const c = quoteChecks().find(([f]) => f === field); if (c) setFieldError(field, c[1]()); };
+
 // Destinations with official "do not travel" advice: say so at once, right under the box (the quote is refused anyway).
-$('#destination').addEventListener('change', () => {
-  const form = $('#quote-form');
-  if (destBlocked()) showError(form, E.DESTINATION_NOT_COVERED, destField());
-  else if (destField().getAttribute('aria-invalid')) showError(form, null);
-});
+$('#destination').addEventListener('change', () => { if (destBlocked() || destField().getAttribute('aria-invalid')) checkOne(destField()); });
 
 $('#departure').addEventListener('change', () => {
   const dep = $('#departure').value;
   if (!dep) return;
   $('#return').min = addDays(dep, 1);
+  $('#return').max = addDays(dep, limits.maxTripDays - 1);
   if ($('#return').value && $('#return').value <= dep) $('#return').value = '';
+  if ($('#return').value) checkOne($('#return'));
 });
+// Too long a trip: said at once, under the dates (the date picker also stops at the latest allowed return).
+$('#return').addEventListener('change', () => { if ($('#return').value) checkOne($('#return')); });
 
 $('#quote-form').addEventListener('submit', async e => {
   e.preventDefault();
   const form = $('#quote-form');
   const ages = ageInputs();
-  // Convenience checks only (empty fields). Every real rule is decided by the server.
-  if (!$('#destination').value) return showError(form, E.missingDestination, destField());
-  if (destBlocked()) return showError(form, E.DESTINATION_NOT_COVERED, destField()); // the server refuses it too
-  if (!$('#departure').value) return showError(form, E.missingDates, $('#departure'));
-  if (!$('#return').value) return showError(form, E.missingDates, $('#return'));
+  if (!validateAll(quoteChecks())) return;
 
   await busy($('#quote-submit'), T.form.loading, async () => {
     const result = await callApi('get_quote', {
@@ -223,13 +280,13 @@ $('#quote-form').addEventListener('submit', async e => {
         SAME_COUNTRY: '#destination-search', INVALID_COUNTRY: '#destination-search', DESTINATION_NOT_COVERED: '#destination-search',
         DEPARTURE_NOT_IN_FUTURE: '#departure', INVALID_DATE: '#departure',
         RETURN_BEFORE_DEPARTURE: '#return', TRIP_TOO_LONG: '#return',
-        INVALID_TRAVELER_COUNT: '#add-age',
       }[result.error_code];
       // For an age outside the limits, point at the first such age (limits come from the config).
       const badAge = result.error_code === 'INVALID_AGE' ? ages.find(a => Number(a.value) < limits.minAge || Number(a.value) > limits.maxAge) ?? ages[0] : null;
       return showError(form, friendly(result), badAge ?? (fieldFor && $(fieldFor)));
     }
     showError(form, null);
+    for (const field of form.querySelectorAll('[aria-invalid="true"]')) setFieldError(field, null);
     Object.assign(state, { quote: result, plan: null, orderId: null, review: null, paid: null });
     renderStep1();
     render('1');
@@ -411,7 +468,8 @@ function renderStep2() {
       same,
       el('div', { class: 'field' }, el('label', { for: nameId, text: C.fullName }), el('input', { id: nameId, class: 't-name', autocomplete: 'off', 'aria-required': 'true', value: previous[i]?.name ?? '' })),
       el('div', { class: 'field' }, el('label', { for: birthId, text: C.birthDate }),
-        el('input', { id: birthId, class: 't-birth', type: 'text', inputmode: 'numeric', placeholder: C.birthDatePlaceholder, maxlength: '10', autocomplete: 'off', 'aria-required': 'true', value: previous[i]?.birth ?? '' })),
+        el('p', { class: 'hint field-hint', id: `${birthId}-hint`, text: C.birthDateHint }),
+        el('input', { id: birthId, class: 't-birth', type: 'text', inputmode: 'numeric', placeholder: C.birthDatePlaceholder, maxlength: '10', autocomplete: 'off', 'aria-required': 'true', 'aria-describedby': `${birthId}-hint`, value: previous[i]?.birth ?? '' })),
     );
   }));
 }
@@ -422,16 +480,51 @@ $('#ph-name').addEventListener('input', () => {
 });
 $('#travelers').addEventListener('input', formatBirthInput);
 
+// Step 2 convenience checks, in reading order (empty or unreadable fields; the server checks everything else).
+const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function detailChecks() {
+  const name = input => [input, () => (input.value.trim() ? null : E.missingName)];
+  const fieldsets = [...document.querySelectorAll('#travelers fieldset')];
+  return [
+    name($('#ph-name')),
+    [$('#ph-email'), () => (EMAIL_SHAPE.test($('#ph-email').value.trim()) ? null : friendly({ error_code: 'INVALID_EMAIL' }))],
+    ...fieldsets.flatMap(f => {
+      const birth = f.querySelector('.t-birth');
+      return [name(f.querySelector('.t-name')), [birth, () => (toIsoDate(birth.value) ? null : E.missingBirthDate)]];
+    }),
+  ];
+}
+liveCheck($('#details-form'), detailChecks);
+
+// "Actualizar a X años y recalcular": the birth date is right, the quoted age was not. New quote with that age,
+// same plan, then back to this step with everything typed kept (the server prices it; nothing is decided here).
+async function updateAgeAndRequote(index, age, button) {
+  const q = state.quote.trip;
+  const ages = q.traveler_ages.map((a, i) => (i === index ? age : a));
+  await busy(button, C.working, async () => {
+    const quote = await callApi('get_quote', { origin_country: 'ES', destination_country: q.destination_country, departure_date: q.departure_date, return_date: q.return_date, traveler_ages: ages });
+    if (!quote.ok) return showError($('#details-form'), friendly(quote));
+    const order = await callApi('select_plan', { quote_id: quote.quote_id, plan: state.plan });
+    if (!order.ok) return showError($('#details-form'), friendly(order));
+    Object.assign(state, { quote, orderId: order.order_id, review: null });
+    const select = ageInputs()[index]; // keep the landing form in step with the new quote
+    if (select) select.value = String(age);
+    renderStep2();
+    renderTripCard();
+    updateTotalBar();
+    const total = eur(quote.plans.find(p => p.plan === state.plan).total_price_eur);
+    $('#details-status').textContent = fill(C.ageUpdated, { traveler: index + 1, age, total });
+    $(`#t-birth-${index}`).focus();
+  });
+}
+
 $('#details-form').addEventListener('submit', async e => {
   e.preventDefault();
   const form = $('#details-form');
   const names = [...document.querySelectorAll('#travelers .t-name')];
   const births = [...document.querySelectorAll('#travelers .t-birth')];
-  // Convenience checks only (empty or unreadable fields); the server checks everything else.
-  for (const input of [$('#ph-name'), ...names]) if (!input.value.trim()) return showError(form, E.missingName, input);
-  if (!$('#ph-email').value.trim()) return showError(form, friendly({ error_code: 'INVALID_EMAIL' }), $('#ph-email'));
-  const badBirth = births.find(b => !toIsoDate(b.value));
-  if (badBirth) return showError(form, E.missingBirthDate, badBirth);
+  $('#details-status').textContent = '';
+  if (!validateAll(detailChecks())) return;
 
   await busy(e.submitter ?? form.querySelector('button[type=submit]'), C.working, async () => {
     const result = await callApi('set_traveler_details', {
@@ -441,6 +534,13 @@ $('#details-form').addEventListener('submit', async e => {
     });
     if (!result.ok) {
       const field = { INVALID_EMAIL: $('#ph-email'), AGE_MISMATCH: births[(result.traveler ?? 1) - 1], INVALID_BIRTH_DATE: births[0] }[result.error_code];
+      if (result.error_code === 'AGE_MISMATCH' && field && Number.isInteger(result.age_at_departure)) {
+        const index = (result.traveler ?? 1) - 1;
+        const fix = el('button', { type: 'button', class: 'link-button error-action', text: fill(C.updateAge, { age: result.age_at_departure }),
+          onclick: ev => updateAgeAndRequote(index, result.age_at_departure, ev.currentTarget) });
+        setFieldError(field, friendly(result), fix);
+        return field.focus();
+      }
       return showError(form, friendly(result), field);
     }
     const review = await callApi('review_order', { order_id: state.orderId });

@@ -595,3 +595,19 @@ test('agents are welcome: robots.txt allows all, /llms.txt lists the 6 tools, th
     }
   }
 });
+
+test('quote form helpers: destination aliases point at real, coverable countries; max travellers note; birth date hint', async () => {
+  const { COUNTRY_CODES } = await import('../config/countries.js');
+  const f = brand.texts.form;
+  for (const [code, aliases] of Object.entries(f.destinationAliases)) {
+    assert.ok(COUNTRY_CODES.includes(code) && code !== 'ES', `${code} is not a destination`);
+    assert.ok(!pricing.destinationsNotCovered.includes(code), `${code} is not coverable`);
+    assert.ok(aliases.length > 0);
+  }
+  for (const [code, alias] of [['US', 'EEUU'], ['US', 'USA'], ['US', 'Nueva York'], ['GB', 'UK'], ['GB', 'Inglaterra'], ['JP', 'Tokio']]) assert.ok(f.destinationAliases[code].includes(alias), alias);
+  assert.ok(f.homeAliases.includes('España') && f.homeMessage === 'Este seguro es para viajes desde España al extranjero.');
+  const html = nbsp(await (await fetch(`${base}/`)).text());
+  assert.ok(html.includes(`<p class="field-help max-travelers" id="max-travelers" hidden>Máximo ${pricing.limits.maxTravelers} viajeros por póliza</p>`));
+  assert.ok(html.includes('id="details-status" role="status"'));
+  assert.equal(brand.texts.checkout.birthDateHint, 'Formato dd/mm/aaaa, por ejemplo 07/03/1990.');
+});

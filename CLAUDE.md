@@ -13,10 +13,16 @@ The owner is not a programmer: explain things simply, report test results honest
   `public/app.js` runs the quote form and the 4-step checkout (Paso X de 4: compare plans → who travels → review + pay (Stripe test mode, or simulated when Stripe is off) → done),
   with browser history per step, a trip summary card (steps 1–3, "Editar" goes back to the form) and a fixed total bar
   ("Elige un plan" + price range until a plan is chosen). Quote form: one row per traveller, "Viajero N" + age dropdown
-  (0–85, "Menos de 1 año", default 30; first row rendered by the server, others copied by app.js), max 8; sends the same `traveler_ages`.
+  (0–85, "Menos de 1 año"; first row rendered by the server with 30, others copied by app.js with no age), max 8; sends the same `traveler_ages`.
   Step 1: Wild and Wild+ as two separate cards; CSS subgrid aligns each coverage row across both cards; exclusions in a
   closed-by-default `<details>` ("En los dos planes", "Solo en Wild", "Límites de Wild+"). Friendly error texts: `brand.texts.errors`, keyed by the server's `error_code`
-  (+ client-only keys like `missingDates`); the message is shown right under the field it is about.
+  (+ client-only keys like `missingDeparture`). Field errors (app.js `setFieldError`): ONE `.field-error` per field, right under it
+  (Ida/Vuelta: under the whole row), aria-invalid + aria-describedby, removed as soon as the field is valid again (`liveCheck`);
+  on submit every field is checked (`validateAll`), errors in reading order, focus on the first. Messages about no field: the form's `.error` box.
+  Quote form: return max = departure + (maxTripDays − 1) with an inline TRIP_TOO_LONG; travellers 2–8 start with NO age ("Elige la edad");
+  at 8 the add button gives way to "Máximo 8 viajeros por póliza". Step 2: visible "Formato dd/mm/aaaa" hint; AGE_MISMATCH shows a button
+  "Actualizar a X años y recalcular" (new get_quote + select_plan, same plan, typed data kept). Destination search: `texts.form.destinationAliases`
+  (EEUU, UK, Tokio…, shown small after the country) and `homeAliases` ("España", "Madrid"… → "Este seguro es para viajes desde España al extranjero.").
   Birth dates are typed as dd/mm/aaaa (numeric keyboard) and sent as YYYY-MM-DD. Mobile-first CSS (`public/style.css`), breakpoints 700/960 px.
 - "Desde X €" on the plan cards = 7 days, Europe, 1 adult, computed by the pricing engine (`fromPrices` in `src/landing.js`), never typed in.
 - No public pricing-methodology page (removed 28 Oct 2026 at the owner's request). The research is in `docs/pricing-research.md`
