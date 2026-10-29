@@ -43,6 +43,12 @@ function copyValues(pricing, market) {
     plusMedWorld: formatEur(plus.coverage.medical_expenses_rest_of_world_eur),
     plusBaggage: formatEur(plus.coverage.baggage_theft_damage_eur),
     plusCancellation: formatEur(plus.coverage.cancellation_per_traveler_eur),
+    wildDental: formatEur(wild.coverage.urgent_dental_eur),
+    plusDental: formatEur(plus.coverage.urgent_dental_eur),
+    wildLiability: formatEur(wild.coverage.civil_liability_eur),
+    plusLiability: formatEur(plus.coverage.civil_liability_eur),
+    repatriation: plus.coverage.repatriation,
+    ...pricing.limits, // maxTripDays, minTravelers, maxTravelers, minAge, maxAge
     trekkingAltitude: plus.adventure_sports_limits.trekking_max_altitude_m.toLocaleString('es-ES'),
     divingDepth: plus.adventure_sports_limits.scuba_diving_max_depth_m,
     count: quoteCount(market),
@@ -67,14 +73,35 @@ function footerHtml(brand) {
   </div></footer>`;
 }
 
-// Shared shell for simple pages (terms).
+// Demo banner: the full sentence, and a one-line short version for phones (CSS shows one of them).
+export function bannerHtml(brand) {
+  return `<div class="banner" id="demo-banner"><span class="banner-long">${escapeHtml(brand.siteBanner)}</span><span class="banner-short">${escapeHtml(brand.siteBannerShort)}</span></div>`;
+}
+
+// "Saltar al contenido": the first thing a keyboard user reaches on every page (visible only when focused).
+export const skipLinkHtml = brand => `<a class="skip-link" href="#contenido">${escapeHtml(brand.texts.nav.skip)}</a>`;
+
+// Site header on every page: logo, "Preguntas frecuentes", "Agentes", "Condiciones" and "Ver mi precio".
+// Phones and tablets: the links fold into a simple "Menú" panel (public/site-nav.js). On the landing the links stay on the page.
+export function headerHtml(brand, { home = false } = {}) {
+  const n = brand.texts.nav;
+  const root = home ? '' : '/';
+  return `<header class="site-header"><div class="wrap header-bar">${logoHtml()}
+  <button type="button" class="menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="site-nav" data-open="${escapeHtml(n.menu)}" data-close="${escapeHtml(n.close)}">${escapeHtml(n.menu)}</button>
+  <nav class="site-nav" id="site-nav" aria-label="${escapeHtml(n.label)}">
+    <ul><li><a href="${root}#preguntas" data-open-faq>${escapeHtml(n.faq)}</a></li><li><a href="/agentes">${escapeHtml(n.agents)}</a></li><li><a href="/condiciones">${escapeHtml(n.terms)}</a></li></ul>
+    <a class="primary nav-cta" href="${root}#quote-form"${home ? ' data-focus-form' : ''}>${escapeHtml(n.cta)}</a>
+  </nav>
+</div></header>`;
+}
+
+// Shared shell for simple pages (terms, /agentes, 404).
 export function pageShell({ brand, title, body, scripts = [] }) {
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(title)} · ${escapeHtml(brand.name)}</title>${iconLinks}${fontPreloads}<link rel="stylesheet" href="/brand.css"><link rel="stylesheet" href="/style.css"></head>
-<body><div class="banner">${escapeHtml(brand.siteBanner)}</div>
-<header class="site-header"><div class="wrap">${logoHtml()}</div></header>
-<main class="page"><div class="wrap"><div class="card-page">${body}</div></div></main>
-${footerHtml(brand)}${scripts.map(src => `<script type="module" src="${src}"></script>`).join('')}</body></html>`;
+<body>${skipLinkHtml(brand)}${bannerHtml(brand)}${headerHtml(brand)}
+<main class="page" id="contenido" tabindex="-1"><div class="wrap"><div class="card-page">${body}</div></div></main>
+${footerHtml(brand)}${['/site-nav.js', ...scripts].map(src => `<script type="module" src="${src}"></script>`).join('')}</body></html>`;
 }
 
 // Age dropdown options ("Menos de 1 año", "1 año", "2 años"… "85 años"), from the pricing limits.
@@ -183,43 +210,62 @@ export function countryOptionsHtml({ brand, pricing, countries }) {
     + `<optgroup label="${escapeHtml(f.allLabel)}">${all.filter(c => !f.popularDestinations.includes(c.code)).map(option).join('')}</optgroup>`;
 }
 
-// "¿Y si…?": ARIA tabs, one panel per scenario. Every limit comes from the pricing config (placeholders + `figure`).
+// Horizontal carousel (scroll-snap): ‹ › buttons on computers, swipe on phones, a progress line shows there is more.
+// public/landing-fx.js wires the buttons and the progress line for every [data-carousel].
+export function carouselHtml({ id, label, prev, next, items }) {
+  const arrow = (dir, text, d) => `<button type="button" class="carousel-arrow carousel-${dir}" aria-controls="${id}" aria-label="${escapeHtml(text)}" hidden><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="${d}" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`;
+  return `<div class="carousel" data-carousel>
+    ${arrow('prev', prev, 'M15 5l-7 7 7 7')}
+    <ul class="carousel-strip" id="${id}"${label ? ` aria-label="${escapeHtml(label)}"` : ''}>${items}</ul>
+    ${arrow('next', next, 'M9 5l7 7-7 7')}
+    <div class="carousel-progress" aria-hidden="true"><span></span></div>
+  </div>`;
+}
+
+// "¿Y si…?": one card per situation, in a carousel. Every limit comes from the pricing config (placeholders + `figure`).
 export function whatIfHtml({ brand, pricing, values }) {
   const w = brand.texts.whatIf;
-  const arts = { sprain: art.whatIfSprain, suitcase: art.whatIfSuitcase, cancel: art.whatIfCancel, rescue: art.whatIfRescue };
-  const tabs = w.scenarios.map((sc, i) => `<button type="button" role="tab" class="whatif-tab" id="wi-tab-${sc.id}" aria-controls="wi-panel-${sc.id}" aria-selected="${i === 0}"${i ? ' tabindex="-1"' : ''}>${escapeHtml(sc.tab)}</button>`).join('');
-  const panels = w.scenarios.map((sc, i) => {
-    const amount = pricing.plans[sc.figure.plan].coverage[sc.figure.key];
-    if (typeof amount !== 'number' || amount <= 0) throw new Error(`What-if ${sc.id}: no limit ${sc.figure.key} in ${sc.figure.plan}`);
+  const cards = w.scenarios.map(sc => {
+    let figure = '';
+    if (sc.figure) {
+      const amount = pricing.plans[sc.figure.plan].coverage[sc.figure.key];
+      if (typeof amount !== 'number' || amount <= 0) throw new Error(`What-if ${sc.id}: no limit ${sc.figure.key} in ${sc.figure.plan}`);
+      figure = `<p class="whatif-figure"><span class="count" data-to="${amount}">${escapeHtml(formatEur(amount))}</span> <span class="whatif-figure-label">${escapeHtml(sc.figureLabel)}</span></p>`;
+    }
     const verdicts = Object.entries(sc.plans).map(([plan, v]) => `<li class="verdict ${v.ok ? 'is-ok' : 'is-no'}"><strong>${escapeHtml(pricing.plans[plan].name)}</strong> <span class="verdict-state">${escapeHtml(v.ok ? w.covered : w.notCovered)}</span><span class="verdict-text">${escapeHtml(fill(v.text, values))}</span></li>`).join('');
-    return `<div class="whatif-panel" role="tabpanel" id="wi-panel-${sc.id}" aria-labelledby="wi-tab-${sc.id}" tabindex="0"${i ? ' hidden' : ''}>
-      <div class="whatif-art">${arts[sc.id]}</div>
-      <div class="whatif-body">
-        <h3>${escapeHtml(sc.title)}</h3>
-        <p class="whatif-figure"><span class="count" data-to="${amount}">${escapeHtml(formatEur(amount))}</span> <span class="whatif-figure-label">${escapeHtml(sc.figureLabel)}</span></p>
-        <p class="whatif-text">${escapeHtml(fill(sc.text, values))}</p>
-        <ul class="verdicts">${verdicts}</ul>
-        <a class="primary button-link" href="#quote-form" data-focus-form>${escapeHtml(w.seePrice)}</a>
-      </div>
-    </div>`;
+    return `<li class="whatif-card" id="wi-${sc.id}"><h3>${escapeHtml(sc.title)}</h3>${figure}<ul class="verdicts">${verdicts}</ul><p class="whatif-text">${escapeHtml(fill(sc.text, values))}</p></li>`;
   }).join('');
-  return `<div class="whatif-tabs" role="tablist" aria-label="${escapeHtml(w.tabsLabel)}">${tabs}</div><div class="whatif-panels">${panels}</div>`;
+  return carouselHtml({ id: 'whatif-strip', label: w.listLabel, prev: w.prev, next: w.next, items: cards })
+    + `<p class="wrap carousel-hint">${escapeHtml(fill(w.hint, { count: w.scenarios.length }))}</p>`;
+}
+
+// FAQ answers: escaped text, then [text](#quote-form) → a link to the quote form, {contactLink} → a mailto link.
+function faqHtml({ brand, values, contactEmail }) {
+  const t = brand.texts;
+  const contact = contactEmail ? `<a href="mailto:${escapeHtml(contactEmail)}">${escapeHtml(contactEmail)}</a>` : '';
+  return t.faq.filter(f => !f.needsContact || contactEmail).map(f => {
+    const answer = escapeHtml(fill(f.a, values))
+      .replace(/\[([^\]]+)\]\(#quote-form\)/g, '<a href="#quote-form" data-focus-form>$1</a>')
+      .replace('{contactLink}', contact);
+    return `<details class="faq-item"><summary>${escapeHtml(f.q)}</summary><p>${answer}</p></details>`;
+  }).join('');
 }
 
 // "¿A dónde te escapas?": one card per scene destination, "7 días desde X €" = Wild, 1 adult, from the engine.
 export function destinationsHtml({ brand, pricing, business, countries }) {
   const d = brand.texts.destinations;
   const adult = pricing.ageFactors.find(b => b.factor === 1).minAge;
-  return d.countries.map(code => {
+  const items = d.countries.map(code => {
     const country = countries.find(c => c.code === code);
     if (!country) throw new Error(`Destinations: unknown country ${code}`);
     const price = formatEur(business.pricePerTravelerCents(zoneOf(code, pricing), 'wild', 7, adult) / 100);
     return `<li><button type="button" class="dest-card" data-country="${code}" aria-label="${escapeHtml(fill(d.cardLabel, { name: country.name, price }))}">`
       + `${miniScene(sceneFor(code, pricing))}<span class="dest-name">${escapeHtml(country.name)}</span><span class="dest-price">${escapeHtml(fill(d.price, { price }))}</span></button></li>`;
   }).join('');
+  return carouselHtml({ id: 'dest-strip', prev: d.prev, next: d.next, items });
 }
 
-export function createLanding({ brand, pricing, business, market, countries, templatePath }) {
+export function createLanding({ brand, pricing, business, market, countries, templatePath, contactEmail = '' }) {
   const template = readFileSync(templatePath, 'utf8');
   const t = brand.texts;
   const values = copyValues(pricing, market);
@@ -228,7 +274,9 @@ export function createLanding({ brand, pricing, business, market, countries, tem
     const prices = fromPrices(business, pricing);
     const html = {
       iconLinks, fontPreloads,
-      logo: logoHtml(),
+      skipLink: skipLinkHtml(brand),
+      siteHeader: headerHtml(brand, { home: true }),
+      banner: bannerHtml(brand),
       countryOptions: countryOptionsHtml({ brand, pricing, countries }),
       showcase: showcaseHtml({ brand, pricing, business }),
       sceneSprite, heroScene, routeStrip,
@@ -237,9 +285,9 @@ export function createLanding({ brand, pricing, business, market, countries, tem
       whatIf: whatIfHtml({ brand, pricing, values }),
       destinations: destinationsHtml({ brand, pricing, business, countries }),
       benefits: t.editorial.benefits.map((b, i) => `<li class="benefit">${[art.globePin, art.mountainRope, art.shieldCheck][i]}<h3>${escapeHtml(b.title)}</h3><p>${escapeHtml(fill(b.text, values))}</p></li>`).join(''),
-      faq: t.faq.map(f => `<details class="faq-item"><summary>${escapeHtml(f.q)}</summary><p>${escapeHtml(fill(f.a, values))}</p></details>`).join(''),
+      faq: faqHtml({ brand, values, contactEmail }),
       travelerRow: firstTravelerRow(t.form, pricing.limits),
-      iconPin: art.iconPin, iconCalendar: art.iconCalendar, iconPeople: art.iconPeople, iconRemove: art.iconRemove,
+      iconPin: art.iconPin, iconCalendar: art.iconCalendar, iconPeople: art.iconPeople, iconRemove: art.iconRemove, iconCard: art.iconCard,
     };
     return render(template, {
       html,

@@ -324,8 +324,17 @@ test('landing: complete server-rendered page with prices from the pricing engine
   assert.ok(!/\{\{|\}\}/.test(html), 'leftover template braces');
   // Headline: two fixed lines, never a lonely "you.".
   assert.ok(/<h1 id="hero-title"><span class="claim-part">Travel wild\.<\/span> <span class="claim-part">We(’|'|&#39;)ve got you\.<\/span><\/h1>/.test(html), 'headline in two parts');
-  // Live price line sits ABOVE the button, with its placeholder already there.
-  assert.ok(html.indexOf('id="price-preview"') < html.indexOf('id="quote-submit"') && html.includes('<span class="pp-main">Tu precio</span>'));
+  // Live price line sits ABOVE the button and stays hidden until there is a price (no placeholder).
+  assert.ok(html.indexOf('id="price-preview"') < html.indexOf('id="quote-submit"') && html.includes('<p class="price-preview" id="price-preview" hidden><span class="pp-main"></span>'));
+  assert.ok(!html.includes('Elige destino y fechas para verlo'));
+  // Header: skip link first, then menu links and "Ver mi precio"; phones fold them into "Menú".
+  assert.ok(html.indexOf('class="skip-link" href="#contenido"') < html.indexOf('id="demo-banner"') && html.includes('id="contenido" tabindex="-1"'));
+  for (const link of ['<a href="#preguntas" data-open-faq>Preguntas frecuentes</a>', '<a href="/agentes">Agentes</a>', '<a href="/condiciones">Condiciones</a>',
+    '<a class="primary nav-cta" href="#quote-form" data-focus-form>Ver mi precio</a>', 'id="menu-toggle" aria-expanded="false" aria-controls="site-nav"']) assert.ok(html.includes(link), link);
+  // FAQ: about ten questions, closed behind a button; some answers link to the quote form.
+  assert.ok(html.includes('id="faq-toggle" aria-expanded="false" aria-controls="faq-list"') && html.includes('<div class="faq-list" id="faq-list" hidden>'));
+  assert.ok((html.match(/<details class="faq-item">/g) ?? []).length >= 9);
+  assert.ok(html.includes('<a href="#quote-form" data-focus-form>Calcula tu precio</a>'));
   for (const text of ['Ver mi precio', 'Gratis y sin compromiso: no te pedimos datos personales.',
     'Viajeros y edad el día de la ida', 'La edad influye en el precio.', '+ Añadir viajero',
     'Tu asistente también puede contratarlo', 'Tú pon la aventura. Nosotros, todo lo demás.', 'Elige cómo quieres viajar',
@@ -353,7 +362,9 @@ test('landing: complete server-rendered page with prices from the pricing engine
   assert.deepEqual(options.filter(o => o[2]).map(o => o[1]), ['30']);
   // Checkout steps are in the page; no ID or card fields anywhere.
   for (const id of ['quote-form', 'trip-card', 'step-1', 'step-2', 'step-3', 'step-4', 'total-bar', 'accept-terms', 'exclusions']) assert.ok(html.includes(`id="${id}"`), id);
-  assert.ok(!/dni|tarjeta de cr|card-number|cc-number/i.test(html.replace('Nada de DNI', '').replace('datos de tarjeta', '')));
+  // (Texts that only SAY there is no DNI, or name the card method shown above Stripe's own frame, are fine.)
+  assert.ok(!/dni|tarjeta de cr|card-number|cc-number/i.test(html.replace(/nada de DNI/gi, '').replace('datos de tarjeta', '').replace('Tarjeta de crédito o débito', '')));
+  assert.ok(!/<input[^>]*(card|dni|passport|cvc)/i.test(html));
 });
 
 test('landing hero: destination scenes and the AI example use real prices and the real WebMCP tools', async () => {
@@ -426,7 +437,9 @@ test('AI block on the landing: only title, text, the example chat and the compat
   const html = nbsp(await (await fetch(`${base}/`)).text());
   const ai = html.slice(html.indexOf('id="ia"'), html.indexOf('</section>', html.indexOf('id="ia"')));
   assert.ok(ai.includes('Tu asistente también puede contratarlo') && ai.includes('id="showcase"') && ai.includes('id="showcase-replay"'));
-  assert.ok(ai.includes('Funciona con asistentes y navegadores compatibles con WebMCP'));
+  // ONE line about agents, server-rendered, with the link to /agentes.
+  assert.ok(ai.includes('<p class="ai-agents">¿Usas un asistente de IA? Puede contratar por ti aquí: usa nuestras herramientas WebMCP o el formulario, como tú. Instrucciones: <a href="/agentes">/agentes</a></p>'));
+  assert.ok(!ai.includes('Funciona con asistentes y navegadores compatibles con WebMCP'));
   // Developer material lives on /agentes now.
   for (const gone of ['copy-prompt', 'Para desarrolladores</summary>', 'Herramientas WebMCP que usa', 'data-tool=', 'Prueba a pedirle esto']) assert.ok(!html.includes(gone), gone);
   // Screen readers: each message once. The visual copy is aria-hidden, the sr-only copy carries the speaker.
@@ -446,7 +459,7 @@ test('AI block on the landing: only title, text, the example chat and the compat
   // Benefits: no AI repeat; plans: two cards only.
   assert.ok(html.includes('Sin franquicia en Wild+') && !html.includes('Contrátalo con tu asistente de IA'));
   assert.equal((html.match(/<li class="plan-card/g) ?? []).length, 2);
-  assert.ok(html.includes('Me tuerzo el tobillo haciendo trekking'));
+  assert.ok(html.includes('¿Y si me tuerzo el tobillo haciendo trekking?'));
 });
 
 test('/agentes: WebMCP explained, example prompt, the real tools and the confirm_payment rules', async () => {
@@ -552,7 +565,11 @@ test('landing: what-if scenarios and destination cards use the real limits and e
     assert.ok(html.includes(`data-to="${amount}"`), `figure ${amount}`);
   }
   assert.ok(html.includes('hasta 3.000 € por viajero') && html.includes('hasta 15.000 €'));
-  assert.equal((html.match(/role="tab"/g) ?? []).length, 4);
+  // About 15 situations in a carousel; the first one is covered by BOTH plans.
+  const cards = [...html.matchAll(/<li class="whatif-card"[^>]*>(.*?)<\/li><\/ul><p class="whatif-text">/g)].map(m => m[1]);
+  assert.equal(cards.length, 15);
+  assert.equal((cards[0].match(/verdict is-ok/g) ?? []).length, 2, 'first situation covered by both plans');
+  assert.ok(html.includes('data-carousel') && html.includes('id="whatif-strip"') && html.includes('Desliza para ver las 15 situaciones'));
   // "7 días desde X €" = Wild, 7 days, 1 adult, from the engine for that country's zone.
   for (const code of ['TH', 'IT', 'US']) {
     const q = await call('get_quote', quoteInput({ destination_country: code, return_date: addDays(DEP, 6), traveler_ages: [35] }));
@@ -571,7 +588,7 @@ test('agents are welcome: robots.txt allows all, /llms.txt lists the 6 tools, th
   assert.ok(!order.includes(-1) && [...order].sort((a, b) => a - b).join() === order.join(), llms);
   assert.ok(llms.includes(`(${base}/agentes)`) && llms.includes('WebMCP'));
   const html = nbsp(await (await fetch(`${base}/`)).text());
-  assert.ok(html.includes('<p class="ai-agents">Esta web es compatible con agentes de IA mediante WebMCP. Instrucciones: <a href="/agentes">/agentes</a></p>'));
+  assert.ok(html.includes('Puede contratar por ti aquí: usa nuestras herramientas WebMCP o el formulario, como tú. Instrucciones: <a href="/agentes">/agentes</a></p>'));
   for (const ua of ['ChatGPT-User/1.0', 'GPTBot/1.1', 'OAI-SearchBot/1.0', 'ClaudeBot/1.0', 'Claude-User/1.0', 'PerplexityBot/1.0', 'Google-Extended']) {
     for (const path of ['/', '/robots.txt', '/llms.txt', '/agentes']) {
       assert.equal((await fetch(`${base}${path}`, { headers: { 'User-Agent': `Mozilla/5.0 (compatible; ${ua})` } })).status, 200, `${ua} ${path}`);

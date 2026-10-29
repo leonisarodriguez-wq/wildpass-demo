@@ -55,12 +55,10 @@ for (const id of ['#departure', '#return']) $(id).addEventListener('change', rou
 if (destination.value) showDestination(); // e.g. the browser restored the form after "back"
 
 // ---------- live price preview above the button: "Tu precio: desde X €" + "plan Wild · 2 viajeros" ----------
-// Both lines are in the page from the start ("Tu precio" / "Elige destino y fechas para verlo"), so nothing jumps.
+// Shown only once there is a price (hidden again when the form can't be priced).
 const preview = $('#price-preview');
 const previewMain = preview.querySelector('.pp-main');
 const previewSub = preview.querySelector('.pp-sub');
-const emptyMain = previewMain.textContent;
-const emptySub = previewSub.textContent;
 let seq = 0;
 let timer;
 function odometer(text, old) {
@@ -75,9 +73,9 @@ function odometer(text, old) {
 function showPrice(main = '', sub = '') {
   if (preview.dataset.text === main + sub) return;
   preview.dataset.text = main + sub;
-  preview.classList.toggle('has-price', Boolean(main));
-  previewSub.textContent = main ? sub : emptySub;
-  if (!main) { previewMain.textContent = emptyMain; delete previewMain.dataset.text; return; }
+  preview.hidden = !main;
+  previewSub.textContent = sub;
+  if (!main) { previewMain.textContent = ''; delete previewMain.dataset.text; return; }
   previewMain.innerHTML = odometer(main, previewMain.dataset.text);
   previewMain.dataset.text = main;
   const strips = [...previewMain.querySelectorAll('.odo-strip')];
@@ -200,47 +198,31 @@ const countObserver = new IntersectionObserver(entries => {
 }, { threshold: 0.6 });
 document.querySelectorAll('.count').forEach(n => countObserver.observe(n));
 
-// ---------- "¿Y si…?" tabs (ARIA tabs: click, arrow keys, Home/End) ----------
-const tabs = [...document.querySelectorAll('.whatif-tab')];
-function selectTab(tab, focus) {
-  for (const t of tabs) {
-    const on = t === tab;
-    t.setAttribute('aria-selected', String(on));
-    t.tabIndex = on ? 0 : -1;
-    const panel = document.getElementById(t.getAttribute('aria-controls'));
-    panel.hidden = !on;
-    if (on) panel.querySelectorAll('.count').forEach(n => { countObserver.unobserve(n); countObserver.observe(n); });
-  }
-  if (focus) { tab.focus(); tab.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: reduced.matches ? 'auto' : 'smooth' }); }
-}
-for (const tab of tabs) {
-  tab.addEventListener('click', () => selectTab(tab, false));
-  tab.addEventListener('keydown', e => {
-    const i = tabs.indexOf(tab);
-    const next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
-    if (next === undefined) return;
-    e.preventDefault();
-    selectTab(tabs[(next + tabs.length) % tabs.length], true);
-  });
+// ---------- carousels ("¿Y si…?", destinations): ‹ › on computers, a progress line under the strip ----------
+// Arrows scroll by most of a screen, are hidden when everything fits and disabled at each end.
+for (const box of document.querySelectorAll('[data-carousel]')) {
+  const strip = box.querySelector('.carousel-strip');
+  const arrows = [[box.querySelector('.carousel-prev'), -1], [box.querySelector('.carousel-next'), 1]];
+  const bar = box.querySelector('.carousel-progress');
+  const sync = () => {
+    const max = strip.scrollWidth - strip.clientWidth;
+    for (const [button, dir] of arrows) {
+      const hadFocus = document.activeElement === button;
+      button.hidden = max <= 1;
+      button.disabled = dir < 0 ? strip.scrollLeft <= 1 : strip.scrollLeft >= max - 1;
+      if (hadFocus && button.disabled) arrows.find(([other]) => other !== button)[0].focus(); // keyboard focus never gets lost
+    }
+    // Progress line: its thumb is as wide as the visible part and moves with the scroll.
+    bar.hidden = max <= 1;
+    bar.style.setProperty('--thumb', `${(strip.clientWidth / strip.scrollWidth) * 100}%`);
+    bar.style.setProperty('--pos', max > 0 ? String(strip.scrollLeft / max) : '0');
+  };
+  for (const [button, dir] of arrows) button.addEventListener('click', () => strip.scrollBy({ left: dir * strip.clientWidth * 0.8, behavior: reduced.matches ? 'auto' : 'smooth' }));
+  strip.addEventListener('scroll', sync, { passive: true });
+  new ResizeObserver(sync).observe(strip);
 }
 
 // ---------- destination cards: set the destination, switch the hero scene, go to the form ----------
-// Destination strip arrows (computers): scroll by most of a screen; hidden when everything fits, disabled at each end.
-const strip = $('#dest-strip');
-const arrows = [[$('.dest-prev'), -1], [$('.dest-next'), 1]];
-function syncArrows() {
-  const max = strip.scrollWidth - strip.clientWidth;
-  for (const [button, dir] of arrows) {
-    const hadFocus = document.activeElement === button;
-    button.hidden = max <= 1;
-    button.disabled = dir < 0 ? strip.scrollLeft <= 1 : strip.scrollLeft >= max - 1;
-    if (hadFocus && button.disabled) arrows.find(([other]) => other !== button)[0].focus(); // keyboard focus never gets lost
-  }
-}
-for (const [button, dir] of arrows) button.addEventListener('click', () => strip.scrollBy({ left: dir * strip.clientWidth * 0.8, behavior: reduced.matches ? 'auto' : 'smooth' }));
-strip.addEventListener('scroll', syncArrows, { passive: true });
-new ResizeObserver(syncArrows).observe(strip);
-
 for (const card of document.querySelectorAll('.dest-card')) {
   card.addEventListener('click', () => {
     destination.value = card.dataset.country;

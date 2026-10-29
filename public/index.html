@@ -14,10 +14,12 @@
 </head>
 <!-- Template filled in by the server (src/landing.js): double braces = escaped text, triple braces = built HTML. -->
 <body>
+  {{{skipLink}}}
   {{{sceneSprite}}}
-  <div class="banner" id="demo-banner">{{brand.siteBanner}}</div>
-  <header class="site-header"><div class="wrap">{{{logo}}}</div></header>
+  {{{banner}}}
+  {{{siteHeader}}}
 
+  <div id="contenido" tabindex="-1">
   <main id="landing">
     <!-- 1. Hero + quote form -->
     <section class="hero" aria-labelledby="hero-title">
@@ -59,7 +61,7 @@
             <template id="remove-icon">{{{iconRemove}}}</template>
           </fieldset>
           <div class="error" id="quote-error" role="alert" hidden></div>
-          <p class="price-preview" id="price-preview" aria-live="polite"><span class="pp-main">{{t.form.pricePreviewEmpty}}</span><span class="pp-sub">{{t.form.pricePreviewHint}}</span></p>
+          <div aria-live="polite"><p class="price-preview" id="price-preview" hidden><span class="pp-main"></span><span class="pp-sub"></span></p></div>
           <button type="submit" class="primary block" id="quote-submit">{{t.form.submit}}</button>
           <p class="form-note">{{t.form.note}}</p>
         </form>
@@ -80,7 +82,10 @@
       <div class="wrap">
         <h2 id="whatif-title">{{t.whatIf.title}}</h2>
         <p class="section-intro">{{t.whatIf.intro}}</p>
-        {{{whatIf}}}
+      </div>
+      {{{whatIf}}}
+      <div class="wrap whatif-foot">
+        <a class="secondary button-link" href="#planes">{{t.whatIf.comparePlans}}</a>
         <p class="whatif-note">{{t.whatIf.note}} <a href="/condiciones">{{t.whatIf.noteLink}}</a>.</p>
       </div>
     </section>
@@ -91,16 +96,12 @@
         <h2 id="dest-title">{{t.destinations.title}}</h2>
         <p class="section-intro">{{t.destinations.intro}}</p>
       </div>
-      <div class="dest-scroller">
-        <button type="button" class="dest-arrow dest-prev" aria-controls="dest-strip" aria-label="{{t.destinations.prev}}" hidden><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <ul class="dest-strip" id="dest-strip">{{{destinations}}}</ul>
-        <button type="button" class="dest-arrow dest-next" aria-controls="dest-strip" aria-label="{{t.destinations.next}}" hidden><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-      </div>
+      {{{destinations}}}
       <p class="wrap dest-note">{{t.destinations.note}}</p>
     </section>
 
     <!-- 5. Plans band -->
-    <section class="plans-band" aria-labelledby="plans-title">
+    <section class="plans-band" id="planes" aria-labelledby="plans-title">
       <div class="wrap">
         <h2 id="plans-title">{{t.plans.title}}</h2>
         <ul class="plan-cards">
@@ -128,16 +129,16 @@
         <h2 id="ai-title">{{t.ai.title}}</h2>
         <p class="ai-text">{{t.ai.text}}</p>
         {{{showcase}}}
-        <p class="ai-note">{{t.ai.compatNote}}</p>
         <p class="ai-agents">{{t.ai.agentsLine}} <a href="/agentes">/agentes</a></p>
       </div>
     </section>
 
     <!-- 7. FAQ + final CTA -->
-    <section class="faq" aria-labelledby="faq-title">
+    <section class="faq" id="preguntas" aria-labelledby="faq-title" tabindex="-1">
       <div class="wrap narrow">
         <h2 id="faq-title">{{t.faqTitle}}</h2>
-        {{{faq}}}
+        <p class="faq-toggle-row"><button type="button" class="secondary faq-toggle" id="faq-toggle" aria-expanded="false" aria-controls="faq-list" data-show="{{t.faqShow}}" data-hide="{{t.faqHide}}">{{t.faqShow}}</button></p>
+        <div class="faq-list" id="faq-list" hidden>{{{faq}}}</div>
       </div>
     </section>
     <section class="final-cta" aria-labelledby="cta-title">
@@ -199,7 +200,8 @@
         <h2 id="step-3-title" tabindex="-1">{{t.checkout.step3Title}}</h2>
         <div id="review"></div>
         <div class="card-payment" id="card-payment" hidden>
-          <h3>{{t.checkout.cardTitle}}</h3>
+          <h3 class="card-title">{{{iconCard}}}{{t.checkout.cardTitle}}</h3>
+          <p class="pay-method"><span class="pay-radio" aria-hidden="true"></span>{{{iconCard}}}<span class="pay-method-name">{{t.checkout.cardMethod}}</span><span class="pay-method-state">{{t.checkout.cardMethodSelected}}</span></p>
           <div id="payment-element"><p class="form-note">{{t.checkout.cardLoading}}</p></div>
           <p class="form-note stripe-note">{{t.checkout.stripeNote}}</p>
         </div>
@@ -241,6 +243,7 @@
       <div class="wrap narrow"><span id="total-label"></span><strong id="total-value"></strong></div>
     </div>
   </main>
+  </div>
 
   <footer class="site-footer">
     <div class="wrap">
@@ -261,6 +264,7 @@
     <p class="sr-only" role="status" id="agent-status"></p>
   </aside>
 
+  <script type="module" src="/site-nav.js"></script>
   <script type="module" src="/app.js"></script>
   <script type="module" src="/landing-fx.js"></script>
   <script type="module" src="/webmcp.js"></script>

@@ -26,9 +26,11 @@ The owner is not a programmer: explain things simply, report test results honest
   unknown → mountains), a stylised Spain → destination flight path (SMIL animateMotion), a live "Desde X € · plan Wild" preview (debounced get_quote,
   no order), and the AI example chat + the real tools timeline (`showcaseHtml` in landing.js: tool names from webmcp-tools.js, price from the engine
   for `texts.ai.example`, final state server-rendered; each message = one sr-only copy + one aria-hidden typed copy, so screen readers read it once).
-  Landing order: hero + form → benefits → ¿Y si…? → destinations → plans (Wild, Wild+) → AI block (chat only) → FAQ → final CTA → footer.
+  Landing order: hero + form → benefits → ¿Y si…? → destinations → plans (Wild, Wild+) → AI block (chat + ONE agents line) → FAQ → final CTA → footer.
+  Header on every page (`headerHtml` + `skipLinkHtml` in landing.js, public/site-nav.js): "Saltar al contenido" (→ #contenido), logo,
+  "Preguntas frecuentes" (#preguntas, opens the FAQ), "Agentes", "Condiciones", yellow "Ver mi precio"; <960 px they fold into a "Menú" panel.
   Developer material (WebMCP explained, example prompt + Copiar, the tools and confirm_payment's rules, all from webmcp-tools.js) is on
-  `/agentes` (`agentsPageBody` in landing.js, `public/agentes.js`), linked from the footer and from ONE plain line in the AI block
+  `/agentes` (`agentsPageBody` in landing.js, `public/agentes.js`), linked from the header, the footer and ONE plain line in the AI block
   (`texts.ai.agentsLine` + link "/agentes", server-rendered so agents reading the raw HTML find it).
   Agents: `/robots.txt` = `User-agent: *` / `Allow: /`; `/llms.txt` (`llmsTxt` in landing.js, texts `texts.llms`) = what Wildpass is, the 6 tools
   in order (from webmcp-tools.js) with confirm_payment's rules, links to /agentes and /condiciones. Our app never blocks any user-agent.
@@ -42,11 +44,14 @@ The owner is not a programmer: explain things simply, report test results honest
   the WHOLE 3:1 landscape band (sky strip on top holds the route; phones <600 px: 20 px strip, ground cropped 8 %, sun lifted via .sun-pos) → card on a turquoise "ground" (.hero-grid::after); nothing overlaps.
   Phones: compact first screen — on 375×812 "Ver mi precio" is visible without scrolling (re-check after any hero/form change).
   Headline = two .claim-part blocks ("Travel wild." / "We've got you."); form and headline have NO entrance animation.
-  Live price ABOVE the button (#price-preview: .pp-main "Tu precio: desde X €" + .pp-sub "plan Wild · n viajeros"), placeholder
-  lines rendered by the server so the button never moves. Sticky phone bar: visible only while no other form CTA
+  Live price ABOVE the button (#price-preview: .pp-main "Tu precio: desde X €" + .pp-sub "plan Wild · n viajeros"), hidden until
+  there IS a price (owner's choice: no placeholder; the button moves down once). Sticky phone bar: visible only while no other form CTA
   (#quote-submit, [data-focus-form]) is on screen; hidden near .final-cta/footer and in the checkout; body gets 80 px padding.
   Checkout step 1 <600 px: .plan-switch (two tappable cards + "Elegir") and .compare-rows (label, then Wild | Wild+); ≥600 px:
-  the two .plan-option cards. Destination strip: ‹ › buttons ≥700 px (hidden when it all fits), no native scrollbar.
+  the two .plan-option cards. Carousels (`carouselHtml` in landing.js, wired in landing-fx.js for every [data-carousel]): "¿Y si…?" and destinations;
+  full-width strip whose first card lines up with the content column (--edge), ‹ › buttons ≥700 px (hidden when it all fits), a progress
+  line under it, no native scrollbar. Desktop hero: landscape height max(380px, 33.34vw) so it stays 3:1 (sun and pines never cut), hero
+  bottom padding = 27 % of it so the card ends above the pines. "Calcula tu precio" = 1.6rem title on a mint stub (--notch-y follows it).
   AI chat: unplayed bubbles take no space (box grows); #showcase keeps its final min-height so nothing below moves.
 - Destination field: the server renders a `<select id="destination">` ("Destinos populares" optgroup first from `texts.form.popularDestinations`,
   then A–Z); `public/destination-picker.js` hides it and puts an accessible searchable combobox (`#destination-search`) in front. The select stays
@@ -55,9 +60,12 @@ The owner is not a programmer: explain things simply, report test results honest
   options get `data-blocked`, the form says "No podemos asegurar viajes a destinos con recomendación oficial de no viajar.", and get_quote
   refuses them with DESTINATION_NOT_COVERED (website and WebMCP alike; the tool description says so). `prefers-reduced-motion` → no animation, final state shown. Form fields use `--field-border`
   #6F94A7 (3.25:1 on white; #7FA3B5 was asked for but is only 2.69:1); `--border` #C9DCE6 stays for decorative card lines.
-  Below the benefits: "¿Y si…?" (ARIA tabs, `whatIfHtml`: limits from pricing config, big figure counts up once) and "¿A dónde te escapas?"
+  Below the benefits: "¿Y si…?" (15 cards in a carousel, `whatIfHtml`; the FIRST is covered by both plans; limits from pricing config,
+  optional big figure counts up once; "Cubierto/No cubierto" badges are content-wide) and "¿A dónde te escapas?"
   (`destinationsHtml`: scroll-snap cards, mini scene, "7 días desde X €" = Wild, 1 adult, engine; tap → sets destination + scene, scrolls to form).
-  Sections fade in once (opacity only: moving them counted as layout shift); FAQ opens smoothly via `::details-content` (Chrome/Safari; others
+  Sections fade in once (opacity only: moving them counted as layout shift); FAQ (10 questions, `faqHtml`: "[text](#quote-form)" in an answer = link to
+  the form; the contact question shows only if CONTACT_EMAIL is in .env, so the owner's address stays out of Git) is closed behind
+  "Ver preguntas frecuentes"; each answer opens smoothly via `::details-content` (Chrome/Safari; others
   open at once); phones get a sticky "Ver mi precio" bar once the hero is off screen (inside #landing, so never in the checkout).
 - Success step = boarding pass (names, destination, dates, plan, policy number, "CUBIERTO" stamp, one confetti burst in brand colours, never
   with reduced motion) with a QR code of the PDF link made in the browser by `public/qr.js` (hand-written encoder, byte mode, level M,
@@ -71,7 +79,7 @@ The owner is not a programmer: explain things simply, report test results honest
 - Brand name, logo text, claim, colours, fonts, email sender name and ALL website texts: `config/brand.config.js`.
 - ALL prices, coverage, limits, exclusions, zones, age factors: `config/pricing.config.js`. Change prices there only.
 - Website texts in Spanish. Server error messages in Spanish too (shown to users). Tool descriptions in English (read by AI agents).
-- `.env` holds secrets (BREVO_API_KEY, SENDER_EMAIL, STRIPE_PUBLISHABLE_KEY, STRIPE_SECRET_KEY). Never put secrets in code or Git; never print a key (check presence/prefix/length only). `.env.example` has placeholders only.
+- `.env` holds secrets (BREVO_API_KEY, SENDER_EMAIL, STRIPE_PUBLISHABLE_KEY, STRIPE_SECRET_KEY) and CONTACT_EMAIL (FAQ mailto). Never put secrets in code or Git; never print a key (check presence/prefix/length only). `.env.example` has placeholders only.
   The email sender NAME comes from the brand config ("Seguros Wildpass (demo)"), not from `.env`.
 
 ## Brand

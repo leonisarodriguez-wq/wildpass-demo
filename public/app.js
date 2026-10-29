@@ -236,14 +236,36 @@ $('#quote-form').addEventListener('submit', async e => {
   });
 });
 
-// "Ver mi precio" links: go to the form and put the cursor in the first field.
-for (const link of document.querySelectorAll('[data-focus-form]')) {
-  link.addEventListener('click', e => {
-    e.preventDefault();
-    $('#quote-form').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
-    destField().focus({ preventScroll: true });
-  });
+// "Ver mi precio" links (also the header's, and the links inside FAQ answers): go to the form and put the cursor in
+// the first field. From the checkout, the landing comes back first.
+const smooth = () => (matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth');
+document.addEventListener('click', e => {
+  const link = e.target.closest('[data-focus-form]');
+  if (!link) return;
+  e.preventDefault();
+  if (state.step !== 'landing') render('landing');
+  $('#quote-form').scrollIntoView({ behavior: smooth(), block: 'center' });
+  destField().focus({ preventScroll: true });
+});
+
+// ---------- FAQ: closed behind "Ver preguntas frecuentes"; the header link (#preguntas) opens it and goes there ----------
+function setFaqOpen(open) {
+  const button = $('#faq-toggle');
+  button.setAttribute('aria-expanded', String(open));
+  button.textContent = open ? button.dataset.hide : button.dataset.show;
+  $('#faq-list').hidden = !open;
 }
+$('#faq-toggle').addEventListener('click', () => setFaqOpen($('#faq-list').hidden));
+function openFaq({ scroll = true } = {}) {
+  if (state.step !== 'landing') render('landing');
+  setFaqOpen(true);
+  if (scroll) { $('#preguntas').scrollIntoView({ behavior: smooth(), block: 'start' }); $('#preguntas').focus({ preventScroll: true }); }
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('[data-open-faq]')) return;
+  e.preventDefault();
+  openFaq();
+});
 
 // ---------- trip summary card (steps 1–3; the same card, plus the plan, on the success step) ----------
 function tripLines(trip) {
@@ -604,6 +626,7 @@ async function init() {
   // A reload in the middle of the checkout starts again from the landing (nothing is stored in the browser).
   if (location.hash.startsWith('#paso-')) history.replaceState({ step: 'landing' }, '', location.pathname);
   history.replaceState({ step: 'landing' }, '', location.pathname + location.hash);
+  if (location.hash === '#preguntas') openFaq(); // the header link from another page
 }
 
 init().catch(() => showError($('#quote-form'), 'No hemos podido cargar la página. Recarga para intentarlo de nuevo.'));

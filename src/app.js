@@ -37,7 +37,7 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
 
   const regionNames = new Intl.DisplayNames(['es'], { type: 'region' });
   const countries = COUNTRY_CODES.map(code => ({ code, name: regionNames.of(code) ?? code })).sort((a, b) => a.name.localeCompare(b.name, 'es'));
-  const landing = createLanding({ brand, pricing, business, market: marketQuotes, countries, templatePath: join(ROOT, 'public', 'index.html') });
+  const landing = createLanding({ brand, pricing, business, market: marketQuotes, countries, templatePath: join(ROOT, 'public', 'index.html'), contactEmail: env.CONTACT_EMAIL ?? '' });
   const payments = { provider: stripe.enabled ? 'stripe_test' : 'simulated' };
 
   const app = express();
