@@ -83,7 +83,7 @@ function footerHtml(brand) {
   const t = brand.texts;
   return `<footer class="site-footer"><div class="wrap">
     <p class="footer-legal">${escapeHtml(t.footerLegal)}</p>
-    <p class="footer-links"><a href="/condiciones">${escapeHtml(t.footerTerms)}</a><a href="/terminos">${escapeHtml(t.footerContracting)}</a><a href="/privacidad">${escapeHtml(t.footerPrivacy)}</a><a href="/agentes">${escapeHtml(t.footerAgents)}</a><a class="footer-quiet" href="/caso">${escapeHtml(t.footerCaso)}</a><span>${escapeHtml(t.footerWebmcp)}</span></p>
+    <p class="footer-links"><a href="/condiciones">${escapeHtml(t.footerTerms)}</a><a href="/terminos">${escapeHtml(t.footerContracting)}</a><a href="/privacidad">${escapeHtml(t.footerPrivacy)}</a><a href="/si-me-pasa-algo">${escapeHtml(t.footerIncident)}</a><a href="/agentes">${escapeHtml(t.footerAgents)}</a><a class="footer-quiet" href="/caso">${escapeHtml(t.footerCaso)}</a><span>${escapeHtml(t.footerWebmcp)}</span></p>
   </div></footer>`;
 }
 
@@ -280,6 +280,16 @@ export function termsPageBody({ brand, pricing }) {
     <h2 id="exclusiones">${escapeHtml(t.exclusionsTitle)}</h2><ul>${pricing.exclusions.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>
     <div class="page-cta"><p>${escapeHtml(c.ctaText)}</p><a class="primary" href="/#quote-form">${escapeHtml(t.nav.cta)}</a></div>
     <p><a href="/">← ${escapeHtml(t.back)}</a></p>`;
+}
+
+// /si-me-pasa-algo: what to do and how a claim would be reported (demo, no phone numbers).
+export function incidentPageBody({ brand }) {
+  const i = brand.texts.incident;
+  return `<h1>${escapeHtml(i.title)}</h1><p class="legal-notice" role="note"><strong>${escapeHtml(i.notice)}</strong></p>
+    <p>${escapeHtml(i.intro)}</p>
+    <ol class="incident-steps">${i.steps.map(s => `<li><h2>${escapeHtml(s.title)}</h2><p>${escapeHtml(s.text)}</p></li>`).join('')}</ol>
+    <p class="incident-callout" role="note">${escapeHtml(i.callout)}</p>
+    <p><a href="/">← ${escapeHtml(i.back)}</a></p>`;
 }
 
 // /terminos and /privacidad: demo documents (texts.legal). `[text](/path)` in a paragraph = an internal link.

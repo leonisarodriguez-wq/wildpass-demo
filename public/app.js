@@ -334,6 +334,44 @@ $('#quote-form').addEventListener('submit', async e => {
   });
 });
 
+// «Probar con un ejemplo»: fills Tailandia, the example dates and two travellers, and calculates. If the form already has
+// data, it asks first (inline, keyboard friendly); «No» keeps what was typed.
+function formHasData() {
+  const ages = ageInputs();
+  return Boolean($('#destination').value || $('#departure').value || $('#return').value || ages.length > 1 || (ages[0] && Number(ages[0].value) !== T.form.defaultAge));
+}
+function fillExample() {
+  const ex = T.form.example;
+  $('#destination').value = ex.destination;
+  $('#destination').dispatchEvent(new Event('change', { bubbles: true }));
+  $('#departure').value = ex.departure;
+  $('#departure').dispatchEvent(new Event('change', { bubbles: true }));
+  $('#return').value = ex.return;
+  $('#return').dispatchEvent(new Event('change', { bubbles: true }));
+  while (ageInputs().length > ex.ages.length) $('#ages').lastElementChild.remove();
+  relabelAges();
+  while (ageInputs().length < ex.ages.length) addTraveler();
+  ageInputs().forEach((select, i) => { select.value = String(ex.ages[i]); select.dispatchEvent(new Event('change', { bubbles: true })); });
+  for (const field of $('#quote-form').querySelectorAll('[aria-invalid="true"]')) setFieldError(field, null);
+  showError($('#quote-form'), null);
+  track('example_used');
+  $('#quote-form').requestSubmit();
+}
+function closeExampleAsk(focusButton) {
+  $('#example-confirm').hidden = true;
+  $('#example-fill').hidden = false;
+  if (focusButton) $('#example-fill').focus();
+}
+$('#example-fill').addEventListener('click', () => {
+  if (!formHasData()) return fillExample();
+  $('#example-fill').hidden = true;
+  $('#example-confirm').hidden = false;
+  $('#example-yes').focus();
+});
+$('#example-yes').addEventListener('click', () => { closeExampleAsk(false); fillExample(); });
+$('#example-no').addEventListener('click', () => closeExampleAsk(true));
+$('#example-confirm').addEventListener('keydown', e => { if (e.key === 'Escape') closeExampleAsk(true); });
+
 // "Ver mi precio" links (also the header's, and the links inside FAQ answers): go to the form and put the cursor in
 // the first field. From the checkout, the landing comes back first.
 const smooth = () => (matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth');

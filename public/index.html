@@ -83,6 +83,11 @@
           <div class="error" id="quote-error" role="alert" hidden></div>
           <div aria-live="polite"><p class="price-preview" id="price-preview" hidden><span class="pp-main"></span><span class="pp-sub"></span></p></div>
           <button type="submit" class="primary block" id="quote-submit">{{t.form.submit}}</button>
+          <button type="button" class="secondary block example-btn" id="example-fill">{{t.form.exampleButton}}</button>
+          <div class="example-confirm" id="example-confirm" role="group" aria-labelledby="example-ask" hidden>
+            <p id="example-ask">{{t.form.exampleAsk}}</p>
+            <div class="example-actions"><button type="button" class="secondary" id="example-yes">{{t.form.exampleYes}}</button><button type="button" class="secondary" id="example-no">{{t.form.exampleNo}}</button></div>
+          </div>
           <p class="form-note">{{t.form.note}}</p>
         </form>
       </div>
@@ -269,6 +274,7 @@
         <a class="primary button-link block" id="pdf-link" target="_blank" rel="noopener">{{t.checkout.download}}</a>
         <!-- One line under the main button: where the email went + a discreet "Reenviar" link; its result replaces the link. -->
         <p class="email-line"><span id="email-line"></span> <span class="resend-slot"><button type="button" class="link-button" id="resend">{{t.checkout.after.resend}}</button><span class="send-status" id="resend-status" role="status"></span></span></p>
+        <p class="incident-line"><a href="/si-me-pasa-algo" target="_blank" rel="noopener">{{t.checkout.incidentLink}}</a></p>
         <p class="complete-id-line" id="complete-id-line" hidden><a id="complete-id-link" href="#">{{t.checkout.after.completeId}}</a></p>
         <!-- ONE card, full content width: forward the policy to a travel companion, then the log of copies sent. -->
         <section class="after-card" id="forward-card" aria-labelledby="forward-title">
@@ -307,7 +313,7 @@
   <footer class="site-footer">
     <div class="wrap">
       <p class="footer-legal">{{t.footerLegal}}</p>
-      <p class="footer-links"><a href="/condiciones">{{t.footerTerms}}</a><a href="/terminos">{{t.footerContracting}}</a><a href="/privacidad">{{t.footerPrivacy}}</a><a href="/agentes">{{t.footerAgents}}</a><a class="footer-quiet" href="/caso">{{t.footerCaso}}</a><span>{{t.footerWebmcp}}</span></p>
+      <p class="footer-links"><a href="/condiciones">{{t.footerTerms}}</a><a href="/terminos">{{t.footerContracting}}</a><a href="/privacidad">{{t.footerPrivacy}}</a><a href="/si-me-pasa-algo">{{t.footerIncident}}</a><a href="/agentes">{{t.footerAgents}}</a><a class="footer-quiet" href="/caso">{{t.footerCaso}}</a><span>{{t.footerWebmcp}}</span></p>
     </div>
   </footer>
 

@@ -70,3 +70,26 @@ test('accept_terms covers both documents: tool description, /agentes and review_
   assert.ok(pay.description.includes('/terminos') && pay.description.includes('/condiciones'));
   assert.ok(pay.inputSchema.properties.accept_terms.description.includes('BOTH'));
 });
+
+test('/si-me-pasa-algo: demo page with the four steps, the demo notice, linked from the footer and from «¡Todo listo!»', async () => {
+  const res = await fetch(`${base}/si-me-pasa-algo`);
+  assert.equal(res.status, 200);
+  const html = nbsp(await res.text());
+  assert.ok(html.includes('Demo — no es un seguro real'));
+  assert.ok(html.includes('Esto es una demo: no es un seguro real.'));
+  for (const text of ['Ponte a salvo', 'Ten a mano tu número de póliza', 'Guarda los documentos', 'Cómo se declararía un siniestro', 'facturas', 'informes médicos', 'denuncia',
+    'En un seguro real tendrías aquí un teléfono de asistencia 24 h. Esta demo no ofrece asistencia ni cobertura.']) assert.ok(html.toLowerCase().includes(text.toLowerCase()), text);
+  assert.ok(!/\d{3} ?\d{2,3} ?\d{2,3} ?\d{2,3}/.test(html.replace(/<[^>]+>/g, ' ')), 'no phone numbers');
+  for (const path of ['/', '/condiciones', '/terminos']) assert.ok((await get(path)).includes('<a href="/si-me-pasa-algo">Si me pasa algo</a>'), `footer on ${path}`);
+  assert.ok((await get('/')).includes('href="/si-me-pasa-algo" target="_blank" rel="noopener">Qué hacer si me pasa algo</a>'), 'link on the success step');
+});
+
+test('«Probar con un ejemplo»: secondary button in the quote form, example data from the texts, event example_used accepted', async () => {
+  const html = await get('/');
+  assert.ok(html.includes('<button type="button" class="secondary block example-btn" id="example-fill">Probar con un ejemplo</button>'));
+  assert.ok(html.includes('id="example-confirm"') && html.includes('Sí, usar el ejemplo') && html.includes('No, mantener mis datos'));
+  const config = await (await fetch(`${base}/api/config`)).json();
+  assert.deepEqual(config.texts?.form?.example ?? config.brand?.texts?.form?.example, { destination: 'TH', departure: '2026-12-10', return: '2026-12-24', ages: [35, 38] });
+  const ev = await fetch(`${base}/api/events`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ event: 'example_used', session_id: 'abcdefghijklmnop1234', channel: 'web', device: 'desktop' }) });
+  assert.equal((await ev.json()).ok, true);
+});

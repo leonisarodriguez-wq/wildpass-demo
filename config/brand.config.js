@@ -103,6 +103,12 @@ export default {
       removeTravelerLabel: 'Quitar el viajero {n}',
       submit: 'Ver mi precio',
       note: 'Gratis y sin compromiso: para ver tu precio no te pedimos datos personales.',
+      // «Probar con un ejemplo» (secondary button): fills the example trip and calculates. The example itself: `example` below.
+      exampleButton: 'Probar con un ejemplo',
+      exampleAsk: 'Ya has escrito datos. ¿Los sustituimos por el ejemplo (Tailandia, 2 viajeros)?',
+      exampleYes: 'Sí, usar el ejemplo',
+      exampleNo: 'No, mantener mis datos',
+      example: { destination: 'TH', departure: '2026-12-10', return: '2026-12-24', ages: [35, 38] },
       residence: 'Desde España · Para residentes en España',
       loading: 'Calculando…',
       passLabel: 'Calcula tu precio',
@@ -435,6 +441,23 @@ export default {
       },
     },
 
+    // /si-me-pasa-algo: short demo page (what to do and how a claim would be reported). No phone numbers, no promises.
+    incident: {
+      title: 'Si me pasa algo (demo)',
+      pageTitle: 'Si me pasa algo (demo)',
+      notice: 'Esto es una demo: no es un seguro real.',
+      intro: 'Así sería el proceso en un seguro de viaje. Aquí es solo una ilustración.',
+      steps: [
+        { title: 'Ponte a salvo', text: 'Lo primero es tu seguridad y la de quienes viajan contigo. Si hay peligro, llama a los servicios de emergencia del lugar donde estés.' },
+        { title: 'Ten a mano tu número de póliza', text: 'Lo encuentras en el email que te enviamos y en el PDF de tu póliza. Empieza por WILD-.' },
+        { title: 'Guarda los documentos', text: 'Facturas y tickets, informes médicos, y la denuncia si te han robado algo. Sin ellos es difícil demostrar lo que pasó.' },
+        { title: 'Cómo se declararía un siniestro', text: 'En un seguro real contarías qué ha pasado, con tu número de póliza y los documentos, al equipo de asistencia, y te dirían los pasos siguientes. Todo se haría con tu póliza delante.' },
+      ],
+      callout: 'En un seguro real tendrías aquí un teléfono de asistencia 24 h. Esta demo no ofrece asistencia ni cobertura.',
+      back: 'Volver a Wildpass',
+      policyLink: 'Si me pasa algo',
+    },
+
     // /llms.txt: plain text for AI agents. Tool lines come from public/webmcp-tools.js (each tool's `es` line).
     llms: {
       intro: 'Wildpass es una web de demostración de un seguro de viaje (planes Wild, Wild+ y Wild Max) que pueden usar tanto personas como agentes de IA.',
@@ -698,6 +721,7 @@ export default {
       exclusions: 'Exclusiones',
       terms: 'Leer las condiciones completas',
       accept: 'Acepto las condiciones del seguro y los términos de contratación',
+      incidentLink: 'Qué hacer si me pasa algo',
       acceptBefore: 'Acepto las',
       acceptConditions: 'condiciones del seguro',
       acceptAnd: 'y los',

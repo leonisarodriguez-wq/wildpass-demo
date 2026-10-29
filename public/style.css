@@ -813,6 +813,23 @@ html[data-exp-hero="b"] .hero-b { display: inline; }
 .privacy-link { margin: 4px 0 10px; }
 .privacy-link a { color: var(--turquoise-text); font-weight: 600; }
 
+/* /si-me-pasa-algo: four numbered steps and a closing note. */
+.incident-steps { list-style: none; counter-reset: step; padding: 0; margin: 16px 0; display: grid; gap: 14px; }
+.incident-steps li { counter-increment: step; position: relative; padding: 14px 14px 14px 58px; background: var(--sky); border-radius: 12px; }
+.incident-steps li::before { content: counter(step); position: absolute; left: 14px; top: 14px; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: var(--turquoise); color: var(--white); font-family: var(--font-headings); font-weight: 700; }
+.incident-steps h2 { font-size: 1.15rem; margin: 2px 0 4px; }
+.incident-steps p { margin: 0; }
+.incident-callout { margin: 16px 0; padding: 14px; background: var(--mint); border: 2px solid var(--night); border-radius: 12px; font-weight: 600; }
+.incident-line { margin: 4px 0 10px; text-align: center; }
+.incident-line a { color: var(--turquoise-text); font-weight: 600; }
+
+/* «Probar con un ejemplo» under the quote button, and its question when the form already has data. */
+.example-btn { min-height: 44px; margin-top: 8px; padding-top: 8px; padding-bottom: 8px; }
+.example-confirm { margin-top: 8px; padding: 12px; background: var(--mint); border: 2px solid var(--night); border-radius: 12px; }
+.example-confirm p { margin: 0 0 8px; font-weight: 600; }
+.example-actions { display: grid; gap: 8px; }
+.example-actions .secondary { min-height: 44px; padding-top: 8px; padding-bottom: 8px; }
+
 /* ---------- 404 ---------- */
 .not-found { text-align: center; padding: 16px 0 8px; }
 .not-found svg { width: 140px; height: auto; margin: 8px auto 0; display: block; }

@@ -5,10 +5,10 @@ import { fail } from './business.js';
 
 export const EVENT_NAMES = [
   'page_view', 'destination_selected', 'quote_viewed', 'plan_selected', 'details_completed', 'review_viewed',
-  'payment_started', 'policy_issued', 'policy_resent', 'policy_forwarded',
+  'payment_started', 'policy_issued', 'policy_resent', 'policy_forwarded', 'example_used',
 ];
 // Pages that send page_view (/metricas never does).
-export const TRACKED_PAGES = ['/', '/agentes', '/condiciones', '/terminos', '/privacidad', '/caso'];
+export const TRACKED_PAGES = ['/', '/agentes', '/condiciones', '/terminos', '/privacidad', '/si-me-pasa-algo', '/caso'];
 const PLAN_IDS = ['wild', 'wild_plus', 'wild_max'];
 const FIELDS = ['event', 'session_id', 'channel', 'device', 'page', 'plan', 'exp_hero', 'exp_upsell'];
 const SESSION_RE = /^[A-Za-z0-9_-]{16,64}$/;

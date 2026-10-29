@@ -15,7 +15,7 @@ import { metricsPageBody } from './metrics-page.js';
 import experiments from '../config/experiments.config.js';
 import { timingSafeEqual, createHash } from 'node:crypto';
 import { faviconSvg } from './logo.js';
-import { agentsPageBody, casePageBody, completeIdPageBody, createLanding, legalPageBody, llmsTxt, notFoundBody, pageShell, termsPageBody } from './landing.js';
+import { agentsPageBody, casePageBody, completeIdPageBody, createLanding, incidentPageBody, legalPageBody, llmsTxt, notFoundBody, pageShell, termsPageBody } from './landing.js';
 import marketQuotes from '../config/market-quotes.js';
 import { COUNTRY_CODES } from '../config/countries.js';
 import brand from '../config/brand.config.js';
@@ -164,6 +164,10 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
   app.get('/robots.txt', (req, res) => res.type('text/plain').send('User-agent: *\nAllow: /\n'));
   app.get('/llms.txt', (req, res) => {
     res.type('text/plain').send(llmsTxt({ brand, pricing, payments, baseUrl: baseUrl(req) }));
+  });
+
+  app.get('/si-me-pasa-algo', (req, res) => {
+    res.type('html').send(pageShell({ brand, title: brand.texts.incident.pageTitle, body: incidentPageBody({ brand }), scripts: ['/page-view.js'] }));
   });
 
   for (const [path, kind] of [['/terminos', 'terminos'], ['/privacidad', 'privacidad']]) {
