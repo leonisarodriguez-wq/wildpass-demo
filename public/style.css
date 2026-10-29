@@ -253,6 +253,14 @@ select[hidden] { display: none; } /* the plain <select> once the search box repl
 .dev-rules { margin: 6px 0 0; padding-left: 1.2rem; display: grid; gap: 4px; }
 .card-page code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em; font-weight: 700; overflow-wrap: anywhere; }
 
+/* ---------- trust strip (white): 4 facts with an icon; phones 2×2, computers 4 columns ---------- */
+.trust { background: var(--white); border-bottom: 1px solid var(--border); }
+.trust-list { list-style: none; margin: 0 auto; padding-top: 12px; padding-bottom: 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; }
+.trust-item { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 600; line-height: 1.25; }
+.trust-item .icon { flex: none; width: 22px; height: 22px; color: var(--turquoise-text); }
+@media (min-width: 700px) { .trust-list { grid-template-columns: repeat(4, minmax(0, 1fr)); padding-top: 18px; padding-bottom: 18px; } .trust-item { font-size: 0.95rem; } .trust-item .icon { width: 28px; height: 28px; } }
+.plans-more { text-align: center; margin: 18px 0 0; }
+
 /* ---------- 3. editorial + benefits ---------- */
 .editorial { background: var(--white); padding: 56px 0; text-align: center; }
 .eyebrow { color: var(--turquoise-text); font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; }
@@ -378,6 +386,10 @@ html:has(.agent-pill:not([hidden])) .site-footer { padding-bottom: 90px; }
 .plan-option { position: relative; display: grid; grid-row: span 9; grid-template-rows: subgrid; row-gap: 0; min-width: 0; /* name, price, 6 coverage rows, button */
   background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 22px 12px 14px; text-align: left; }
 .plan-option.featured { background: var(--mint); border: 2px solid var(--turquoise); padding: 21px 11px 13px; }
+/* The marked plan (step 1): a thick night ring around its card. */
+.plan-option, .switch-card { cursor: pointer; }
+.plan-option.is-selected, .switch-card.is-selected { box-shadow: 0 0 0 3px var(--night); }
+.selected-note { font-family: var(--font-text); font-size: 0.8rem; font-weight: 700; color: var(--turquoise-text); }
 .plan-option .badge { left: 50%; transform: translate(-50%, -50%); font-size: 0.72rem; padding: 4px 10px; white-space: normal; text-align: center; width: max-content; max-width: calc(100% - 12px); }
 .plan-option h3 { font-size: 1.35rem; margin: 0; }
 .plan-price { font-family: var(--font-headings); font-weight: 700; font-size: 1.6rem; margin: 2px 0 6px; }
@@ -569,6 +581,7 @@ html:has(.agent-pill:not([hidden])) .site-footer { padding-bottom: 90px; }
 .mini-scene { display: block; width: 100%; height: 96px; }
 .dest-name { padding: 10px 12px 0; font-family: var(--font-headings); font-weight: 700; font-size: 1.1rem; }
 .dest-price { padding: 0 12px; font-size: 0.9rem; color: var(--secondary); }
+.dest-price-plus { color: var(--turquoise-text); font-weight: 600; }
 .dest-note { margin-top: 6px; font-size: 0.85rem; color: var(--secondary); }
 
 /* ---------- scroll reveal + sticky bar ---------- */

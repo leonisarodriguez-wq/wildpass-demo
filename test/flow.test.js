@@ -323,7 +323,7 @@ test('landing: complete server-rendered page with prices from the pricing engine
   // Every template placeholder was filled (an unknown one would have thrown).
   assert.ok(!/\{\{|\}\}/.test(html), 'leftover template braces');
   // Headline: two fixed lines, never a lonely "you.".
-  assert.ok(/<h1 id="hero-title"><span class="claim-part">Travel wild\.<\/span> <span class="claim-part">We(’|'|&#39;)ve got you\.<\/span><\/h1>/.test(html), 'headline in two parts');
+  assert.ok(/<h1 id="hero-title" lang="en"><span class="claim-part">Travel wild\.<\/span> <span class="claim-part">We(’|'|&#39;)ve got you\.<\/span><\/h1>/.test(html), 'headline in two parts');
   // Live price line sits ABOVE the button and stays hidden until there is a price (no placeholder).
   assert.ok(html.indexOf('id="price-preview"') < html.indexOf('id="quote-submit"') && html.includes('<p class="price-preview" id="price-preview" hidden><span class="pp-main"></span>'));
   assert.ok(!html.includes('Elige destino y fechas para verlo'));
@@ -413,7 +413,7 @@ test('brand: name, claim, colours and self-hosted fonts', async () => {
     assert.ok(html.includes('href="/favicon.svg"'), 'favicon link missing');
   }
   assert.ok(home.includes('<!--logo-->') === false);
-  assert.ok((await (await fetch(`${base}/api/config`)).json()).brand.texts.heroSubtitle.startsWith('Seguro de viaje con deportes de aventura'));
+  assert.ok((await (await fetch(`${base}/api/config`)).json()).brand.texts.heroSubtitle.startsWith('Viaja salvaje, nosotros te cubrimos: seguro de viaje'));
   const favicon = await fetch(`${base}/favicon.svg`);
   assert.equal(favicon.headers.get('content-type'), 'image/svg+xml; charset=utf-8');
   assert.ok((await favicon.text()).includes('rx="12"'));
@@ -456,6 +456,17 @@ test('AI block on the landing: only title, text, the example chat and the compat
   assert.deepEqual([...order].sort((a, b) => a - b), order);
   assert.ok(!order.includes(-1));
   assert.ok(html.includes('<a href="/condiciones">') && html.includes('<a href="/agentes">Para desarrolladores y agentes de IA</a>'));
+  // Trust strip right under the hero: 4 facts, values from the pricing config; no 24 h promise anywhere (not in the terms).
+  assert.ok(html.indexOf('class="trust"') > html.indexOf('id="quote-form"') && html.indexOf('class="trust"') < html.indexOf('id="editorial-title"'));
+  assert.equal((html.match(/<li class="trust-item">/g) ?? []).length, 4);
+  for (const text of ['Póliza en tu email en 2 min', 'Cancelación hasta 3.000 € con Wild+', 'Deportes de aventura incluidos con Wild+', 'Sin letra pequeña: condiciones claras']) assert.ok(html.includes(text), text);
+  const visibleText = html.replace(/<svg[\s\S]*?<\/svg>/g, '').replace(/<[^>]+>/g, ' ');
+  assert.ok(!/\b24 ?h\b|demoras|asistencia 24/i.test(visibleText), 'no promise the terms do not make');
+  assert.ok(html.includes('Médicos, dentista urgente, equipaje y retraso de maleta'));
+  // CTAs: plan buttons are secondary and preselect their plan; "Comparar planes" and "Ver qué cubre" are secondary too.
+  assert.ok(html.includes('<a class="secondary block card-button" href="#quote-form" data-focus-form data-plan="wild">Elegir Wild</a>'));
+  assert.ok(html.includes('<a class="secondary block card-button" href="#quote-form" data-focus-form data-plan="wild_plus">Elegir Wild+</a>'));
+  assert.ok(html.includes('<a class="secondary button-link" href="#planes">Comparar planes</a>') && html.includes('<a class="secondary button-link" href="/condiciones">Ver qué cubre</a>'));
   // Benefits: no AI repeat; plans: two cards only.
   assert.ok(html.includes('Sin franquicia en Wild+') && !html.includes('Contrátalo con tu asistente de IA'));
   assert.equal((html.match(/<li class="plan-card/g) ?? []).length, 2);
@@ -575,6 +586,8 @@ test('landing: what-if scenarios and destination cards use the real limits and e
     const q = await call('get_quote', quoteInput({ destination_country: code, return_date: addDays(DEP, 6), traveler_ages: [35] }));
     const wild = q.plans.find(p => p.plan === 'wild').total_price_eur.toLocaleString('es-ES', { minimumFractionDigits: 2 });
     assert.ok(html.includes(`data-country="${code}"`) && html.includes(`7 días desde ${wild} €`), `${code} ${wild}`);
+    const plus = q.plans.find(p => p.plan === 'wild_plus').total_price_eur.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+    assert.ok(html.includes(`Wild+ desde ${plus} €`), `${code} Wild+ ${plus}`);
   }
 });
 

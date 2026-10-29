@@ -239,6 +239,12 @@ export function whatIfHtml({ brand, pricing, values }) {
     + `<p class="wrap carousel-hint">${escapeHtml(fill(w.hint, { count: w.scenarios.length }))}</p>`;
 }
 
+// Trust strip under the hero: 4 plain facts with an icon (values from the pricing config).
+function trustHtml({ brand, values }) {
+  const icons = { mail: art.iconMail, cancel: art.iconCancel, mountain: art.iconMountain, doc: art.iconDoc };
+  return brand.texts.trust.map(item => `<li class="trust-item">${icons[item.icon]}<span>${escapeHtml(fill(item.text, values))}</span></li>`).join('');
+}
+
 // FAQ answers: escaped text, then [text](#quote-form) → a link to the quote form, {contactLink} → a mailto link.
 function faqHtml({ brand, values, contactEmail }) {
   const t = brand.texts;
@@ -258,9 +264,12 @@ export function destinationsHtml({ brand, pricing, business, countries }) {
   const items = d.countries.map(code => {
     const country = countries.find(c => c.code === code);
     if (!country) throw new Error(`Destinations: unknown country ${code}`);
-    const price = formatEur(business.pricePerTravelerCents(zoneOf(code, pricing), 'wild', 7, adult) / 100);
-    return `<li><button type="button" class="dest-card" data-country="${code}" aria-label="${escapeHtml(fill(d.cardLabel, { name: country.name, price }))}">`
-      + `${miniScene(sceneFor(code, pricing))}<span class="dest-name">${escapeHtml(country.name)}</span><span class="dest-price">${escapeHtml(fill(d.price, { price }))}</span></button></li>`;
+    const priceOf = plan => formatEur(business.pricePerTravelerCents(zoneOf(code, pricing), plan, 7, adult) / 100);
+    const price = priceOf('wild');
+    const plusPrice = priceOf('wild_plus');
+    return `<li><button type="button" class="dest-card" data-country="${code}" aria-label="${escapeHtml(fill(d.cardLabel, { name: country.name, price, plusPrice }))}">`
+      + `${miniScene(sceneFor(code, pricing))}<span class="dest-name">${escapeHtml(country.name)}</span><span class="dest-price">${escapeHtml(fill(d.price, { price }))}</span>`
+      + `<span class="dest-price dest-price-plus">${escapeHtml(fill(d.pricePlus, { price: plusPrice }))}</span></button></li>`;
   }).join('');
   return carouselHtml({ id: 'dest-strip', prev: d.prev, next: d.next, items });
 }
@@ -286,6 +295,7 @@ export function createLanding({ brand, pricing, business, market, countries, tem
       destinations: destinationsHtml({ brand, pricing, business, countries }),
       benefits: t.editorial.benefits.map((b, i) => `<li class="benefit">${[art.globePin, art.mountainRope, art.shieldCheck][i]}<h3>${escapeHtml(b.title)}</h3><p>${escapeHtml(fill(b.text, values))}</p></li>`).join(''),
       faq: faqHtml({ brand, values, contactEmail }),
+      trust: trustHtml({ brand, values }),
       travelerRow: firstTravelerRow(t.form, pricing.limits),
       maxTravelersNote: escapeHtml(fill(t.form.maxTravelersNote, pricing.limits)),
       iconPin: art.iconPin, iconCalendar: art.iconCalendar, iconPeople: art.iconPeople, iconRemove: art.iconRemove, iconCard: art.iconCard,
@@ -296,6 +306,7 @@ export function createLanding({ brand, pricing, business, market, countries, tem
       t,
       price: { wild: fill(t.plans.from, { price: formatEur(prices.wild) }), wild_plus: fill(t.plans.from, { price: formatEur(prices.wild_plus) }) },
       planNames: { wild: pricing.plans.wild.name, wild_plus: pricing.plans.wild_plus.name },
+      choose: { wild: fill(t.plans.choose, { plan: pricing.plans.wild.name }), wild_plus: fill(t.plans.choose, { plan: pricing.plans.wild_plus.name }) },
     });
   }
 

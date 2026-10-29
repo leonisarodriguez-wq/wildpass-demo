@@ -9,7 +9,8 @@ const $ = sel => document.querySelector(sel);
 // The destination field people see: the searchable box once it exists, else the plain <select>.
 const destField = () => $('#destination-search') ?? $('#destination');
 const destBlocked = () => $('#destination').selectedOptions[0]?.dataset.blocked === 'true';
-const state = { quote: null, plan: null, orderId: null, review: null, paid: null, step: 'landing' };
+// selected = the plan marked in step 1 (from "Elegir Wild/Wild+" on the landing, or a tap on a card); plan = the one ordered.
+const state = { quote: null, plan: null, selected: null, preferredPlan: null, orderId: null, review: null, paid: null, step: 'landing' };
 let T = {};      // brand texts
 let C = {};      // checkout texts
 let E = {};      // friendly error texts
@@ -184,6 +185,10 @@ function updateTotalBar() {
     const p = state.quote.plans.find(x => x.plan === state.plan);
     label.textContent = `${C.totalLabel} · ${p.plan_name}`;
     value.textContent = eur(p.total_price_eur);
+  } else if (state.quote && state.selected) {
+    const p = state.quote.plans.find(x => x.plan === state.selected);
+    label.textContent = `${C.totalLabel} · ${p.plan_name}`;
+    value.textContent = eur(p.total_price_eur);
   } else if (state.quote) {
     // Step 1, no plan chosen yet: show the price range of the plans.
     const totals = state.quote.plans.map(p => p.total_price_eur);
@@ -287,7 +292,7 @@ $('#quote-form').addEventListener('submit', async e => {
     }
     showError(form, null);
     for (const field of form.querySelectorAll('[aria-invalid="true"]')) setFieldError(field, null);
-    Object.assign(state, { quote: result, plan: null, orderId: null, review: null, paid: null });
+    Object.assign(state, { quote: result, plan: null, selected: state.preferredPlan, orderId: null, review: null, paid: null });
     renderStep1();
     render('1');
   });
@@ -300,6 +305,7 @@ document.addEventListener('click', e => {
   const link = e.target.closest('[data-focus-form]');
   if (!link) return;
   e.preventDefault();
+  if (link.dataset.plan) state.preferredPlan = link.dataset.plan; // "Elegir Wild+": that plan comes preselected in step 1
   if (state.step !== 'landing') render('landing');
   $('#quote-form').scrollIntoView({ behavior: smooth(), block: 'center' });
   destField().focus({ preventScroll: true });
@@ -392,7 +398,7 @@ function renderStep1() {
   const chooseButton = (p, text) => el('button', { type: 'button', class: buttonClass(p), text, 'aria-label': fill(C.choose, { plan: p.plan_name }), onclick: e => choosePlan(p.plan, e.currentTarget) });
   const switcher = el('div', { class: 'plan-switch', role: 'group', 'aria-label': cmp.switchLabel }, q.plans.map(p => {
     const button = chooseButton(p, cmp.chooseShort);
-    return el('div', { class: p.plan === 'wild_plus' ? 'switch-card featured' : 'switch-card', onclick: e => { if (e.target !== button && !button.disabled) button.click(); } },
+    return el('div', { class: p.plan === 'wild_plus' ? 'switch-card featured' : 'switch-card', 'data-plan-card': p.plan, onclick: e => { if (e.target !== button) markPlan(p.plan); } },
       el('p', { class: 'switch-name', text: p.plan_name }),
       el('p', { class: 'switch-price' }, el('span', { class: 'sr-only', text: `${cmp.price}: ` }), eur(p.total_price_eur)),
       button);
@@ -409,7 +415,8 @@ function renderStep1() {
     const featured = p.plan === 'wild_plus';
     const nameId = `plan-${p.plan}-name`;
     // Rows: name, price, one per coverage, button (the CSS subgrid needs the count).
-    return el('article', { class: featured ? 'plan-option featured' : 'plan-option', 'aria-labelledby': nameId, style: `grid-row: span ${features.length + 3}` },
+    return el('article', { class: featured ? 'plan-option featured' : 'plan-option', 'data-plan-card': p.plan, 'aria-labelledby': nameId, style: `grid-row: span ${features.length + 3}`,
+      onclick: e => { if (!e.target.closest('button')) markPlan(p.plan); } },
       featured && el('p', { class: 'badge', text: T.plans.wildPlusBadge }),
       el('h3', { id: nameId, text: p.plan_name }),
       el('p', { class: 'plan-price' }, el('span', { class: 'sr-only', text: `${cmp.price}: ` }), eur(p.total_price_eur)),
@@ -424,10 +431,24 @@ function renderStep1() {
     [cmp.bothPlans, common],
     ...q.plans.map(p => [fill(p.adventure_sports_included ? cmp.limitsOf : cmp.onlyIn, { plan: p.plan_name }), p.exclusions.filter(x => !common.includes(x))]),
   ].filter(([, list]) => list.length);
+  if (state.selected) markPlan(state.selected);
   $('#exclusions').replaceChildren(el('details', { class: 'exclusions' },
     el('summary', { text: cmp.exclusionsToggle }),
     groups.map(([title, list]) => el('div', { class: 'exclusion-group' }, el('h3', { text: title }), el('ul', {}, list.map(x => el('li', { text: x }))))),
   ));
+}
+
+// Step 1: the marked plan (a tap on its card, or "Elegir Wild+" on the landing). The bar shows its total and
+// "Continuar con …"; the cards' own "Elegir" buttons still order straight away.
+function markPlan(plan) {
+  state.selected = plan;
+  for (const card of document.querySelectorAll('#compare [data-plan-card]')) {
+    const on = card.dataset.planCard === plan;
+    card.classList.toggle('is-selected', on);
+    card.querySelector('.selected-note')?.remove();
+    if (on) card.querySelector('h3, .switch-name').append(el('span', { class: 'selected-note', text: ` · ${C.selectedPlan}` }));
+  }
+  updateTotalBar();
 }
 
 async function choosePlan(plan, button) {

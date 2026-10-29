@@ -26,7 +26,7 @@
       <div class="wrap hero-grid">
         {{{heroScene}}}
         <div class="hero-copy">
-          <h1 id="hero-title">{{{heroTitle}}}</h1>
+          <h1 id="hero-title" lang="en">{{{heroTitle}}}</h1>
           <p class="hero-sub">{{t.heroSubtitle}}</p>
         </div>
         <div class="route" id="route" aria-hidden="true">
@@ -67,6 +67,11 @@
           <p class="form-note">{{t.form.note}}</p>
         </form>
       </div>
+    </section>
+
+    <!-- 1b. Trust strip: 4 plain facts -->
+    <section class="trust" aria-label="{{t.trustLabel}}">
+      <ul class="wrap trust-list">{{{trust}}}</ul>
     </section>
 
     <!-- 2. Editorial headline + benefits -->
@@ -110,17 +115,18 @@
             <h3>{{planNames.wild}}</h3>
             <p class="desc">{{t.plans.wildDescription}}</p>
             <p class="from-price">{{price.wild}}<sup aria-hidden="true">*</sup></p>
-            <a class="primary block card-button" href="#quote-form" data-focus-form>{{t.plans.seePrice}}</a>
+            <a class="secondary block card-button" href="#quote-form" data-focus-form data-plan="wild">{{choose.wild}}</a>
           </li>
           <li class="plan-card featured">
             <h3>{{planNames.wild_plus}}</h3>
             <p class="badge">{{t.plans.wildPlusBadge}}</p>
             <p class="desc">{{t.plans.wildPlusDescription}}</p>
             <p class="from-price">{{price.wild_plus}}<sup aria-hidden="true">*</sup></p>
-            <a class="primary block card-button" href="#quote-form" data-focus-form>{{t.plans.seePrice}}</a>
+            <a class="secondary block card-button" href="#quote-form" data-focus-form data-plan="wild_plus">{{choose.wild_plus}}</a>
           </li>
         </ul>
         <p class="from-note"><span aria-hidden="true">* </span>{{t.plans.fromNote}}</p>
+        <p class="plans-more"><a class="secondary button-link" href="/condiciones">{{t.plans.whatCovers}}</a></p>
       </div>
     </section>
 

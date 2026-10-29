@@ -32,7 +32,7 @@ The owner is not a programmer: explain things simply, report test results honest
   unknown → mountains), a stylised Spain → destination flight path (SMIL animateMotion), a live "Desde X € · plan Wild" preview (debounced get_quote,
   no order), and the AI example chat + the real tools timeline (`showcaseHtml` in landing.js: tool names from webmcp-tools.js, price from the engine
   for `texts.ai.example`, final state server-rendered; each message = one sr-only copy + one aria-hidden typed copy, so screen readers read it once).
-  Landing order: hero + form → benefits → ¿Y si…? → destinations → plans (Wild, Wild+) → AI block (chat + ONE agents line) → FAQ → final CTA → footer.
+  Landing order: hero + form → trust strip (white, 4 facts with icons, `texts.trust`; phones 2×2 ≤120 px) → benefits → ¿Y si…? → destinations → plans (Wild, Wild+) → AI block (chat + ONE agents line) → FAQ → final CTA → footer.
   Header on every page (`headerHtml` + `skipLinkHtml` in landing.js, public/site-nav.js): "Saltar al contenido" (→ #contenido), logo,
   "Preguntas frecuentes" (#preguntas, opens the FAQ), "Agentes", "Condiciones", yellow "Ver mi precio"; <960 px they fold into a "Menú" panel.
   Developer material (WebMCP explained, example prompt + Copiar, the tools and confirm_payment's rules, all from webmcp-tools.js) is on
@@ -49,7 +49,7 @@ The owner is not a programmer: explain things simply, report test results honest
   classic <head> script setting html.sun-seen from sessionStorage). Parallax far 0.14 / mid 0.07. Phones/tablets (<960 px): copy →
   the WHOLE 3:1 landscape band (sky strip on top holds the route; phones <600 px: 20 px strip, ground cropped 8 %, sun lifted via .sun-pos) → card on a turquoise "ground" (.hero-grid::after); nothing overlaps.
   Phones: compact first screen — on 375×812 "Ver mi precio" is visible without scrolling (re-check after any hero/form change).
-  Headline = two .claim-part blocks ("Travel wild." / "We've got you."); form and headline have NO entrance animation.
+  Headline = two .claim-part blocks ("Travel wild." / "We've got you.") on an h1 with lang="en"; the Spanish subtitle explains the offer; form and headline have NO entrance animation.
   Live price ABOVE the button (#price-preview: .pp-main "Tu precio: desde X €" + .pp-sub "plan Wild · n viajeros"), hidden until
   there IS a price (owner's choice: no placeholder; the button moves down once). Sticky phone bar: visible only while no other form CTA
   (#quote-submit, [data-focus-form]) is on screen; hidden near .final-cta/footer and in the checkout; body gets 80 px padding.
@@ -76,6 +76,10 @@ The owner is not a programmer: explain things simply, report test results honest
 - Success step = boarding pass (names, destination, dates, plan, policy number, "CUBIERTO" stamp, one confetti burst in brand colours, never
   with reduced motion) with a QR code of the PDF link made in the browser by `public/qr.js` (hand-written encoder, byte mode, level M,
   versions 1–10; checked with an independent reader, jsQR, outside the repo). No external QR service.
+- Promises = the terms: no "asistencia 24 h" and no "demoras" (only baggage delay is covered); a test checks the landing's visible text.
+  CTAs: every primary (yellow) button says "Ver mi precio"; others are secondary with intent ("Comparar planes", "Ver qué cubre",
+  "Elegir Wild"/"Elegir Wild+" = go to the form with that plan preselected, `state.preferredPlan` → marked in step 1).
+  Destination cards show "7 días desde X €" (Wild) and "Wild+ desde Y €".
 - Illustrations: original inline SVGs in `src/illustrations.js` (night outline + turquoise fill + small yellow accent). No emoji, no stock art,
   no fake reviews/ratings/press logos/invented stats; only promise what the product really does.
 - SQLite via Node's built-in `node:sqlite` (no native npm module). DB file in `data/` (git-ignored). Small migrations run at start in `src/db.js`.

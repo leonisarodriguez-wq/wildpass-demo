@@ -60,7 +60,17 @@ export default {
     },
     pageTitle: 'Seguros Wildpass · Seguro de viaje con deportes de aventura (demo)',
     metaDescription: 'Demo de seguro de viaje con deportes de aventura. Calcula tu precio sin datos personales.',
-    heroSubtitle: 'Seguro de viaje con deportes de aventura, sin letra pequeña y con la póliza en tu email en 2 minutos.',
+    // The claim stays in English (lang="en" on the h1); this Spanish line says what Wildpass is.
+    heroSubtitle: 'Viaja salvaje, nosotros te cubrimos: seguro de viaje con deportes de aventura y la póliza en tu email en 2 minutos.',
+
+    // Trust strip under the hero (white, 4 items with an icon). Only what the product really does: no reviews, no seals.
+    trust: [
+      { icon: 'mail', text: 'Póliza en tu email en 2 min' },
+      { icon: 'cancel', text: 'Cancelación hasta {plusCancellation} con Wild+' },
+      { icon: 'mountain', text: 'Deportes de aventura incluidos con Wild+' },
+      { icon: 'doc', text: 'Sin letra pequeña: condiciones claras' },
+    ],
+    trustLabel: 'Por qué Wildpass',
 
     // Landing: hero + quote form
     form: {
@@ -185,7 +195,7 @@ export default {
       label: 'Seguro de viaje para los que no se quedan quietos',
       headline: 'Tú pon la aventura. Nosotros, todo lo demás.',
       benefits: [
-        { title: 'Asistencia 24 h, estés donde estés', text: 'Médicos, equipaje y demoras, en español.' },
+        { title: 'Lo esencial, bien cubierto', text: 'Médicos, dentista urgente, equipaje y retraso de maleta, en los dos planes.' },
         { title: 'Aventura cubierta', text: 'Trekking, buceo, esquí, surf… y rescate hasta {rescue} con Wild+.' },
         { title: 'Sin franquicia en Wild+', text: 'Si te pasa algo, no pagas los primeros euros.' },
       ],
@@ -268,8 +278,9 @@ export default {
       title: '¿A dónde te escapas?',
       intro: 'Toca un destino y lo dejamos puesto en el formulario.',
       price: '7 días desde {price}',
-      note: 'Precio del plan Wild para 1 adulto.',
-      cardLabel: 'Elegir {name}: 7 días desde {price}',
+      pricePlus: 'Wild+ desde {price}',
+      note: '7 días, 1 adulto: primer precio con Wild, segundo con Wild+.',
+      cardLabel: 'Elegir {name}: 7 días desde {price} con Wild o {plusPrice} con Wild+',
       prev: 'Ver destinos anteriores',
       next: 'Ver más destinos',
       countries: ['TH', 'JP', 'PE', 'IS', 'MX', 'US', 'IT'],
@@ -287,6 +298,8 @@ export default {
       from: 'Desde {price}',
       fromNote: '7 días en Europa, 1 adulto.',
       seePrice: 'Ver mi precio',
+      choose: 'Elegir {plan}', // secondary: goes to the form with this plan preselected for step 1
+      whatCovers: 'Ver qué cubre',
     },
 
     // Landing: FAQ, closed behind "Ver preguntas frecuentes". Answers use values from the pricing config.
@@ -424,6 +437,7 @@ export default {
         compareTitle: 'Compara las coberturas',
       },
       choose: 'Elegir {plan}',
+      selectedPlan: 'elegido',
 
       step2Title: '¿Quién viaja?',
       step2Line: 'Solo necesitamos nombre y fecha de nacimiento. Nada de DNI.',
@@ -569,7 +583,7 @@ export default {
       excess: 'Franquicia por siniestro médico',
       exclusionsTitle: 'Principales exclusiones',
       emergencyTitle: '¿Una emergencia?',
-      emergencyText: 'Llama antes de acudir al médico y no adelantes dinero. Asistencia 24\u00a0h en español.',
+      emergencyText: 'Llama antes de acudir al médico y no adelantes dinero.',
       emergencyPhone: '[Teléfono de asistencia · demo]',
       emergencyKeepNumber: 'Ten a mano tu nº de póliza.',
       footer: 'Seguros Wildpass es un producto ficticio creado para una demostración. Este certificado no tiene validez legal ni ofrece cobertura real.',
@@ -591,7 +605,7 @@ export default {
       days: 'días',
       button: 'Descargar mi póliza',
       attachedNote: 'También va adjunta a este correo.',
-      emergency: '¿Una emergencia? Llama antes de acudir al médico y no adelantes dinero. Asistencia 24\u00a0h en español: [Teléfono de asistencia · demo]. Ten a mano tu nº de póliza.',
+      emergency: '¿Una emergencia? Llama antes de acudir al médico y no adelantes dinero. Teléfono: [Teléfono de asistencia · demo]. Ten a mano tu nº de póliza.',
       footer: 'Seguros Wildpass es un producto ficticio creado para una demostración. Este correo y el certificado no tienen validez legal ni ofrecen cobertura real.',
     },
   },
