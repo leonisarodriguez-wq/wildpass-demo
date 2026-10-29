@@ -579,6 +579,7 @@ export default {
       step2Line: 'Para emitir la póliza necesitamos el nombre, la fecha de nacimiento y el DNI o NIE de quien contrata.',
       holderId: 'DNI o NIE de quien contrata',
       holderIdHint: 'Lo necesitamos para emitir la póliza a tu nombre.',
+      idTestNote: 'Simulación: puedes usar el DNI de prueba 12345678Z.',
       holderIdMissing: 'Escribe el DNI o NIE de quien contrata.',
       holderIdShort: 'DNI/NIE {id}',
       resident: 'Resido en España',

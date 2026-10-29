@@ -215,7 +215,8 @@
             <div class="field"><label for="ph-name">{{t.checkout.fullName}}</label><input id="ph-name" autocomplete="name" aria-required="true"></div>
             <div class="field"><label for="ph-email">{{t.checkout.email}}</label><input id="ph-email" type="email" inputmode="email" autocomplete="email" aria-describedby="ph-email-hint" aria-required="true"><p class="hint" id="ph-email-hint">{{t.checkout.emailHint}}</p></div>
             <div class="field"><label for="ph-id">{{t.checkout.holderId}}</label><p class="hint" id="ph-id-hint">{{t.checkout.holderIdHint}}</p><input id="ph-id" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12" aria-required="true" aria-describedby="ph-id-hint"></div>
-            <label class="check" for="ph-resident"><input type="checkbox" id="ph-resident" aria-required="true"> <span>{{t.checkout.resident}}</span></label>
+            <p class="form-note id-test-note">{{t.checkout.idTestNote}}</p>
+            <label class="check resident-check" for="ph-resident"><input type="checkbox" id="ph-resident" aria-required="true"> <span>{{t.checkout.resident}}</span></label>
           </fieldset>
           <div id="travelers"></div>
           <div class="error" role="alert" hidden></div>

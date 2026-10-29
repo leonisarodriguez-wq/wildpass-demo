@@ -373,6 +373,7 @@ test('landing: complete server-rendered page with prices from the pricing engine
   assert.deepEqual(options.filter(o => o[2]).map(o => o[1]), ['30']);
   // Checkout steps are in the page; no card or passport fields anywhere. ONE DNI/NIE field: the policyholder's, in step 2.
   for (const id of ['quote-form', 'trip-card', 'step-1', 'step-2', 'step-3', 'step-4', 'total-bar', 'accept-terms', 'exclusions', 'ph-id', 'ph-resident']) assert.ok(html.includes(`id="${id}"`), id);
+  assert.ok(html.includes('Simulación: puedes usar el DNI de prueba 12345678Z.'), 'DNI test note in step 2');
   assert.ok(!/tarjeta de cr|card-number|cc-number/i.test(html.replace('datos de tarjeta', '').replace('Tarjeta de crédito o débito', '')));
   assert.ok(!/<input[^>]*(card|dni|passport|cvc)/i.test(html));
   assert.equal((html.match(/<input id="ph-id"[^>]*autocomplete="off"/g) ?? []).length, 1);

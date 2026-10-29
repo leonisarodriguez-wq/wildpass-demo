@@ -108,7 +108,7 @@ export function buildPolicyPdf({ policy_number, issued_at, summary, brand, terms
     y += 34;
     // Status + the policyholder's masked DNI/NIE (never the whole number). Older snapshots have neither.
     if (summary.status_text) {
-      const idPart = policyholder.id_number_masked ? ` · ${t.holderIdLabel} ${policyholder.id_number_masked}` : '';
+      const idPart = policyholder.id_number_masked ? ` · ${t.holderIdLabel}\u00a0${policyholder.id_number_masked}` : '';
       const pending = summary.id_status === 'pending_id' ? ` · ${t.completeIdNote}` : '';
       y += put(`${t.statusLabel} ${summary.status_text}${idPart}${pending}`, M, y - 6, { f: 'bold', size: 9.5, color: c.secondary, width: W }) + 4;
     }

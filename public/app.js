@@ -626,7 +626,9 @@ function renderStep3() {
   const s = r.summary;
   const plan = s.plan;
   const K = C.chips;
-  const row = (label, value) => el('div', { class: 'row' }, el('dt', { text: label }), el('dd', { text: value }));
+  // value = text, or a list of lines (one per line, e.g. name / email / DNI).
+  const row = (label, value) => el('div', { class: 'row' }, el('dt', { text: label }),
+    Array.isArray(value) ? el('dd', { class: 'lines' }, ...value.map(line => el('span', { text: line }))) : el('dd', { text: value }));
   const chips = [
     fill(K.medical, { amount: eur(plan.medical_limit_for_this_trip_eur) }),
     plan.excess_per_medical_claim_eur > 0 ? fill(K.excess, { amount: eur(plan.excess_per_medical_claim_eur) }) : K.noExcess,
@@ -643,7 +645,7 @@ function renderStep3() {
       row(C.trip, `${s.trip.origin_name} → ${s.trip.destination_name}`),
       row(C.dates, `${rangeEs(s.trip.departure_date, s.trip.return_date)} · ${fill(C.tripCard.days, { days: s.trip.days })}`),
       row(C.plan, plan.plan_name),
-      row(C.whoBuys, [s.policyholder.full_name, s.policyholder.email, s.policyholder.id_number_masked && fill(C.holderIdShort, { id: s.policyholder.id_number_masked })].filter(Boolean).join(' · ')),
+      row(C.whoBuys, [s.policyholder.full_name, s.policyholder.email, s.policyholder.id_number_masked && fill(C.holderIdShort, { id: s.policyholder.id_number_masked })].filter(Boolean)),
       row(C.travelers, s.travelers.map(t => `${t.full_name} (${t.age_at_departure})`).join(' · ')),
     ),
     el('p', { class: 'review-zone', text: fill(C.zone, { zone: s.trip.zone_name }) }),

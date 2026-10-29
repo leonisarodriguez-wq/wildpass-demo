@@ -495,6 +495,11 @@ html[data-exp-hero="b"] .hero-b { display: inline; }
 .person legend { float: left; width: 100%; font-size: 1.05rem; margin-bottom: 10px; }
 .person legend + * { clear: both; }
 .person .check { margin: 0 0 10px; font-size: 0.95rem; }
+/* Step 2: the DNI test note (same look as the Stripe note), then «Resido en España» as its own block, 44 px tap area. */
+.person .id-test-note { text-align: left; margin: 0 0 4px; }
+.person .resident-check { margin: 20px 0 4px; min-height: 44px; align-items: center; }
+.review-card dd.lines span { display: block; overflow-wrap: anywhere; }
+.review-card dd.lines span:nth-child(3) { white-space: nowrap; } /* «DNI/NIE *****678Z» never splits */
 
 .summary { background: var(--white); border-radius: 16px; padding: 6px 16px 14px; }
 .summary dl { margin: 0; }
