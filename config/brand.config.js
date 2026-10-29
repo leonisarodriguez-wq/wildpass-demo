@@ -183,7 +183,7 @@ export default {
       copyLabel: 'Copiar el ejemplo',
       compatNote: 'Funciona con asistentes y navegadores compatibles con WebMCP, un estándar nuevo que se está incorporando a Chrome.', // /agentes
       // A discreet link at the end of the AI block, in the served HTML (agents reading the raw HTML find it).
-      agentsLink: 'Cómo funciona para asistentes y desarrolladores →',
+      agentsLink: 'Ver cómo funciona',
       devTitle: 'Para desarrolladores',
       devIntro: 'Esta página ofrece {count} herramientas WebMCP a los asistentes de IA:',
       // Animated example (an illustration, not a live chat). {price}/{plan} come from the pricing engine for `example`.
@@ -320,6 +320,27 @@ export default {
       whatCovers: 'Ver qué cubre',
     },
 
+    // FAQ contact question: a form (the owner's address stays in .env, never in the HTML). Sent with Brevo to CONTACT_EMAIL.
+    contact: {
+      intro: 'Escríbenos con este formulario y te contestamos lo antes posible.',
+      name: 'Tu nombre',
+      email: 'Tu email',
+      emailHelp: 'Solo para contestarte.',
+      message: 'Tu mensaje',
+      consent: 'Acepto que Wildpass use estos datos solo para contestarme. Es una demo.',
+      honeypot: 'No rellenes este campo',
+      send: 'Enviar mensaje',
+      sending: 'Enviando…',
+      sent: 'Mensaje enviado. Te contestaremos a {email}.',
+      missingName: 'Escribe tu nombre.',
+      missingEmail: 'Escribe tu email para que podamos contestarte.',
+      missingMessage: 'Escribe tu mensaje.',
+      missingConsent: 'Marca la casilla para poder enviarlo.',
+      subject: 'Mensaje desde la web de Wildpass (demo) · {name}',
+      demoLine: 'Demo — no es un seguro real',
+      emailIntro: 'Mensaje enviado con el formulario de contacto de la web.',
+    },
+
     // Landing: FAQ, closed behind "Ver preguntas frecuentes". Answers use values from the pricing config.
     // [text](#quote-form) becomes a link to the quote form. The contact question shows only when CONTACT_EMAIL is set in .env.
     faqTitle: 'Preguntas frecuentes',
@@ -335,7 +356,7 @@ export default {
       { q: '¿A qué destinos no podéis asegurar?', a: 'A los países donde el Ministerio de Asuntos Exteriores recomienda no viajar. Si eliges uno, el formulario te lo dice al momento.' },
       { q: '¿Qué no cubre ningún plan?', a: 'Las enfermedades preexistentes (salvo la primera asistencia urgente), los incidentes bajo los efectos del alcohol o las drogas, los deportes profesionales y las actividades extremas, los viajes en contra de las recomendaciones oficiales, los actos intencionados y los viajes de más de {maxTripDays} días.' },
       { q: '¿Puede contratarlo mi asistente de IA?', a: 'Sí, si tu asistente es compatible con WebMCP, el estándar que permite a los agentes de IA usar una web. Tu asistente pide el precio, te enseña el resumen completo y solo puede pagar cuando tú lo confirmas expresamente. Nunca introduce una tarjeta: tras tu confirmación, el pago de prueba se completa en nuestro servidor.' },
-      { q: '¿Cómo contacto con vosotros?', a: 'Escríbenos a {contactLink} y te contestamos lo antes posible.', needsContact: true },
+      { q: '¿Cómo contacto con vosotros?', a: '{contactForm}', needsContact: true },
     ],
     finalCtaTitle: '¿Preparado para empezar tu viaje?',
     finalCtaButton: 'Ver mi precio',
@@ -667,9 +688,8 @@ export default {
       paletteNames: { sky: 'Cielo', night: 'Azul noche', turquoise: 'Turquesa', yellow: 'Amarillo (solo botones)', secondary: 'Secundario', mint: 'Menta' },
       agentes: [
         { title: 'WebMCP', text: 'La web registra {tools} herramientas WebMCP: un asistente de IA puede cotizar, contratar y consultar la póliza sin leer la pantalla, con las mismas reglas que la web y sin tocar nunca una tarjeta. Nunca paga sin el «sí» expreso de la persona.' },
-        { title: 'llms.txt', text: 'Un resumen en texto plano para modelos de lenguaje: qué es Wildpass, los dos planes y sus límites, cómo cotizar y las reglas de pago.' },
-        { title: 'Datos estructurados', text: 'JSON-LD en la portada (organización, producto con sus dos ofertas, preguntas frecuentes) y en las condiciones (coberturas), y un endpoint público de tarifas: /api/pricing.' },
-        { title: 'Puertas abiertas', text: 'robots.txt permite todos los rastreadores, incluidos los de IA, y un sitemap lista las páginas públicas. [COMPLETAR: por qué crees que este canal importará en Tuio.]' },
+        { title: 'llms.txt', text: 'Un resumen en texto plano para modelos de lenguaje: qué es Wildpass, las herramientas en orden, las reglas de pago y los enlaces a las condiciones y a /agentes.' },
+        { title: 'Puertas abiertas', text: 'robots.txt permite todos los rastreadores, incluidos los de IA, y no bloqueamos a ningún asistente. [COMPLETAR: por qué crees que este canal importará en Tuio.]' },
       ],
       medicion: 'Medición propia, sin cookies ni herramientas de terceros: cada evento lleva un identificador de sesión aleatorio, el canal (web o agente), el dispositivo, el plan y la variante de cada experimento. Nunca nombres, emails ni fechas de nacimiento.',
       metricsLink: 'Ver las métricas reales de la demo',
@@ -683,9 +703,6 @@ export default {
         review_viewed: 'Ve el resumen antes de pagar.',
         payment_started: 'Pulsa pagar.',
         policy_issued: 'Se emite la póliza.',
-        quote_emailed: 'Se envía el presupuesto por email.',
-        share_clicked: 'Comparte la web con su acompañante.',
-        referral_used: 'Llega con un código de amigo y lo usa.',
         policy_resent: 'Reenvía la póliza a su email.',
         policy_forwarded: 'Envía la póliza a otra persona.',
       },
@@ -705,6 +722,12 @@ export default {
         'Email desde el dominio propio (SPF, DKIM y DMARC) para llegar a la bandeja de entrada.',
         'Una aseguradora real detrás: producto registrado, condiciones revisadas por legal y pagos reales.',
         'Analítica con consentimiento y un almacén de datos para cruzar marketing y siniestralidad.',
+        'Siguiente paso: datos estructurados JSON-LD (organización, producto con sus dos planes, preguntas frecuentes) para buscadores y asistentes.',
+        'Siguiente paso: un endpoint público de precios, con el mismo motor que la web, para comparadores y agentes.',
+        'Siguiente paso: enviar el presupuesto por email, con un enlace que lo vuelve a abrir.',
+        'Siguiente paso: un botón para compartir la póliza con quien viaja contigo.',
+        'Siguiente paso: un programa de referidos con un código de amigo.',
+        'Siguiente paso: la herramienta WebMCP email_quote, para que un asistente envíe el presupuesto con el permiso de la persona.',
         '[COMPLETAR: equipo y presupuesto que pedirías.]',
       ],
     },
@@ -773,6 +796,9 @@ export default {
 
     // Friendly error messages by server error_code ({placeholders} come from limits or the error).
     errors: {
+      CONTACT_INVALID: 'Revisa el formulario: falta algún dato o no es correcto.',
+      CONTACT_LIMIT_REACHED: 'Ya nos has escrito varias veces. Espera un rato antes de enviar otro mensaje.',
+      CONTACT_NOT_AVAILABLE: 'Ahora mismo no podemos recibir mensajes. Inténtalo más tarde.',
       DESTINATION_NOT_COVERED: 'No podemos asegurar viajes a destinos con recomendación oficial de no viajar.',
       RETURN_BEFORE_DEPARTURE: 'La vuelta tiene que ser después de la ida. ¿Lo revisamos?',
       TRIP_TOO_LONG: 'Cubrimos viajes de hasta {maxTripDays} días.',

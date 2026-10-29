@@ -65,7 +65,7 @@ function checkShape(input, allowed, what = 'input') {
   return null;
 }
 
-function cleanName(value) {
+export function cleanName(value) {
   if (typeof value !== 'string') return null;
   const name = value.trim().replace(/\s+/g, ' ');
   // eslint-disable-next-line no-control-regex
@@ -73,7 +73,7 @@ function cleanName(value) {
   return name;
 }
 
-function cleanEmail(value) {
+export function cleanEmail(value) {
   if (typeof value !== 'string') return null;
   const email = value.trim();
   return email.length <= 254 && EMAIL_RE.test(email) ? email : null;

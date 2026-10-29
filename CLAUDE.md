@@ -37,7 +37,7 @@ The owner is not a programmer: explain things simply, report test results honest
   unknown → mountains), a stylised Spain → destination flight path (SMIL animateMotion), a live "Desde X € · plan Wild" preview (debounced get_quote,
   no order), and the AI example chat + the real tools timeline (`showcaseHtml` in landing.js: tool names from webmcp-tools.js, price from the engine
   for `texts.ai.example`, final state server-rendered; each message = one sr-only copy + one aria-hidden typed copy, so screen readers read it once).
-  Landing order: hero + form → trust strip (sky band, 4 white cards, icon in a mint circle, `texts.trust`; each fact = bold `text` + smaller #3C5368 `sub` line, same at every width; phones 2×2 icon on top, ≥700 px 4 in a row) → benefits → ¿Y si…? → destinations → plans (Wild, Wild+) → AI block (chat + ONE discreet link "Cómo funciona para asistentes y desarrolladores →" to /agentes) → FAQ → final CTA → footer.
+  Landing order: hero + form → trust strip (sky band, 4 white cards, icon in a mint circle, `texts.trust`; each fact = bold `text` + smaller #3C5368 `sub` line, same at every width; phones 2×2 icon on top, ≥700 px 4 in a row) → benefits → ¿Y si…? → destinations → plans (Wild, Wild+) → AI block (chat + ONE short link "Ver cómo funciona →" to /agentes, one line, 44 px tall) → FAQ → final CTA → footer.
   Header on every page (`headerHtml` + `skipLinkHtml` in landing.js, public/site-nav.js): "Saltar al contenido" (→ #contenido), logo,
   "Preguntas frecuentes" (#preguntas, opens the FAQ), "Agentes", "Condiciones" (<960 px they fold into a "Menú" panel), yellow "Ver mi precio"
   in the bar itself. The header is STICKY under the sticky banner (always compact: never shrinks on scroll, that would be layout shift);
@@ -89,7 +89,7 @@ The owner is not a programmer: explain things simply, report test results honest
   optional big figure counts up once; "Cubierto/No cubierto" badges are content-wide) and "¿A dónde te escapas?"
   (`destinationsHtml`, 10 countries in `texts.destinations.countries`: scroll-snap cards, mini scene, "7 días desde X €" = Wild, 1 adult, engine; tap → sets destination + scene, scrolls to form).
   Sections fade in once (opacity only: moving them counted as layout shift); FAQ (10 questions, `faqHtml`: "[text](#quote-form)" in an answer = link to
-  the form; the contact question shows only if CONTACT_EMAIL is in .env, so the owner's address stays out of Git) is closed behind
+  the form; the contact question shows only if CONTACT_EMAIL is in .env; its answer is a contact form (`contactFormHtml` in landing.js → POST /api/contact, `src/contact.js`: name, email, message, required consent, honeypot `website`, 3 messages per browser session and 10 per IP a day, in memory; sent with Brevo to CONTACT_EMAIL with reply-to = the visitor; the owner's address is never in the HTML, the answers or Git; `test/contact.test.js`) is closed behind
   "Ver preguntas frecuentes"; each answer opens smoothly via `::details-content` (Chrome/Safari; others
   open at once); phones get a sticky "Ver mi precio" bar once the hero is off screen (inside #landing, so never in the checkout).
 - Success step, under "Descargar mi póliza": "Reenviar póliza" and "Enviar la póliza a quien viaja contigo" (highlighted when >1 traveller).
@@ -274,3 +274,10 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
   order again (review → Pagar, or confirm_payment) finds the succeeded PaymentIntent and issues the policy without charging again.
 - Policies issued before the snapshot feature have no snapshot and show the current config (`coverage_source: "current_config_legacy_policy"`).
 - Emails sent before 28 Oct 2026 (afternoon) load their logo from an old tunnel address, so it no longer shows in them.
+
+## Working method (owner's rule, 29 Oct 2026)
+- NEVER edit ~/travel-demo (branch `live`, served by wildpass-app: public/*.js are served live from disk, server code and the template only on restart → half-new files broke the public form once).
+- Work in the worktree ~/travel-demo-dev (own data/ and .env), instance `HOST=127.0.0.1 PORT=3001 node server.js`. Promote only after `npm test` + a full purchase there:
+  fast-forward `live`, push, and tell the owner to restart wildpass-app (they do it themselves). Never touch Tailscale or the README.
+- Delivery scope (owner, 29 Oct 2026): Blocks 1–4 + the contact form. NOT public: Block 5 (JSON-LD, /api/pricing, sitemap… kept on branch `block5-later`),
+  «Precio honesto» chart (6.1) and Block 7 (growth loops). /caso lists them as next steps.

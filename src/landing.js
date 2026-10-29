@@ -364,13 +364,28 @@ function trustHtml({ brand, values }) {
 }
 
 // FAQ answers: escaped text, then [text](#quote-form) → a link to the quote form, {contactLink} → a mailto link.
+// The contact question's answer: a form posted to /api/contact (src/contact.js). The owner's address stays on the
+// server. "website" is a honeypot: hidden from people and screen readers, bots fill it in.
+function contactFormHtml(brand) {
+  const c = brand.texts.contact;
+  const e = escapeHtml;
+  return `<p>${e(c.intro)}</p><form id="contact-form" class="contact-form" novalidate>`
+    + `<div class="field"><label for="contact-name">${e(c.name)}</label><input id="contact-name" name="name" autocomplete="name" maxlength="100" aria-required="true"></div>`
+    + `<div class="field"><label for="contact-email">${e(c.email)}</label><p class="hint" id="contact-email-hint">${e(c.emailHelp)}</p><input id="contact-email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" aria-required="true" aria-describedby="contact-email-hint"></div>`
+    + `<div class="field"><label for="contact-message">${e(c.message)}</label><textarea id="contact-message" name="message" rows="5" maxlength="2000" aria-required="true"></textarea></div>`
+    + `<div class="hp" aria-hidden="true"><label for="contact-website">${e(c.honeypot)}</label><input id="contact-website" name="website" tabindex="-1" autocomplete="off"></div>`
+    + `<label class="check" for="contact-consent"><input type="checkbox" id="contact-consent" name="consent" aria-required="true"> <span>${e(c.consent)}</span></label>`
+    + `<p class="error" role="alert" hidden></p>`
+    + `<button type="submit" class="secondary" id="contact-send">${e(c.send)}</button>`
+    + `<p class="contact-status" id="contact-status" role="status"></p></form>`;
+}
+
 function faqHtml({ brand, values, contactEmail }) {
   const t = brand.texts;
-  const contact = contactEmail ? `<a href="mailto:${escapeHtml(contactEmail)}">${escapeHtml(contactEmail)}</a>` : '';
   return t.faq.filter(f => !f.needsContact || contactEmail).map(f => {
+    if (f.needsContact) return `<details class="faq-item"><summary>${escapeHtml(f.q)}</summary><div class="faq-answer">${contactFormHtml(brand)}</div></details>`;
     const answer = escapeHtml(fill(f.a, values))
-      .replace(/\[([^\]]+)\]\(#quote-form\)/g, '<a href="#quote-form" data-focus-form>$1</a>')
-      .replace('{contactLink}', contact);
+      .replace(/\[([^\]]+)\]\(#quote-form\)/g, '<a href="#quote-form" data-focus-form>$1</a>');
     return `<details class="faq-item"><summary>${escapeHtml(f.q)}</summary><p>${answer}</p></details>`;
   }).join('');
 }

@@ -10,6 +10,7 @@ import { buildPolicyPdf } from './pdf.js';
 import { createEmailService } from './email.js';
 import { createStripe } from './stripe.js';
 import { createEvents } from './events.js';
+import { createContact } from './contact.js';
 import { metricsPageBody } from './metrics-page.js';
 import experiments from '../config/experiments.config.js';
 import { timingSafeEqual, createHash } from 'node:crypto';
@@ -37,7 +38,9 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
   const db = openDb(join(dataDir, 'travel.db'));
   const stripe = createStripe({ env, fetchImpl: stripeFetch, log }); // test keys only, else simulated payments
   const events = createEvents({ db, ...(now && { now }) });
-  const business = createBusiness({ db, pricing, brand, pdfDir, buildPdf: buildPolicyPdf, email: createEmailService({ env, brand, fetchImpl }), stripe, ...(now && { now }) });
+  const email = createEmailService({ env, brand, fetchImpl });
+  const business = createBusiness({ db, pricing, brand, pdfDir, buildPdf: buildPolicyPdf, email, stripe, ...(now && { now }) });
+  const contact = createContact({ brand, email, to: env.CONTACT_EMAIL ?? '', log, ...(now && { now }) });
 
   const regionNames = new Intl.DisplayNames(['es'], { type: 'region' });
   const countries = COUNTRY_CODES.map(code => ({ code, name: regionNames.of(code) ?? code })).sort((a, b) => a.name.localeCompare(b.name, 'es'));
@@ -108,6 +111,11 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
   app.post('/api/events', express.json({ limit: '2kb' }), (req, res) => {
     const result = events.record(req.body ?? null, { ip: req.ip });
     res.status(result.ok ? 200 : { TOO_MANY_EVENTS: 429, EVENTS_FULL: 507 }[result.error_code] ?? 400).json(result);
+  });
+  // Contact form (FAQ): its own small body limit; the owner's address stays on the server.
+  app.post('/api/contact', express.json({ limit: '8kb' }), async (req, res) => {
+    const result = await contact.send(req.body ?? null, { ip: req.ip });
+    res.status(result.ok ? 200 : { CONTACT_LIMIT_REACHED: 429, CONTACT_NOT_AVAILABLE: 503, EMAIL_SEND_FAILED: 502 }[result.error_code] ?? 400).json(result);
   });
   app.use('/api', api);
 

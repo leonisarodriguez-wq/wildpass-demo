@@ -10,7 +10,7 @@ function randomId() {
   return [...bytes].map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-function sessionId() {
+export function sessionId() {
   try {
     let id = sessionStorage.getItem(KEY);
     if (!id) { id = randomId(); sessionStorage.setItem(KEY, id); }

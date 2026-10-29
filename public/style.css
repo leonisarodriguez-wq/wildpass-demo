@@ -256,8 +256,9 @@ select[hidden] { display: none; } /* the plain <select> once the search box repl
 .prompt-text::before { content: open-quote; } .prompt-text::after { content: close-quote; }
 .copy-prompt { min-height: 44px; padding: 8px 20px; font-size: 1rem; }
 .ai-note { font-size: 0.95rem; margin: 16px auto 0; max-width: 40rem; }
-.ai-agents { font-size: 0.95rem; margin: 20px auto 0; max-width: 40rem; }
-.ai-agents a { color: var(--white); font-weight: 600; text-underline-offset: 3px; }
+.ai-agents { font-size: 1rem; margin: 16px auto 0; max-width: 40rem; }
+/* Short link, one line, 44 px touch target, centred like the rest of the block. */
+.ai-agents a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 8px; color: var(--white); font-weight: 700; text-underline-offset: 4px; white-space: nowrap; }
 .card-page .ai-note { margin-left: 0; color: var(--secondary); }
 .dev-tool-list { margin: 0; padding-left: 1.2rem; display: grid; gap: 8px; }
 /* /agentes: an index to the two parts, each part a block with its own heading. */
@@ -860,3 +861,26 @@ mark.todo { background: var(--mint); color: var(--night); font-weight: 700; bord
   .roadmap::before { left: 8px; right: 8px; top: 9px; bottom: auto; width: auto; height: 3px; }
   .phase::before { left: 16px; top: -29px; }
 }
+
+/* /agentes: "Cómo nos encuentra un asistente" */
+.find-list { display: grid; gap: 10px; margin: 0 0 12px; }
+.find-list div { border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; }
+.find-list dt { font-weight: 700; }
+.find-list dd { margin: 2px 0 0; }
+
+/* ---------- Contact form (FAQ answer) ---------- */
+.faq-answer { padding: 0 16px 16px; }
+.faq-item .faq-answer > p:first-child { padding: 0; margin-bottom: 12px; }
+.faq-item .contact-form .field-error { padding: 8px 10px; margin: 6px 0 0; color: var(--night); }
+.faq-item .contact-form .error { padding: 12px 14px; margin: 0; color: var(--night); }
+.faq-item .contact-form p.hint { padding: 0; }
+.contact-form textarea[aria-invalid="true"] { border-color: var(--red); }
+.contact-form { display: grid; gap: 12px; max-width: 36rem; }
+.contact-form .field { margin: 0; }
+.contact-form textarea { width: 100%; min-height: 8rem; resize: vertical; font: inherit; padding: 12px; border: 2px solid var(--field-border); border-radius: 12px; background: var(--white); color: var(--night); }
+.contact-form .check { margin: 4px 0; font-weight: 400; font-size: 0.95rem; }
+.contact-form button { justify-self: start; }
+.contact-status:empty { display: none; }
+.faq-item .contact-status { padding: 0; margin: 0; font-weight: 600; color: var(--turquoise-text); }
+/* Honeypot: off screen for people, still in the form for bots. */
+.hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }

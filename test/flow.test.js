@@ -446,7 +446,7 @@ test('AI block on the landing: only title, text, the example chat and the compat
   const ai = html.slice(html.indexOf('id="ia"'), html.indexOf('</section>', html.indexOf('id="ia"')));
   assert.ok(ai.includes('Tu asistente también puede contratarlo') && ai.includes('id="showcase"') && ai.includes('id="showcase-replay"'));
   // ONE discreet link to /agentes, server-rendered; the old visible "¿Usas un asistente de IA?…" line is gone.
-  assert.ok(ai.includes('<p class="ai-agents"><a href="/agentes">Cómo funciona para asistentes y desarrolladores →</a></p>'));
+  assert.ok(ai.includes('<p class="ai-agents"><a href="/agentes">Ver cómo funciona<span class="arrow" aria-hidden="true">→</span></a></p>'));
   assert.ok(!html.includes('¿Usas un asistente de IA?'));
   assert.ok(!ai.includes('Funciona con asistentes y navegadores compatibles con WebMCP'));
   // Developer material lives on /agentes now.
@@ -724,7 +724,7 @@ test('agents are welcome: robots.txt allows all, /llms.txt lists the 6 tools, th
   assert.ok(!order.includes(-1) && [...order].sort((a, b) => a - b).join() === order.join(), llms);
   assert.ok(llms.includes(`(${base}/agentes)`) && llms.includes('WebMCP'));
   const html = nbsp(await (await fetch(`${base}/`)).text());
-  assert.ok(html.includes('<a href="/agentes">Cómo funciona para asistentes y desarrolladores →</a>'));
+  assert.ok(html.includes('<a href="/agentes">Ver cómo funciona<span class="arrow" aria-hidden="true">→</span></a>'));
   // Agents never type a card: said on /llms.txt, /agentes and in confirm_payment's description.
   const noCard = 'Los agentes no deben introducir datos de tarjeta. Usa las herramientas WebMCP: tras la confirmación explícita del usuario, confirm_payment completa el pago de prueba en el servidor.';
   assert.ok(llms.includes(noCard), 'llms.txt');

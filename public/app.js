@@ -4,7 +4,7 @@
 import { callApi, loadConfig } from './api.js';
 import { qrSvg } from './qr.js';
 import { enhanceDestination, isHomeQuery } from './destination-picker.js';
-import { track } from './track.js';
+import { track, sessionId } from './track.js';
 
 const $ = sel => document.querySelector(sel);
 // The destination field people see: the searchable box once it exists, else the plain <select>.
@@ -835,6 +835,36 @@ $('#forward-form').addEventListener('submit', async e => {
   syncSendButtons();
 });
 liveCheck($('#forward-form'), () => [[$('#forward-email'), () => (EMAIL_SHAPE.test($('#forward-email').value.trim()) ? null : A().missingEmail)]]);
+
+// ---------- contact form (FAQ) ----------
+// Sent to /api/contact; the server validates again, limits per session and never shows the owner's address.
+const contactForm = $('#contact-form');
+if (contactForm) {
+  const K = () => T.contact;
+  const f = id => $(`#contact-${id}`);
+  const checks = () => [
+    [f('name'), () => (f('name').value.trim().length >= 2 ? null : K().missingName)],
+    [f('email'), () => (!f('email').value.trim() ? K().missingEmail : EMAIL_SHAPE.test(f('email').value.trim()) ? null : E.INVALID_EMAIL)],
+    [f('message'), () => (f('message').value.trim().length >= 2 ? null : K().missingMessage)],
+    [f('consent'), () => (f('consent').checked ? null : K().missingConsent)],
+  ];
+  contactForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    $('#contact-status').textContent = '';
+    if (!validateAll(checks())) return;
+    await busy($('#contact-send'), K().sending, async () => {
+      const result = await callApi('contact', {
+        name: f('name').value, email: f('email').value.trim(), message: f('message').value,
+        consent: f('consent').checked, website: f('website').value, session_id: sessionId(),
+      });
+      if (!result.ok) return showError(contactForm, friendly(result));
+      showError(contactForm, null);
+      $('#contact-status').textContent = fill(K().sent, { email: f('email').value.trim() });
+      f('message').value = '';
+    });
+  });
+  liveCheck(contactForm, checks);
+}
 
 // ---------- navigation ----------
 for (const b of document.querySelectorAll('[data-go]')) {

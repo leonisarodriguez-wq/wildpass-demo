@@ -5,7 +5,7 @@ import { fail } from './business.js';
 
 export const EVENT_NAMES = [
   'page_view', 'destination_selected', 'quote_viewed', 'plan_selected', 'details_completed', 'review_viewed',
-  'payment_started', 'policy_issued', 'quote_emailed', 'share_clicked', 'referral_used', 'policy_resent', 'policy_forwarded',
+  'payment_started', 'policy_issued', 'policy_resent', 'policy_forwarded',
 ];
 // Pages that send page_view (/metricas never does).
 export const TRACKED_PAGES = ['/', '/agentes', '/condiciones', '/caso'];
