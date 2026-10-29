@@ -86,7 +86,7 @@ test('/si-me-pasa-algo: demo page with the four steps, the demo notice, linked f
 
 test('«Probar con un ejemplo»: secondary button in the quote form, example data from the texts, event example_used accepted', async () => {
   const html = await get('/');
-  assert.ok(html.includes('<button type="button" class="secondary block example-btn" id="example-fill">Probar con un ejemplo</button>'));
+  assert.ok(html.includes('<button type="button" class="link-button example-btn" id="example-fill">Probar con un ejemplo</button>'));
   assert.ok(html.includes('id="example-confirm"') && html.includes('Sí, usar el ejemplo') && html.includes('No, mantener mis datos'));
   const config = await (await fetch(`${base}/api/config`)).json();
   assert.deepEqual(config.texts?.form?.example ?? config.brand?.texts?.form?.example, { destination: 'TH', startInDays: 42, tripDays: 14, ages: [35, 38] });

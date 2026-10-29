@@ -55,6 +55,15 @@
         </div>
         <form id="quote-form" class="quote-card pass" aria-labelledby="quote-title" novalidate>
           <h2 class="pass-head" id="quote-title"><span class="pass-title">{{t.form.passLabel}}</span><span class="pass-brand" aria-hidden="true">{{brand.name}}</span></h2>
+          <!-- Under the title: the discreet example link (right on computers, first on phones) and the adventure line. -->
+          <div class="card-aid">
+            <button type="button" class="link-button example-btn" id="example-fill">{{t.form.exampleButton}}</button>
+            <p class="hero-adventure-line">{{t.heroAdventureLine}}</p>
+          </div>
+          <div class="example-confirm" id="example-confirm" role="group" aria-labelledby="example-ask" hidden>
+            <p id="example-ask">{{t.form.exampleAsk}}</p>
+            <div class="example-actions"><button type="button" class="secondary" id="example-yes">{{t.form.exampleYes}}</button><button type="button" class="secondary" id="example-no">{{t.form.exampleNo}}</button></div>
+          </div>
           <div class="field">
             <label for="destination">{{t.form.destination}}</label>
             <p class="field-help origin-line">{{t.form.residence}}</p>
@@ -84,12 +93,6 @@
           <div class="error" id="quote-error" role="alert" hidden></div>
           <div aria-live="polite"><p class="price-preview" id="price-preview" hidden><span class="pp-main"></span><span class="pp-sub"></span></p></div>
           <button type="submit" class="primary block" id="quote-submit">{{t.form.submit}}</button>
-          <p class="hero-adventure-line">{{t.heroAdventureLine}}</p>
-          <button type="button" class="secondary block example-btn" id="example-fill">{{t.form.exampleButton}}</button>
-          <div class="example-confirm" id="example-confirm" role="group" aria-labelledby="example-ask" hidden>
-            <p id="example-ask">{{t.form.exampleAsk}}</p>
-            <div class="example-actions"><button type="button" class="secondary" id="example-yes">{{t.form.exampleYes}}</button><button type="button" class="secondary" id="example-no">{{t.form.exampleNo}}</button></div>
-          </div>
           <p class="form-note">{{t.form.note}}</p>
         </form>
       </div>
