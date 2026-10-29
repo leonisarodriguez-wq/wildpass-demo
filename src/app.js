@@ -5,12 +5,12 @@ import { mkdirSync, createReadStream } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openDb } from './db.js';
-import { createBusiness, fail, formatEur } from './business.js';
+import { createBusiness, fail } from './business.js';
 import { buildPolicyPdf } from './pdf.js';
 import { createEmailService } from './email.js';
 import { createStripe } from './stripe.js';
 import { faviconSvg } from './logo.js';
-import { agentsPageBody, createLanding, llmsTxt, pageShell } from './landing.js';
+import { agentsPageBody, createLanding, llmsTxt, notFoundBody, pageShell, termsPageBody } from './landing.js';
 import marketQuotes from '../config/market-quotes.js';
 import { COUNTRY_CODES } from '../config/countries.js';
 import brand from '../config/brand.config.js';
@@ -24,8 +24,6 @@ const STATUS_BY_CODE = {
   PAYMENT_DECLINED: 402, PAYMENT_NOT_COMPLETED: 409, PAYMENT_MISMATCH: 409, CARD_PAYMENT_OFF: 409,
   PAYMENT_ERROR: 502, PAYMENT_PROVIDER_UNAVAILABLE: 503, INTERNAL_ERROR: 500,
 };
-
-const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
 // fetchImpl / stripeFetch are only replaced in tests, to simulate Brevo and Stripe without real calls.
 export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fetchImpl = fetch, stripeFetch = fetch, log = console, now } = {}) {
@@ -130,7 +128,7 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
   });
 
   // Landing (public/index.html filled in on the server).
-  app.get(['/', '/index.html'], (req, res) => res.type('html').send(landing.landingHtml()));
+  app.get(['/', '/index.html'], (req, res) => res.type('html').send(landing.landingHtml({ baseUrl: baseUrl(req) })));
   app.get('/favicon.svg', (req, res) => res.type('image/svg+xml').set('Cache-Control', 'public, max-age=86400').send(faviconSvg()));
 
   // Developer & AI-agent page, linked only from the footer.
@@ -145,17 +143,7 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
   });
 
   app.get('/condiciones', (req, res) => {
-    const plans = Object.values(pricing.plans).map(p => `
-      <h2>${escapeHtml(p.name)}</h2>
-      <ul>${Object.entries(p.coverage).map(([k, v]) => `<li>${escapeHtml(pricing.coverageLabels[k] ?? k)}: ${escapeHtml(typeof v === 'string' ? v : v > 0 ? formatEur(v) : 'no incluida')}</li>`).join('')}
-      <li>Franquicia por siniestro médico: ${escapeHtml(formatEur(p.excess_per_medical_claim_eur))}</li></ul>
-      <h3>${escapeHtml(brand.texts.planExclusionsTitle)} (solo ${escapeHtml(p.name)})</h3>
-      <ul>${p.extraExclusions.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>`).join('');
-    res.type('html').send(pageShell({ brand, title: brand.texts.termsTitle, body: `
-      <h1>${escapeHtml(brand.texts.termsTitle)}</h1><p>${escapeHtml(brand.texts.termsIntro)}</p>
-      <p>Solo viajes que salen de España, de hasta ${pricing.limits.maxTripDays} días, de ${pricing.limits.minTravelers} a ${pricing.limits.maxTravelers} viajeros de ${pricing.limits.minAge} a ${pricing.limits.maxAge} años.</p>
-      ${plans}<h2>${escapeHtml(brand.texts.exclusionsTitle)}</h2><ul>${pricing.exclusions.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>
-      <p><a href="/">← ${escapeHtml(brand.texts.back)}</a></p>` }));
+    res.type('html').send(pageShell({ brand, title: brand.texts.termsTitle, body: termsPageBody({ brand, pricing }) }));
   });
 
   app.get('/poliza/:file', (req, res) => {
@@ -177,6 +165,11 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
   });
 
   app.use(express.static(join(ROOT, 'public')));
+
+  // Any other address: a branded 404 page with the way back to the quote form.
+  app.use((req, res) => {
+    res.status(404).type('html').send(pageShell({ brand, title: brand.texts.notFound.title, body: notFoundBody({ brand }) }));
+  });
 
   // Last-resort error handler: still a structured answer, never a bare crash.
   app.use((err, req, res, _next) => {

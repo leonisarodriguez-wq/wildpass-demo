@@ -310,7 +310,7 @@ test('broken JSON and unknown endpoints give structured errors', async () => {
 });
 
 test('demo banner is on every page', async () => {
-  for (const path of ['/', '/condiciones']) {
+  for (const path of ['/', '/condiciones', '/agentes', '/no-existe']) {
     const html = await (await fetch(`${base}${path}`)).text();
     assert.ok(html.includes('Demo — no es un seguro real. Ningún pago es real.'), `banner missing on ${path}`);
   }
@@ -494,6 +494,61 @@ test('/agentes: WebMCP explained, example prompt, the real tools and the confirm
   assert.ok(html.includes(`Las ${tools.length} herramientas`));
   for (const t of tools) assert.ok(html.includes(`<li><code>${t.name}</code> ${t.es.replace(/[<>&]/g, '')}`), `${t.name} missing from the list`);
   for (const field of ['review_token', 'accept_terms', 'user_confirmed', 'confirmed_total_eur']) assert.ok(html.includes(`<li><code>${field}</code>:`), field);
+});
+
+test('/agentes: the tool list comes right under its "Las 6 herramientas" heading', async () => {
+  const html = await (await fetch(`${base}/agentes`)).text();
+  assert.match(html, /<h2>Las 6 herramientas<\/h2>\s*<ol class="dev-tool-list">/);
+});
+
+test('/condiciones: Wild vs Wild+ table first, an index with working anchors, "Ver mi precio" at the end', async () => {
+  const html = nbsp(await (await fetch(`${base}/condiciones`)).text());
+  const index = html.indexOf('class="terms-index"');
+  const table = html.indexOf('<table class="terms-table">');
+  assert.ok(index > 0 && table > index, 'index, then the table');
+  assert.ok(table < html.indexOf('id="quien"') && table < html.indexOf('id="exclusiones"'), 'the table comes before the other sections');
+  const anchors = [...html.slice(index, table).matchAll(/href="#([a-z-]+)"/g)].map(m => m[1]);
+  assert.deepEqual(anchors, ['comparativa', 'quien', 'plan-wild', 'plan-wild-plus', 'exclusiones']);
+  for (const id of anchors) assert.ok(html.includes(`id="${id}"`), `anchor #${id} has no target`);
+  assert.ok(html.includes('<th scope="col">Wild</th><th scope="col">Wild+</th>'));
+  // Every coverage line, with the values from the pricing config.
+  for (const label of Object.values(pricing.coverageLabels)) assert.ok(html.includes(`<th scope="row">${label}</th>`), label);
+  assert.ok(html.includes('<td data-plan="Wild">75 €</td><td data-plan="Wild+">Sin franquicia</td>'));
+  assert.ok(html.includes('<td data-plan="Wild">No incluida</td><td data-plan="Wild+">15.000 €</td>'));
+  const cta = html.indexOf('<div class="page-cta">');
+  assert.ok(cta > html.indexOf('id="exclusiones"'), 'CTA at the end');
+  assert.ok(html.slice(cta).includes('<a class="primary" href="/#quote-form">Ver mi precio</a>'));
+});
+
+test('404: unknown addresses get the branded page with the way back to the quote form', async () => {
+  for (const path of ['/no-existe', '/poliza', '/agentes/x']) {
+    const res = await fetch(`${base}${path}`);
+    assert.equal(res.status, 404, path);
+    assert.match(res.headers.get('content-type'), /text\/html/);
+    const html = await res.text();
+    assert.ok(html.includes('Demo — no es un seguro real. Ningún pago es real.'), 'demo banner');
+    assert.ok(html.includes('<title>Página no encontrada · Seguros Wildpass</title>'));
+    assert.ok(html.includes('<a class="primary" href="/#quote-form">Ver mi precio</a>') && html.includes('<a class="secondary" href="/">'));
+  }
+  // The API keeps answering JSON.
+  const api = await fetch(`${base}/api/nope`, { method: 'POST' });
+  assert.equal(api.status, 404);
+  assert.equal((await api.json()).error_code, 'UNKNOWN_ENDPOINT');
+});
+
+test('link previews: Open Graph + twitter:card with absolute URLs and a 1200×630 PNG', async () => {
+  const html = await (await fetch(`${base}/`)).text();
+  const meta = name => html.match(new RegExp(`<meta (?:property|name)="${name}" content="([^"]*)">`))?.[1];
+  assert.equal(meta('og:url'), `${base}/`);
+  assert.equal(meta('og:image'), `${base}/og-image.png`);
+  assert.equal(meta('twitter:image'), `${base}/og-image.png`);
+  assert.equal(meta('twitter:card'), 'summary_large_image');
+  for (const name of ['og:title', 'og:description', 'og:image:alt', 'twitter:title', 'twitter:description']) assert.ok(meta(name)?.length > 10, name);
+  assert.ok(meta('og:description').startsWith('Demo — no es un seguro real.'), 'the preview says it is a demo');
+  const png = await fetch(`${base}/og-image.png`);
+  assert.equal(png.headers.get('content-type'), 'image/png');
+  const bytes = Buffer.from(await png.arrayBuffer());
+  assert.deepEqual([bytes.readUInt32BE(16), bytes.readUInt32BE(20)], [1200, 630]); // PNG header: width, height
 });
 
 test('agent activity: a hidden floating pill instead of the technical footer line; provider info only on /agentes', async () => {

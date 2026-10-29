@@ -60,6 +60,12 @@ export default {
     },
     pageTitle: 'Seguros Wildpass · Seguro de viaje con deportes de aventura (demo)',
     metaDescription: 'Demo de seguro de viaje con deportes de aventura. Calcula tu precio sin datos personales.',
+    // Link previews (WhatsApp, LinkedIn, X…): Open Graph + twitter:card. Image = public/og-image.png (1200×630).
+    og: {
+      title: 'Seguros Wildpass · Travel wild. We\'ve got you. (demo)',
+      description: 'Demo — no es un seguro real. Seguro de viaje con deportes de aventura: calcula tu precio y recibe la póliza en tu email.',
+      imageAlt: 'Wildpass: paisaje de montaña con el lema «Travel wild. We\'ve got you.» y la franja «Demo — no es un seguro real».',
+    },
     // The claim stays in English (lang="en" on the h1); this Spanish line says what Wildpass is.
     heroSubtitle: 'Viaja salvaje, nosotros te cubrimos: seguro de viaje con deportes de aventura y la póliza en tu email en 2 minutos.',
 
@@ -583,6 +589,26 @@ export default {
     // Terms page, PDF and email
     termsTitle: 'Condiciones del seguro (demo)',
     termsIntro: 'Esto es una demostración. No es un seguro real y no ofrece ninguna cobertura.',
+    // /condiciones: comparison table first, an index with anchors, "Ver mi precio" at the end.
+    terms: {
+      indexLabel: 'En esta página',
+      compareTitle: 'Wild y Wild+ de un vistazo',
+      coverageCol: 'Cobertura',
+      excess: 'Franquicia por siniestro médico',
+      noExcess: 'Sin franquicia',
+      notIncluded: 'No incluida',
+      whoTitle: 'Quién puede contratar',
+      whoText: 'Solo viajes que salen de España, de hasta {maxTripDays} días, de {minTravelers} a {maxTravelers} viajeros de {minAge} a {maxAge} años.',
+      planExclusionsTitle: 'Qué no cubre {plan}',
+      ctaText: '¿Lo tienes claro? Calcula el precio de tu viaje: no hace falta ningún dato personal.',
+    },
+    // 404 page (any address that does not exist).
+    notFound: {
+      title: 'Página no encontrada',
+      heading: 'Este camino no lleva a ninguna parte',
+      text: 'La página que buscas no existe o ha cambiado de sitio. Tu próximo viaje, en cambio, sigue en pie.',
+      home: 'Ir a la página principal',
+    },
     certificateTitle: 'Certificado de seguro de viaje',
     // PDF certificate (src/pdf.js)
     certificate: {

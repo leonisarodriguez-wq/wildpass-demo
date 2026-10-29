@@ -122,6 +122,10 @@ for (const b of bubbles) b.dataset.text = b.querySelector('.bubble-text').textCo
 let run = 0;
 let visible = false;
 
+const chat = show.querySelector('.chat');
+function reserveChat() { chat.style.minHeight = ''; chat.style.minHeight = `${chat.offsetHeight}px`; }
+// A new width changes the final height: measure again once the conversation is complete.
+addEventListener('resize', () => { if (!show.classList.contains('is-playing')) chat.style.minHeight = ''; });
 function finalState() {
   show.classList.remove('is-playing');
   for (const b of bubbles) { b.classList.remove('is-typing', 'is-thinking'); b.querySelector('.bubble-text').textContent = b.dataset.text; }
@@ -129,8 +133,8 @@ function finalState() {
 async function play() {
   const me = ++run;
   const alive = () => me === run;
-  // The white chat box grows with each message; the section keeps its final height reserved so nothing below moves.
-  if (!show.classList.contains('is-playing')) { show.style.minHeight = ''; show.style.minHeight = `${show.offsetHeight}px`; }
+  // The white chat box keeps its final height while the messages appear in it: no turquoise gap, nothing below moves.
+  if (!show.classList.contains('is-playing')) reserveChat();
   show.classList.add('is-playing');
   for (const b of bubbles) b.classList.remove('is-shown', 'is-typing', 'is-thinking');
   for (const b of bubbles) b.querySelector('.bubble-text').textContent = b.dataset.text;

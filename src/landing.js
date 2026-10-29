@@ -169,14 +169,53 @@ export function agentsPageBody({ brand, pricing, payments }) {
     </figure>
     <p class="ai-note">${escapeHtml(t.ai.compatNote)}</p>
     <h2>${escapeHtml(fill(g.toolsTitle, { count: tools.length }))}</h2>
-    <p>${escapeHtml(g.where)}</p>
-    <h2>${escapeHtml(g.providerTitle)}</h2>
-    <p id="webmcp-provider" data-native="${escapeHtml(g.providerNative)}" data-polyfill="${escapeHtml(g.providerPolyfill)}">${escapeHtml(g.providerChecking)}</p>
     <ol class="dev-tool-list">${tools.map(tool => `<li><code>${escapeHtml(tool.name)}</code> ${escapeHtml(tool.es)}</li>`).join('')}</ol>
+    <p>${escapeHtml(g.where)}</p>
     <h2>${escapeHtml(g.rulesTitle)}</h2>
     <p>${escapeHtml(g.rulesIntro)}</p>
     <ul class="dev-rules">${rules.map(f => `<li><code>${escapeHtml(f)}</code>: ${escapeHtml(pay.rulesEs[f])}</li>`).join('')}</ul>
+    <h2>${escapeHtml(g.providerTitle)}</h2>
+    <p id="webmcp-provider" data-native="${escapeHtml(g.providerNative)}" data-polyfill="${escapeHtml(g.providerPolyfill)}">${escapeHtml(g.providerChecking)}</p>
     <p><a href="/">← ${escapeHtml(t.back)}</a></p>`;
+}
+
+// /condiciones: Wild vs Wild+ table first, an index with anchors, each plan's own exclusions, the common ones, "Ver mi precio".
+export function termsPageBody({ brand, pricing }) {
+  const t = brand.texts;
+  const c = t.terms;
+  const plans = Object.entries(pricing.plans);
+  const anchor = id => `plan-${id.replace(/_/g, '-')}`;
+  const cell = v => typeof v === 'string' ? v.charAt(0).toUpperCase() + v.slice(1) : v > 0 ? formatEur(v) : c.notIncluded;
+  const rows = Object.entries(pricing.coverageLabels).map(([key, label]) =>
+    `<tr><th scope="row">${escapeHtml(label)}</th>${plans.map(([, p]) => `<td data-plan="${escapeHtml(p.name)}">${escapeHtml(cell(p.coverage[key]))}</td>`).join('')}</tr>`).join('')
+    + `<tr><th scope="row">${escapeHtml(c.excess)}</th>${plans.map(([, p]) => `<td data-plan="${escapeHtml(p.name)}">${escapeHtml(p.excess_per_medical_claim_eur > 0 ? formatEur(p.excess_per_medical_claim_eur) : c.noExcess)}</td>`).join('')}</tr>`;
+  const sections = [
+    ['comparativa', c.compareTitle],
+    ['quien', c.whoTitle],
+    ...plans.map(([id, p]) => [anchor(id), fill(c.planExclusionsTitle, { plan: p.name })]),
+    ['exclusiones', t.exclusionsTitle],
+  ];
+  return `<h1>${escapeHtml(t.termsTitle)}</h1><p>${escapeHtml(t.termsIntro)}</p>
+    <nav class="terms-index" aria-label="${escapeHtml(c.indexLabel)}"><p class="terms-index-label">${escapeHtml(c.indexLabel)}</p>
+      <ol>${sections.map(([id, title]) => `<li><a href="#${id}">${escapeHtml(title)}</a></li>`).join('')}</ol></nav>
+    <h2 id="comparativa">${escapeHtml(c.compareTitle)}</h2>
+    <div class="table-scroll"><table class="terms-table">
+      <thead><tr><th scope="col">${escapeHtml(c.coverageCol)}</th>${plans.map(([, p]) => `<th scope="col">${escapeHtml(p.name)}</th>`).join('')}</tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <h2 id="quien">${escapeHtml(c.whoTitle)}</h2><p>${escapeHtml(fill(c.whoText, pricing.limits))}</p>
+    ${plans.map(([id, p]) => `<h2 id="${anchor(id)}">${escapeHtml(fill(c.planExclusionsTitle, { plan: p.name }))}</h2>
+      <ul>${p.extraExclusions.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>`).join('')}
+    <h2 id="exclusiones">${escapeHtml(t.exclusionsTitle)}</h2><ul>${pricing.exclusions.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>
+    <div class="page-cta"><p>${escapeHtml(c.ctaText)}</p><a class="primary" href="/#quote-form">${escapeHtml(t.nav.cta)}</a></div>
+    <p><a href="/">← ${escapeHtml(t.back)}</a></p>`;
+}
+
+// 404: branded page with the way back to the quote form.
+export function notFoundBody({ brand }) {
+  const t = brand.texts;
+  const n = t.notFound;
+  return `<div class="not-found">${art.mountainRope}<h1>${escapeHtml(n.heading)}</h1><p>${escapeHtml(n.text)}</p>
+    <div class="not-found-actions"><a class="primary" href="/#quote-form">${escapeHtml(t.nav.cta)}</a><a class="secondary" href="/">${escapeHtml(n.home)}</a></div></div>`;
 }
 
 // /llms.txt: plain text for AI agents (what Wildpass is, the 6 tools in order, where the instructions are).
@@ -279,7 +318,8 @@ export function createLanding({ brand, pricing, business, market, countries, tem
   const t = brand.texts;
   const values = copyValues(pricing, market);
 
-  function landingHtml() {
+  // baseUrl = this request's public address: link previews need absolute URLs (the tunnel address can change).
+  function landingHtml({ baseUrl = '' } = {}) {
     const prices = fromPrices(business, pricing);
     const html = {
       iconLinks, fontPreloads,
@@ -307,6 +347,7 @@ export function createLanding({ brand, pricing, business, market, countries, tem
       price: { wild: fill(t.plans.from, { price: formatEur(prices.wild) }), wild_plus: fill(t.plans.from, { price: formatEur(prices.wild_plus) }) },
       planNames: { wild: pricing.plans.wild.name, wild_plus: pricing.plans.wild_plus.name },
       choose: { wild: fill(t.plans.choose, { plan: pricing.plans.wild.name }), wild_plus: fill(t.plans.choose, { plan: pricing.plans.wild_plus.name }) },
+      og: { url: `${baseUrl}/`, image: `${baseUrl}/og-image.png` },
     });
   }
 

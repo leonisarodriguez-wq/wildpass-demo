@@ -40,6 +40,11 @@ The owner is not a programmer: explain things simply, report test results honest
   Landing order: hero + form → trust strip (white, 4 facts with icons, `texts.trust`; phones 2×2 ≤120 px) → benefits → ¿Y si…? → destinations → plans (Wild, Wild+) → AI block (chat + ONE agents line) → FAQ → final CTA → footer.
   Header on every page (`headerHtml` + `skipLinkHtml` in landing.js, public/site-nav.js): "Saltar al contenido" (→ #contenido), logo,
   "Preguntas frecuentes" (#preguntas, opens the FAQ), "Agentes", "Condiciones", yellow "Ver mi precio"; <960 px they fold into a "Menú" panel.
+  Other pages (`pageShell` in landing.js): `/condiciones` (`termsPageBody`: index with anchors, Wild vs Wild+ table from the pricing
+  config — stacked per row on phones <600 px —, each plan's exclusions, common exclusions, "Ver mi precio" at the end) and a branded 404
+  (`notFoundBody`, last route in app.js; /api keeps its JSON 404). Link previews: Open Graph + twitter:card in index.html with absolute URLs
+  from the request host (`landingHtml({ baseUrl })`), image `public/og-image.png` (1200×630, demo strip included, rendered from the hero
+  scene in headless Chrome: re-render it if the brand changes). On /agentes the tool list comes right under "Las 6 herramientas".
   Developer material (WebMCP explained, example prompt + Copiar, the tools and confirm_payment's rules, all from webmcp-tools.js) is on
   `/agentes` (`agentsPageBody` in landing.js, `public/agentes.js`), linked from the header, the footer and ONE plain line in the AI block
   (`texts.ai.agentsLine` + link "/agentes", server-rendered so agents reading the raw HTML find it).
@@ -63,7 +68,7 @@ The owner is not a programmer: explain things simply, report test results honest
   full-width strip whose first card lines up with the content column (--edge), ‹ › buttons ≥700 px (hidden when it all fits), a progress
   line under it, no native scrollbar. Desktop hero: landscape height max(380px, 33.34vw) so it stays 3:1 (sun and pines never cut), hero
   bottom padding = 27 % of it so the card ends above the pines. "Calcula tu precio" = 1.6rem title on a mint stub (--notch-y follows it).
-  AI chat: unplayed bubbles take no space (box grows); #showcase keeps its final min-height so nothing below moves.
+  AI chat: unplayed bubbles take no space, but the white .chat box keeps its final min-height (landing-fx.js), so no turquoise gap and nothing below moves.
 - Destination field: the server renders a `<select id="destination">` ("Destinos populares" optgroup first from `texts.form.popularDestinations`,
   then A–Z); `public/destination-picker.js` hides it and puts an accessible searchable combobox (`#destination-search`) in front. The select stays
   the source of truth (`.value` + `change`). Remote territories (AQ BV HM GS TF IO UM) are not in `config/countries.js`.
