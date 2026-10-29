@@ -331,6 +331,13 @@ test('landing: complete server-rendered page with prices from the pricing engine
   assert.ok(html.indexOf('class="skip-link" href="#contenido"') < html.indexOf('id="demo-banner"') && html.includes('id="contenido" tabindex="-1"'));
   for (const link of ['<a href="#preguntas" data-open-faq>Preguntas frecuentes</a>', '<a href="/agentes">Agentes</a>', '<a href="/condiciones">Condiciones</a>',
     '<a class="primary nav-cta" href="#quote-form" data-focus-form>Ver mi precio</a>', 'id="menu-toggle" aria-expanded="false" aria-controls="site-nav"']) assert.ok(html.includes(link), link);
+  // Sticky header: "Ver mi precio" sits in the bar, outside the folding menu; the landing's header is marked is-home
+  // (CSS hides its button on phones, where the bottom sticky bar says it: never two at once).
+  const header = html.slice(html.indexOf('<header class="site-header is-home">'), html.indexOf('</header>'));
+  assert.ok(header.length > 0 && header.indexOf('nav-cta') > header.indexOf('</nav>'));
+  assert.ok(!(await (await fetch(`${base}/condiciones`)).text()).includes('site-header is-home'));
+  const css = await (await fetch(`${base}/style.css`)).text();
+  assert.ok(css.includes('.site-header { position: sticky; top: var(--banner-h, 31px);') && css.includes('.site-header.is-home .nav-cta { display: none; }') && css.includes('scroll-padding-top'));
   // FAQ: about ten questions, closed behind a button; some answers link to the quote form.
   assert.ok(html.includes('id="faq-toggle" aria-expanded="false" aria-controls="faq-list"') && html.includes('<div class="faq-list" id="faq-list" hidden>'));
   assert.ok((html.match(/<details class="faq-item">/g) ?? []).length >= 9);
@@ -413,7 +420,8 @@ test('brand: name, claim, colours and self-hosted fonts', async () => {
     assert.ok(html.includes('href="/favicon.svg"'), 'favicon link missing');
   }
   assert.ok(home.includes('<!--logo-->') === false);
-  assert.ok((await (await fetch(`${base}/api/config`)).json()).brand.texts.heroSubtitle.startsWith('Viaja salvaje, nosotros te cubrimos: seguro de viaje'));
+  // Under the English claim: the short Spanish line (turquoise, Space Grotesk), then the explanation.
+  assert.ok(home.includes('<p class="hero-tagline">Viaja salvaje. Nosotros te cubrimos.</p>\n          <p class="hero-sub">Seguro de viaje con deportes de aventura y la póliza en tu email en 2 minutos.</p>'));
   const favicon = await fetch(`${base}/favicon.svg`);
   assert.equal(favicon.headers.get('content-type'), 'image/svg+xml; charset=utf-8');
   assert.ok((await favicon.text()).includes('rx="12"'));
@@ -437,8 +445,9 @@ test('AI block on the landing: only title, text, the example chat and the compat
   const html = nbsp(await (await fetch(`${base}/`)).text());
   const ai = html.slice(html.indexOf('id="ia"'), html.indexOf('</section>', html.indexOf('id="ia"')));
   assert.ok(ai.includes('Tu asistente también puede contratarlo') && ai.includes('id="showcase"') && ai.includes('id="showcase-replay"'));
-  // ONE line about agents, server-rendered, with the link to /agentes.
-  assert.ok(ai.includes('<p class="ai-agents">¿Usas un asistente de IA? Puede contratar por ti aquí: usa nuestras herramientas WebMCP o el formulario, como tú. Instrucciones: <a href="/agentes">/agentes</a></p>'));
+  // ONE discreet link to /agentes, server-rendered; the old visible "¿Usas un asistente de IA?…" line is gone.
+  assert.ok(ai.includes('<p class="ai-agents"><a href="/agentes">Cómo funciona para asistentes y desarrolladores →</a></p>'));
+  assert.ok(!html.includes('¿Usas un asistente de IA?'));
   assert.ok(!ai.includes('Funciona con asistentes y navegadores compatibles con WebMCP'));
   // Developer material lives on /agentes now.
   for (const gone of ['copy-prompt', 'Para desarrolladores</summary>', 'Herramientas WebMCP que usa', 'data-tool=', 'Prueba a pedirle esto']) assert.ok(!html.includes(gone), gone);
@@ -649,13 +658,22 @@ test('landing: what-if scenarios and destination cards use the real limits and e
     assert.ok(html.includes(`data-to="${amount}"`), `figure ${amount}`);
   }
   assert.ok(html.includes('hasta 3.000 € por viajero') && html.includes('hasta 15.000 €'));
-  // About 15 situations in a carousel; the first one is covered by BOTH plans.
-  const cards = [...html.matchAll(/<li class="whatif-card"[^>]*>(.*?)<\/li><\/ul><p class="whatif-text">/g)].map(m => m[1]);
-  assert.equal(cards.length, 15);
-  assert.equal((cards[0].match(/verdict is-ok/g) ?? []).length, 2, 'first situation covered by both plans');
-  assert.ok(html.includes('data-carousel') && html.includes('id="whatif-strip"') && html.includes('Desliza para ver las 15 situaciones'));
+  // 15 situations: a category filter, one chip (tab) each and ONE card shown; the first is covered by BOTH plans.
+  const filters = [...html.matchAll(/<button type="button" class="whatif-filter" data-cat="(\w+)" aria-pressed="(true|false)">([^<]+)</g)].map(m => [m[1], m[2], m[3]]);
+  assert.deepEqual(filters.map(f => f[2]), ['Todas', 'Salud', 'Equipaje', 'Aventura', 'Cancelación y viaje']);
+  assert.deepEqual(filters.map(f => f[1]), ['true', 'false', 'false', 'false', 'false']);
+  const tabs = [...html.matchAll(/role="tab" class="whatif-tab" id="wi-tab-(\w+)" data-cat="(\w+)"/g)];
+  assert.equal(tabs.length, 15);
+  for (const [, , cat] of tabs) assert.ok(filters.some(f => f[0] === cat), cat);
+  const panels = [...html.matchAll(/<div class="whatif-panel" role="tabpanel" id="wi-panel-\w+"[^>]*>(.*?)<\/ul><\/div>/g)];
+  assert.equal(panels.length, 15);
+  assert.ok(!panels[0][0].includes(' hidden>') && panels.slice(1).every(p => p[0].includes(' hidden>')), 'only the first card shows');
+  assert.equal((panels[0][1].match(/verdict is-ok/g) ?? []).length, 2, 'first situation covered by both plans');
+  assert.ok(html.includes('Desliza para ver más situaciones') && !html.includes('id="whatif-strip"'));
+  // 10 destination cards.
+  assert.equal((html.match(/class="dest-card"/g) ?? []).length, 10);
   // "7 días desde X €" = Wild, 7 days, 1 adult, from the engine for that country's zone.
-  for (const code of ['TH', 'IT', 'US']) {
+  for (const code of ['TH', 'IT', 'US', 'FR', 'MA', 'CA']) {
     const q = await call('get_quote', quoteInput({ destination_country: code, return_date: addDays(DEP, 6), traveler_ages: [35] }));
     const wild = q.plans.find(p => p.plan === 'wild').total_price_eur.toLocaleString('es-ES', { minimumFractionDigits: 2 });
     assert.ok(html.includes(`data-country="${code}"`) && html.includes(`7 días desde ${wild} €`), `${code} ${wild}`);
@@ -674,7 +692,7 @@ test('agents are welcome: robots.txt allows all, /llms.txt lists the 6 tools, th
   assert.ok(!order.includes(-1) && [...order].sort((a, b) => a - b).join() === order.join(), llms);
   assert.ok(llms.includes(`(${base}/agentes)`) && llms.includes('WebMCP'));
   const html = nbsp(await (await fetch(`${base}/`)).text());
-  assert.ok(html.includes('Puede contratar por ti aquí: usa nuestras herramientas WebMCP o el formulario, como tú. Instrucciones: <a href="/agentes">/agentes</a></p>'));
+  assert.ok(html.includes('<a href="/agentes">Cómo funciona para asistentes y desarrolladores →</a>'));
   // Agents never type a card: said on /llms.txt, /agentes, the payment step (served HTML) and confirm_payment's description.
   const noCard = 'Los agentes no deben introducir datos de tarjeta. Usa las herramientas WebMCP: tras la confirmación explícita del usuario, confirm_payment completa el pago de prueba en el servidor.';
   assert.ok(llms.includes(noCard), 'llms.txt');

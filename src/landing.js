@@ -86,12 +86,14 @@ export const skipLinkHtml = brand => `<a class="skip-link" href="#contenido">${e
 export function headerHtml(brand, { home = false } = {}) {
   const n = brand.texts.nav;
   const root = home ? '' : '/';
-  return `<header class="site-header"><div class="wrap header-bar">${logoHtml()}
-  <button type="button" class="menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="site-nav" data-open="${escapeHtml(n.menu)}" data-close="${escapeHtml(n.close)}">${escapeHtml(n.menu)}</button>
+  // Sticky under the demo banner. "Ver mi precio" sits in the bar itself (never folded into the menu), so it is always
+  // visible, except on landing phones (<700 px), where the bottom sticky bar shows it instead: never two at once.
+  return `<header class="site-header${home ? ' is-home' : ''}"><div class="wrap header-bar">${logoHtml()}
   <nav class="site-nav" id="site-nav" aria-label="${escapeHtml(n.label)}">
     <ul><li><a href="${root}#preguntas" data-open-faq>${escapeHtml(n.faq)}</a></li><li><a href="/agentes">${escapeHtml(n.agents)}</a></li><li><a href="/condiciones">${escapeHtml(n.terms)}</a></li></ul>
-    <a class="primary nav-cta" href="${root}#quote-form"${home ? ' data-focus-form' : ''}>${escapeHtml(n.cta)}</a>
   </nav>
+  <a class="primary nav-cta" href="${root}#quote-form"${home ? ' data-focus-form' : ''}>${escapeHtml(n.cta)}</a>
+  <button type="button" class="menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="site-nav" data-open="${escapeHtml(n.menu)}" data-close="${escapeHtml(n.close)}">${escapeHtml(n.menu)}</button>
 </div></header>`;
 }
 
@@ -265,7 +267,14 @@ export function carouselHtml({ id, label, prev, next, items }) {
 // "¿Y si…?": one card per situation, in a carousel. Every limit comes from the pricing config (placeholders + `figure`).
 export function whatIfHtml({ brand, pricing, values }) {
   const w = brand.texts.whatIf;
-  const cards = w.scenarios.map(sc => {
+  const cats = Object.fromEntries(w.categories.map(c => [c.id, c.label]));
+  // Category filter (toggle buttons), then one chip per situation (ARIA tabs) and ONE card with the chosen one.
+  const filters = w.categories.map((c, i) => `<button type="button" class="whatif-filter" data-cat="${c.id}" aria-pressed="${i === 0}">${escapeHtml(c.label)}</button>`).join('');
+  const tabs = w.scenarios.map((sc, i) => {
+    if (!cats[sc.cat]) throw new Error(`What-if ${sc.id}: unknown category ${sc.cat}`);
+    return `<button type="button" role="tab" class="whatif-tab" id="wi-tab-${sc.id}" data-cat="${sc.cat}" aria-controls="wi-panel-${sc.id}" aria-selected="${i === 0}"${i ? ' tabindex="-1"' : ''}>${escapeHtml(sc.tab)}</button>`;
+  }).join('');
+  const panels = w.scenarios.map((sc, i) => {
     let figure = '';
     if (sc.figure) {
       const amount = pricing.plans[sc.figure.plan].coverage[sc.figure.key];
@@ -273,16 +282,21 @@ export function whatIfHtml({ brand, pricing, values }) {
       figure = `<p class="whatif-figure"><span class="count" data-to="${amount}">${escapeHtml(formatEur(amount))}</span> <span class="whatif-figure-label">${escapeHtml(sc.figureLabel)}</span></p>`;
     }
     const verdicts = Object.entries(sc.plans).map(([plan, v]) => `<li class="verdict ${v.ok ? 'is-ok' : 'is-no'}"><strong>${escapeHtml(pricing.plans[plan].name)}</strong> <span class="verdict-state">${escapeHtml(v.ok ? w.covered : w.notCovered)}</span><span class="verdict-text">${escapeHtml(fill(v.text, values))}</span></li>`).join('');
-    return `<li class="whatif-card" id="wi-${sc.id}"><h3>${escapeHtml(sc.title)}</h3>${figure}<ul class="verdicts">${verdicts}</ul><p class="whatif-text">${escapeHtml(fill(sc.text, values))}</p></li>`;
+    return `<div class="whatif-panel" role="tabpanel" id="wi-panel-${sc.id}" aria-labelledby="wi-tab-${sc.id}" tabindex="0"${i ? ' hidden' : ''}>`
+      + `<p class="whatif-cat">${escapeHtml(cats[sc.cat])}</p><h3>${escapeHtml(sc.title)}</h3>${figure}<p class="whatif-text">${escapeHtml(fill(sc.text, values))}</p><ul class="verdicts">${verdicts}</ul></div>`;
   }).join('');
-  return carouselHtml({ id: 'whatif-strip', label: w.listLabel, prev: w.prev, next: w.next, items: cards })
-    + `<p class="wrap carousel-hint">${escapeHtml(fill(w.hint, { count: w.scenarios.length }))}</p>`;
+  return `<div class="wrap whatif-filters" role="group" aria-label="${escapeHtml(w.filtersLabel)}">${filters}</div>
+      <div class="whatif-tabs-box"><div class="whatif-tabs" role="tablist" aria-label="${escapeHtml(w.tabsLabel)}">${tabs}</div></div>
+      <p class="wrap whatif-hint">${escapeHtml(w.hint)}</p>
+      <div class="wrap"><div class="whatif-panels">${panels}</div></div>`;
 }
 
-// Trust strip under the hero: 4 plain facts with an icon (values from the pricing config).
+// Trust strip under the hero: 4 facts, each an icon in a soft circle (values from the pricing config).
 function trustHtml({ brand, values }) {
   const icons = { mail: art.iconMail, cancel: art.iconCancel, mountain: art.iconMountain, doc: art.iconDoc };
-  return brand.texts.trust.map(item => `<li class="trust-item">${icons[item.icon]}<span>${escapeHtml(fill(item.text, values))}</span></li>`).join('');
+  // Phones show `short` (at most 2 lines in the 2×2 grid), wider screens `text`; CSS shows one of the two.
+  return brand.texts.trust.map(item => `<li class="trust-item"><span class="trust-icon">${icons[item.icon]}</span>`
+    + `<span class="trust-text trust-long">${escapeHtml(fill(item.text, values))}</span><span class="trust-text trust-short">${escapeHtml(fill(item.short, values))}</span></li>`).join('');
 }
 
 // FAQ answers: escaped text, then [text](#quote-form) → a link to the quote form, {contactLink} → a mailto link.

@@ -29,25 +29,33 @@ img, svg { max-width: 100%; }
 .skip-link { position: absolute; left: 12px; top: -100px; z-index: 100; padding: 10px 16px; border-radius: 10px; background: var(--night); color: var(--white); text-decoration: none; }
 .skip-link:focus { top: 8px; outline: 3px solid var(--white); outline-offset: -6px; }
 #contenido:focus, #preguntas:focus { outline: none; }
-.site-header { position: relative; z-index: 40; background: var(--white); }
-.site-header .wrap { padding-top: 8px; padding-bottom: 8px; }
-.header-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.site-header { position: sticky; top: var(--banner-h, 31px); z-index: 40; background: var(--white); box-shadow: 0 1px 0 var(--border); }
+.site-header .wrap { padding-top: 6px; padding-bottom: 6px; }
+.header-bar { display: flex; align-items: center; gap: 12px; }
+.header-bar .logo { margin-right: auto; }
+/* Anchors (#preguntas, #planes, #quote-form…) stop below the sticky banner + header (site-nav.js measures them). */
+html { scroll-padding-top: calc(var(--sticky-h, 90px) + 8px); }
 .menu-toggle { min-height: 44px; padding: 8px 16px; border: 2px solid var(--night); border-radius: 999px; background: var(--white); color: var(--night); font-weight: 700; }
 .site-nav ul { list-style: none; margin: 0; padding: 0; }
 .site-nav a:not(.primary) { display: flex; align-items: center; min-height: 44px; color: var(--night); text-decoration: none; font-weight: 600; }
 .site-nav a:not(.primary):hover { color: var(--turquoise-text); text-decoration: underline; }
-.nav-cta { min-height: 44px; padding: 8px 20px; font-size: 1rem; }
+.nav-cta { flex: none; min-height: 44px; padding: 8px 18px; font-size: 1rem; white-space: nowrap; }
 /* Phones and tablets: a simple panel under the header, opened by "Menú". */
 @media (max-width: 959px) {
   .site-nav { display: none; position: absolute; left: 0; right: 0; top: 100%; padding: 8px 16px 16px; background: var(--white); border-top: 1px solid var(--border); box-shadow: 0 12px 24px rgb(11 31 58 / 0.12); }
   .site-nav.is-open { display: block; }
   .site-nav li + li { border-top: 1px solid var(--border); }
   .site-nav a:not(.primary) { min-height: 48px; }
-  .nav-cta { display: flex; width: 100%; margin-top: 10px; min-height: 48px; }
 }
+/* Landing on phones: the bottom sticky bar says "Ver mi precio", so the header doesn't (never two at once). */
+@media (max-width: 699px) {
+  .site-header.is-home .nav-cta { display: none; }
+  .nav-cta { min-height: 40px; padding: 6px 14px; font-size: 0.95rem; }
+}
+@media (max-width: 374px) { .site-header:not(.is-home) .logo-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
 @media (min-width: 960px) {
   .menu-toggle { display: none; }
-  .site-nav { display: flex; align-items: center; gap: 28px; }
+  .site-nav { display: flex; align-items: center; margin-right: 8px; }
   .site-nav ul { display: flex; gap: 24px; }
 }
 .logo { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; min-height: 44px; }
@@ -113,6 +121,8 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .hero { position: relative; overflow: hidden; padding: 10px 0 32px; }
 .hero h1 { font-size: clamp(1.6rem, 7.4vw, 3.4rem); letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 6px; text-wrap: balance; }
 .claim-part { display: block; } /* always two lines: "Travel wild. / We've got you." (never a lonely "you.") */
+/* Large bold text, so turquoise #0E7C86 on sky passes AA for large text (4.38:1 ≥ 3:1). */
+.hero-tagline { font-family: var(--font-headings); font-weight: 700; font-size: 1.25rem; line-height: 1.2; letter-spacing: -0.01em; color: var(--turquoise); margin: 2px 0 4px; }
 .hero-sub { font-size: 0.95rem; line-height: 1.45; color: var(--secondary); margin-bottom: 10px; }
 /* Phone: copy, then the WHOLE landscape as a band (a strip of sky on top holds the route), then the pass card standing on
    the ground: nothing overlaps the mountains. The turquoise behind the card continues the ground of the picture. */
@@ -244,19 +254,30 @@ select[hidden] { display: none; } /* the plain <select> once the search box repl
 .prompt-text::before { content: open-quote; } .prompt-text::after { content: close-quote; }
 .copy-prompt { min-height: 44px; padding: 8px 20px; font-size: 1rem; }
 .ai-note { font-size: 0.95rem; margin: 16px auto 0; max-width: 40rem; }
-.ai-agents { font-size: 1rem; margin: 20px auto 0; max-width: 40rem; }
-.ai-agents a { color: var(--white); font-weight: 600; }
+.ai-agents { font-size: 0.95rem; margin: 20px auto 0; max-width: 40rem; }
+.ai-agents a { color: var(--white); font-weight: 600; text-underline-offset: 3px; }
 .card-page .ai-note { margin-left: 0; color: var(--secondary); }
 .dev-tool-list { margin: 0; padding-left: 1.2rem; display: grid; gap: 8px; }
 .dev-rules { margin: 6px 0 0; padding-left: 1.2rem; display: grid; gap: 4px; }
 .card-page code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em; font-weight: 700; overflow-wrap: anywhere; }
 
-/* ---------- trust strip (white): 4 facts with an icon; phones 2×2, computers 4 columns ---------- */
-.trust { background: var(--white); border-bottom: 1px solid var(--border); }
-.trust-list { list-style: none; margin: 0 auto; padding-top: 12px; padding-bottom: 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; }
-.trust-item { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 600; line-height: 1.25; }
-.trust-item .icon { flex: none; width: 22px; height: 22px; color: var(--turquoise-text); }
-@media (min-width: 700px) { .trust-list { grid-template-columns: repeat(4, minmax(0, 1fr)); padding-top: 18px; padding-bottom: 18px; } .trust-item { font-size: 0.95rem; } .trust-item .icon { width: 28px; height: 28px; } }
+/* ---------- trust strip: 4 white cards on sky, each icon in a soft mint circle. Phones 2×2 (icon on top, centred,
+   short text, max 2 lines); computers 4 in a row (icon left). ---------- */
+.trust { background: var(--sky); padding: 16px 0; }
+.trust-list { list-style: none; margin: 0 auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.trust-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 14px 10px; background: var(--white); border-radius: 16px; text-align: center; font-size: 0.9rem; font-weight: 700; line-height: 1.3; color: var(--night); }
+.trust-icon { flex: none; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: var(--mint); color: var(--turquoise-text); }
+.trust-icon .icon { width: 26px; height: 26px; }
+.trust-long { display: none; }
+@media (max-width: 359px) { .trust-item { padding: 12px 8px; font-size: 0.85rem; } }
+@media (min-width: 600px) { .trust-long { display: inline; } .trust-short { display: none; } }
+@media (min-width: 700px) {
+  .trust { padding: 28px 0; }
+  .trust-list { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .trust-item { flex-direction: row; justify-content: flex-start; gap: 14px; padding: 18px; text-align: left; font-size: 1rem; }
+  .trust-icon { width: 56px; height: 56px; }
+  .trust-icon .icon { width: 30px; height: 30px; }
+}
 .plans-more { text-align: center; margin: 18px 0 0; }
 
 /* ---------- 3. editorial + benefits ---------- */
@@ -423,6 +444,7 @@ html:has(.agent-pill:not([hidden])) .site-footer { padding-bottom: 90px; }
   .site-header .wrap { padding-top: 4px; padding-bottom: 4px; }
   .hero { padding-top: 6px; }
   .hero h1 { font-size: clamp(1.4rem, 6.6vw, 1.75rem); margin-bottom: 4px; }
+  .hero-tagline { font-size: 1.2rem; margin: 0 0 2px; }
   .hero-sub { font-size: 0.85rem; line-height: 1.35; margin-bottom: 2px; }
   .hero-scene { padding-top: 20px; }
   .hero-scene::before { aspect-ratio: 3 / 0.92; } /* the picture's last 8 %: plain ground, continued behind the card */
@@ -468,7 +490,7 @@ html:has(.agent-pill:not([hidden])) .site-footer { padding-bottom: 90px; }
 .summary dd { margin: 0; font-weight: 600; }
 .summary h3 { font-size: 1.05rem; margin: 16px 0 6px; }
 /* Stripe test-mode card form (Stripe's own frame inside a white card, like the summary). */
-.card-payment { background: var(--white); border-radius: 16px; padding: 6px 16px 16px; margin-top: 16px; scroll-margin-top: 60px; }
+.card-payment { background: var(--white); border-radius: 16px; padding: 6px 16px 16px; margin-top: 16px; }
 .card-payment .card-title { display: flex; align-items: center; gap: 10px; font-size: 1.3rem; margin: 16px 0 12px; }
 .card-title .icon { width: 28px; height: 28px; color: var(--turquoise-text); }
 /* The only payment method, shown as a selected option (Stripe's card fields follow right under it). */
@@ -563,12 +585,48 @@ html:has(.agent-pill:not([hidden])) .site-footer { padding-bottom: 90px; }
 .section-intro { color: var(--secondary); font-size: 1.05rem; margin: 0 0 20px; }
 .whatif { padding: 48px 0; }
 .whatif h2, .destinations h2 { font-size: clamp(1.6rem, 6vw, 2.4rem); margin-bottom: 6px; }
-.whatif-card { flex: none; width: min(84vw, 340px); scroll-snap-align: start; display: flex; flex-direction: column; background: var(--white); border-radius: 18px; padding: 18px; }
-.whatif-card h3 { font-size: 1.2rem; margin: 0 0 8px; }
+/* Category filter: text buttons with a turquoise underline when on. */
+.whatif-filters { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-bottom: 10px; }
+.whatif-filter { min-height: 44px; padding: 6px 2px; border: 0; border-bottom: 3px solid transparent; background: none; color: var(--secondary); font-weight: 700; font-size: 0.95rem; }
+.whatif-filter:hover { color: var(--night); }
+.whatif-filter[aria-pressed="true"] { color: var(--night); border-bottom-color: var(--turquoise); }
+/* Chips: one row that scrolls sideways on phones and tablets (first chip on the content edge, a fade + a hint say there are
+   more); computers show them all, wrapped. */
+.whatif-tabs-box { position: relative; --edge: max(16px, calc((100% - 72rem) / 2 + 16px)); }
+.whatif-tabs { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; scroll-padding-inline: var(--edge); padding: 2px var(--edge) 8px; scrollbar-width: none; }
+.whatif-tabs::-webkit-scrollbar { display: none; }
+.whatif-tabs-box::before, .whatif-tabs-box::after { content: ''; position: absolute; top: 0; bottom: 8px; width: 40px; pointer-events: none; opacity: 0; transition: opacity 0.2s; }
+.whatif-tabs-box::before { left: 0; background: linear-gradient(to left, transparent, var(--sky)); }
+.whatif-tabs-box::after { right: 0; background: linear-gradient(to right, transparent, var(--sky)); }
+.whatif-tabs-box.more-left::before, .whatif-tabs-box.more-right::after { opacity: 1; }
+.whatif-tab { flex: none; scroll-snap-align: start; min-height: 44px; padding: 8px 16px; border: 2px solid var(--night); border-radius: 999px; background: var(--white); color: var(--night); font-weight: 700; font-size: 0.95rem; white-space: nowrap; }
+.whatif-tab:hover { background: var(--mint); }
+.whatif-tab[aria-selected="true"] { background: var(--night); color: var(--white); }
+.whatif-tab[hidden] { display: none; }
+.whatif-hint { margin: 0 auto 10px; font-size: 0.85rem; color: var(--secondary); visibility: hidden; } /* reserved space: no shift */
+.whatif-tabs-box.scrolls + .whatif-hint { visibility: visible; }
+/* ONE card: every panel sits in the same grid cell, so the box keeps the tallest one's height and nothing below moves. */
+.whatif-panels { display: grid; }
+.whatif-panel { grid-area: 1 / 1; background: var(--white); border-radius: 18px; padding: 20px; }
+.whatif-panel[hidden] { display: block; visibility: hidden; }
+.whatif-panel:not([hidden]) { animation: rise-in 0.35s ease both; }
+.whatif-cat { margin: 0 0 4px; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--turquoise-text); }
+.whatif-panel h3 { font-size: 1.3rem; margin: 0 0 8px; }
+.whatif-panel .verdicts { margin-top: 14px; }
+@media (min-width: 700px) {
+  .whatif-panel, .whatif-panel[hidden] { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); grid-auto-rows: min-content; column-gap: 36px; padding: 28px 32px; }
+  .whatif-panel > * { grid-column: 1; }
+  .whatif-panel .verdicts { grid-column: 2; grid-row: 1 / span 4; align-self: center; margin: 0; }
+}
+@media (min-width: 960px) {
+  .whatif-tabs { flex-wrap: wrap; overflow: visible; }
+  .whatif-tabs-box::before, .whatif-tabs-box::after { display: none; }
+  .whatif-hint { display: none; }
+}
 .whatif-figure { margin: 0 0 10px; color: var(--turquoise-text); font-weight: 600; font-size: 0.9rem; }
 .whatif-figure .count { display: inline-block; font-family: var(--font-headings); font-size: 1.7rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--night); }
 .whatif-figure-label { display: block; }
-.whatif-text { margin: 10px 0 0; font-size: 0.95rem; color: var(--secondary); }
+.whatif-text { margin: 10px 0 0; font-size: 1rem; color: var(--secondary); }
 .verdicts { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .verdict { display: grid; grid-template-columns: 3.6rem auto; justify-content: start; align-items: center; gap: 4px 10px; padding: 8px 12px; border-radius: 10px; background: var(--sky); }
 /* Badges as wide as their words, never stretched. */
@@ -657,9 +715,9 @@ html:has(.agent-pill:not([hidden])) .site-footer { padding-bottom: 90px; }
   .plan-card h3 { font-size: 1.3rem; }
 }
 @media (min-width: 960px) {
-  .site-header .wrap { padding-top: 12px; padding-bottom: 12px; }
-  .logo svg { width: 44px; height: 44px; }
-  .logo .wordmark { font-size: 1.9rem; }
+  .site-header .wrap { padding-top: 8px; padding-bottom: 8px; }
+  .logo svg { width: 40px; height: 40px; }
+  .logo .wordmark { font-size: 1.7rem; }
   .logo .tagline { font-size: 0.8rem; }
   /* The landscape keeps its 3:1 shape at every width (sun and pines never cut), and the hero leaves room under the card
      for the bottom quarter of the picture, where the pines stand. */
@@ -671,7 +729,8 @@ html:has(.agent-pill:not([hidden])) .site-footer { padding-bottom: 90px; }
   .hero-scene { position: absolute; left: 0; right: 0; bottom: 0; height: var(--scene-h); margin: 0; padding: 0; }
   .hero-scene::before, .hero-grid::after { display: none; }
   .hero-scene .layer { inset: 0; height: 100%; aspect-ratio: auto; }
-  .hero-sub { font-size: 1.2rem; max-width: 30rem; }
+  .hero-tagline { font-size: 1.75rem; margin: 6px 0 8px; }
+  .hero-sub { font-size: 1.15rem; max-width: 30rem; }
   .quote-card { padding: 24px; }
   .pass { --pass-pad: 24px; }
   .ai { padding: 72px 0; }
@@ -710,5 +769,4 @@ html:has(.agent-pill:not([hidden])) .site-footer { padding-bottom: 90px; }
 .not-found svg { width: 140px; height: auto; margin: 8px auto 0; display: block; }
 .not-found p { max-width: 32rem; margin-left: auto; margin-right: auto; }
 .not-found-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 20px; }
-.card-page h2[id] { scroll-margin-top: 56px; } /* the sticky demo banner never covers a heading reached from the index */
 @media (min-width: 600px) { .terms-table { table-layout: fixed; } .terms-table thead th:first-child { width: 34%; } } /* Wild and Wild+ get equal columns */

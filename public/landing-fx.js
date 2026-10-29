@@ -203,7 +203,59 @@ const countObserver = new IntersectionObserver(entries => {
 }, { threshold: 0.6 });
 document.querySelectorAll('.count').forEach(n => countObserver.observe(n));
 
-// ---------- carousels ("¿Y si…?", destinations): ‹ › on computers, a progress line under the strip ----------
+// ---------- "¿Y si…?": category filter + chips (ARIA tabs: click, arrow keys, Home/End) + ONE card ----------
+const tabs = [...document.querySelectorAll('.whatif-tab')];
+const tabsBox = $('.whatif-tabs-box');
+const tabStrip = $('.whatif-tabs');
+function selectTab(tab, focus) {
+  for (const t of tabs) {
+    const on = t === tab;
+    t.setAttribute('aria-selected', String(on));
+    t.tabIndex = on ? 0 : -1;
+    $(`#${t.getAttribute('aria-controls')}`).hidden = !on;
+  }
+  // The newly shown card's big figure counts up once (the observer skips hidden panels).
+  const figure = $(`#${tab.getAttribute('aria-controls')} .count`);
+  if (figure) countUp(figure);
+  if (focus) tab.focus();
+  tab.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: reduced.matches ? 'auto' : 'smooth' });
+}
+for (const tab of tabs) {
+  tab.addEventListener('click', () => selectTab(tab, false));
+  tab.addEventListener('keydown', e => {
+    const shown = tabs.filter(t => !t.hidden);
+    const i = shown.indexOf(tab);
+    const next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: shown.length - 1 }[e.key];
+    if (next === undefined) return;
+    e.preventDefault();
+    selectTab(shown[(next + shown.length) % shown.length], true);
+  });
+}
+// Filter: only that category's chips stay; its first situation is shown.
+const filters = [...document.querySelectorAll('.whatif-filter')];
+for (const button of filters) {
+  button.addEventListener('click', () => {
+    for (const b of filters) b.setAttribute('aria-pressed', String(b === button));
+    const cat = button.dataset.cat;
+    for (const t of tabs) t.hidden = cat !== 'all' && t.dataset.cat !== cat;
+    tabStrip.scrollLeft = 0;
+    selectTab(tabs.find(t => !t.hidden), false);
+  });
+}
+// Fades on the chip row's edges (and the "Desliza…" hint) only while there are more chips that way.
+if (tabStrip) {
+  const syncTabs = () => {
+    const max = tabStrip.scrollWidth - tabStrip.clientWidth;
+    tabsBox.classList.toggle('scrolls', max > 1);
+    tabsBox.classList.toggle('more-left', tabStrip.scrollLeft > 1);
+    tabsBox.classList.toggle('more-right', tabStrip.scrollLeft < max - 1);
+  };
+  tabStrip.addEventListener('scroll', syncTabs, { passive: true });
+  new ResizeObserver(syncTabs).observe(tabStrip);
+  for (const b of filters) b.addEventListener('click', () => requestAnimationFrame(syncTabs));
+}
+
+// ---------- carousels (destinations): ‹ › on computers, a progress line under the strip ----------
 // Arrows scroll by most of a screen, are hidden when everything fits and disabled at each end.
 for (const box of document.querySelectorAll('[data-carousel]')) {
   const strip = box.querySelector('.carousel-strip');

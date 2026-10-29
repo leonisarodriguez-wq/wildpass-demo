@@ -23,9 +23,9 @@ export const mountainRope = svg(`
   <circle cx="18" cy="80" r="7" stroke="${N}" stroke-width="8"/>
   <circle cx="18" cy="80" r="7" stroke="${Y}" stroke-width="3.5"/>`);
 
-// No excess with Wild+: a shield with a check, a small sun rising behind it.
+// No excess with Wild+: a shield with a check, the sun peeking out behind its top-right corner (about a quarter shows).
 export const shieldCheck = svg(`
-  <circle cx="70" cy="26" r="12" fill="${Y}" stroke="${N}" stroke-width="3"/>
+  <circle cx="76" cy="20" r="14" fill="${Y}" stroke="${N}" stroke-width="3"/>
   <path d="M48 10 80 22v24c0 20-13 34-32 42C29 80 16 66 16 46V22z" fill="${T}" stroke="${N}" stroke-width="3"/>
   <path d="M48 20 70 28v18c0 14-9 24-22 30-13-6-22-16-22-30V28z" fill="${W}" stroke="${N}" stroke-width="2.5"/>
   <path d="m37 47 8 8 15-17" stroke="${N}" stroke-width="4.5"/>`);

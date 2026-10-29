@@ -37,17 +37,20 @@ The owner is not a programmer: explain things simply, report test results honest
   unknown → mountains), a stylised Spain → destination flight path (SMIL animateMotion), a live "Desde X € · plan Wild" preview (debounced get_quote,
   no order), and the AI example chat + the real tools timeline (`showcaseHtml` in landing.js: tool names from webmcp-tools.js, price from the engine
   for `texts.ai.example`, final state server-rendered; each message = one sr-only copy + one aria-hidden typed copy, so screen readers read it once).
-  Landing order: hero + form → trust strip (white, 4 facts with icons, `texts.trust`; phones 2×2 ≤120 px) → benefits → ¿Y si…? → destinations → plans (Wild, Wild+) → AI block (chat + ONE agents line) → FAQ → final CTA → footer.
+  Landing order: hero + form → trust strip (sky band, 4 white cards, icon in a mint circle, `texts.trust`; phones 2×2 icon on top with `short` text ≤2 lines, ≥700 px 4 in a row) → benefits → ¿Y si…? → destinations → plans (Wild, Wild+) → AI block (chat + ONE discreet link "Cómo funciona para asistentes y desarrolladores →" to /agentes) → FAQ → final CTA → footer.
   Header on every page (`headerHtml` + `skipLinkHtml` in landing.js, public/site-nav.js): "Saltar al contenido" (→ #contenido), logo,
-  "Preguntas frecuentes" (#preguntas, opens the FAQ), "Agentes", "Condiciones", yellow "Ver mi precio"; <960 px they fold into a "Menú" panel.
+  "Preguntas frecuentes" (#preguntas, opens the FAQ), "Agentes", "Condiciones" (<960 px they fold into a "Menú" panel), yellow "Ver mi precio"
+  in the bar itself. The header is STICKY under the sticky banner (always compact: never shrinks on scroll, that would be layout shift);
+  site-nav.js sets --banner-h / --sticky-h, and `html { scroll-padding-top }` makes every anchor stop below them. Landing on phones (<700 px,
+  `.site-header.is-home`): the header has no "Ver mi precio", the bottom sticky bar says it (never two visible at once); other pages keep it.
   Other pages (`pageShell` in landing.js): `/condiciones` (`termsPageBody`: index with anchors, Wild vs Wild+ table from the pricing
   config — stacked per row on phones <600 px —, each plan's exclusions, common exclusions, "Ver mi precio" at the end) and a branded 404
   (`notFoundBody`, last route in app.js; /api keeps its JSON 404). Link previews: Open Graph + twitter:card in index.html with absolute URLs
   from the request host (`landingHtml({ baseUrl })`), image `public/og-image.png` (1200×630, demo strip included, rendered from the hero
   scene in headless Chrome: re-render it if the brand changes). On /agentes the tool list comes right under "Las 6 herramientas".
   Developer material (WebMCP explained, example prompt + Copiar, the tools and confirm_payment's rules, all from webmcp-tools.js) is on
-  `/agentes` (`agentsPageBody` in landing.js, `public/agentes.js`), linked from the header, the footer and ONE plain line in the AI block
-  (`texts.ai.agentsLine` + link "/agentes", server-rendered so agents reading the raw HTML find it).
+  `/agentes` (`agentsPageBody` in landing.js, `public/agentes.js`), linked from the header, the footer and ONE discreet link at the end of the AI block
+  (`texts.ai.agentsLink`, server-rendered so agents reading the raw HTML find it).
   Agents: `/robots.txt` = `User-agent: *` / `Allow: /`; `/llms.txt` (`llmsTxt` in landing.js, texts `texts.llms`) = what Wildpass is, the 6 tools
   in order (from webmcp-tools.js) with confirm_payment's rules, links to /agentes and /condiciones. Our app never blocks any user-agent.
   `/agentes` also says which WebMCP the visitor's browser has (native or MCP-B polyfill) — that technical info lives ONLY there.
@@ -59,12 +62,12 @@ The owner is not a programmer: explain things simply, report test results honest
   classic <head> script setting html.sun-seen from sessionStorage). Parallax far 0.14 / mid 0.07. Phones/tablets (<960 px): copy →
   the WHOLE 3:1 landscape band (sky strip on top holds the route; phones <600 px: 20 px strip, ground cropped 8 %, sun lifted via .sun-pos) → card on a turquoise "ground" (.hero-grid::after); nothing overlaps.
   Phones: compact first screen — on 375×812 "Ver mi precio" is visible without scrolling (re-check after any hero/form change).
-  Headline = two .claim-part blocks ("Travel wild." / "We've got you.") on an h1 with lang="en"; the Spanish subtitle explains the offer; form and headline have NO entrance animation.
+  Headline = two .claim-part blocks ("Travel wild." / "We've got you.") on an h1 with lang="en"; under it `.hero-tagline` = `brand.claimEs` (Space Grotesk bold, turquoise #0E7C86: large text, AA-large) and `.hero-sub` (`texts.heroSubtitle`, Inter, #3C5368) explains the offer; form and headline have NO entrance animation.
   Live price ABOVE the button (#price-preview: .pp-main "Tu precio: desde X €" + .pp-sub "plan Wild · n viajeros"), hidden until
   there IS a price (owner's choice: no placeholder; the button moves down once). Sticky phone bar: hidden only while the form's
   #quote-submit is on screen (and in the checkout); body gets 80 px padding.
   Checkout step 1 <600 px: .plan-switch (two tappable cards + "Elegir") and .compare-rows (label, then Wild | Wild+); ≥600 px:
-  the two .plan-option cards. Carousels (`carouselHtml` in landing.js, wired in landing-fx.js for every [data-carousel]): "¿Y si…?" and destinations;
+  the two .plan-option cards. Carousel (`carouselHtml` in landing.js, wired in landing-fx.js for every [data-carousel]): destinations only;
   full-width strip whose first card lines up with the content column (--edge), ‹ › buttons ≥700 px (hidden when it all fits), a progress
   line under it, no native scrollbar. Desktop hero: landscape height max(380px, 33.34vw) so it stays 3:1 (sun and pines never cut), hero
   bottom padding = 27 % of it so the card ends above the pines. "Calcula tu precio" = 1.6rem title on a mint stub (--notch-y follows it).
@@ -76,9 +79,12 @@ The owner is not a programmer: explain things simply, report test results honest
   options get `data-blocked`, the form says "No podemos asegurar viajes a destinos con recomendación oficial de no viajar.", and get_quote
   refuses them with DESTINATION_NOT_COVERED (website and WebMCP alike; the tool description says so). `prefers-reduced-motion` → no animation, final state shown. Form fields use `--field-border`
   #6F94A7 (3.25:1 on white; #7FA3B5 was asked for but is only 2.69:1); `--border` #C9DCE6 stays for decorative card lines.
-  Below the benefits: "¿Y si…?" (15 cards in a carousel, `whatIfHtml`; the FIRST is covered by both plans; limits from pricing config,
+  Below the benefits: "¿Y si…?" (`whatIfHtml`, owner's choice 29 Oct 2026 over the card carousel: a category filter Todas · Salud · Equipaje ·
+  Aventura · Cancelación y viaje (aria-pressed buttons, each scenario has `cat`), then 15 chips = ARIA tabs (`tab` label; phones/tablets one
+  sideways row from the content edge with edge fades + "Desliza para ver más situaciones", ≥960 px all wrapped) and ONE card (all panels share
+  one grid cell, so its height never changes); the FIRST is covered by both plans; limits from pricing config,
   optional big figure counts up once; "Cubierto/No cubierto" badges are content-wide) and "¿A dónde te escapas?"
-  (`destinationsHtml`: scroll-snap cards, mini scene, "7 días desde X €" = Wild, 1 adult, engine; tap → sets destination + scene, scrolls to form).
+  (`destinationsHtml`, 10 countries in `texts.destinations.countries`: scroll-snap cards, mini scene, "7 días desde X €" = Wild, 1 adult, engine; tap → sets destination + scene, scrolls to form).
   Sections fade in once (opacity only: moving them counted as layout shift); FAQ (10 questions, `faqHtml`: "[text](#quote-form)" in an answer = link to
   the form; the contact question shows only if CONTACT_EMAIL is in .env, so the owner's address stays out of Git) is closed behind
   "Ver preguntas frecuentes"; each answer opens smoothly via `::details-content` (Chrome/Safari; others
