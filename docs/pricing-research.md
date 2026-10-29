@@ -2,7 +2,7 @@
 
 **Status:** provisional calibration, 28 Oct 2026. Prices live in `config/pricing.config.js`; the automated checks are in `test/pricing-targets.test.js`.
 
-Our plans: **Wild** (id `wild`, the essential plan), **Wild+** (id `wild_plus`, the balanced plan with adventure sports; "El favorito de los aventureros") and **Wild Max** (id `wild_max`, maximum protection; added 29 Oct 2026, see §6).
+Our plans: **Wild** (id `wild`, the essential plan), **Wild+** (id `wild_plus`, the balanced plan with adventure sports; "Recomendado si haces deporte") and **Wild Max** (id `wild_max`, maximum protection; added 29 Oct 2026, see §6).
 
 ## 1. Data collected
 

@@ -416,7 +416,7 @@ html:has(.agent-pill:not([hidden])) .site-footer { padding-bottom: 90px; }
 .plan-compare { display: grid; grid-template-columns: minmax(0, 1fr); row-gap: 24px; margin: 22px 0 12px; }
 @media (min-width: 960px) { .plan-compare { grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 12px; row-gap: 0; } }
 /* White cards with a soft border and a light shadow on the sky background; Wild+ = thicker turquoise border and a turquoise
-   band on top ("El favorito de los aventureros", white text). ≥600 px, Wild starts one band lower so both names line up. */
+   band on top ("Recomendado si haces deporte", white text). ≥600 px, Wild starts one band lower so both names line up. */
 .plan-option { --band-h: 40px; position: relative; display: grid; grid-row: span 9; grid-template-rows: subgrid; row-gap: 0; min-width: 0; /* name, price, 6 coverage rows, button */
   background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 22px 16px 16px; text-align: left;
   box-shadow: 0 2px 12px rgba(11, 31, 58, 0.08); }
@@ -838,6 +838,7 @@ html[data-exp-hero="b"] .hero-claim-b { display: block; margin-bottom: 8px; font
 .incident-callout { margin: 16px 0; padding: 14px; background: var(--mint); border: 2px solid var(--night); border-radius: 12px; font-weight: 600; }
 /* /terminos, /privacidad, /agentes: reading width for prose only (tables, code, chats and containers keep their width). */
 .readable > p, .readable > h2, .readable > h3, .readable > ul, .readable > ol, .readable section > p, .readable section > ul:not(.dev-tool-list), .readable section > ol:not(.dev-tool-list) { max-width: 75ch; }
+.hero-adventure-line { margin: 8px 0 0; font-size: 0.85rem; line-height: 1.35; color: var(--secondary); text-align: center; }
 .incident-card { display: flex; align-items: center; gap: 14px; margin: 18px 0 0; padding: 14px 16px; background: var(--sky); border: 1px solid var(--border); border-radius: 14px; }
 .incident-card .icon { flex: none; width: 32px; height: 32px; color: var(--turquoise-text); }
 .incident-card-text { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; color: var(--night); }

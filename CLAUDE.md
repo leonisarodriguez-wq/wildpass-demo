@@ -148,7 +148,7 @@ The owner is not a programmer: explain things simply, report test results honest
   yellow #FFC21A ONLY for clickable primary buttons (bold night text, large, NO border, NO shadow) — badges and labels NEVER use yellow
   (on the website the only other yellow is the logo sun and small accents inside the illustrations; tested in `test/flow.test.js`);
   red #D7263D ONLY for the demo banner (white text) and error borders; mint #D6F0EE for the plans band and the Wild+ card.
-  Badge ("El favorito de los aventureros"): turquoise #0E7C86 pill with white text. Secondary buttons: white, 2px night border, night text.
+  Badge ("Recomendado si haces deporte"): turquoise #0E7C86 pill with white text. Secondary buttons: white, 2px night border, night text.
   The PDF certificate still uses pale yellow #FFF6D6 for its highlighted cells (not part of the website rule).
 - WCAG AA: never yellow or white text on the light background; #0E7C86 as small text on sky fails (4.38) → use #0B6770. Error boxes: night text on white with a red border.
 - Fonts: Space Grotesk (headings), Inter (text), self-hosted from `@fontsource` via `/fonts/` (no Google requests). The PDF uses the same fonts.
@@ -283,7 +283,7 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
   «Precio honesto» chart (6.1) and Block 7 (growth loops). /caso lists them as next steps.
 
 ## Third plan: Wild Max (29 Oct 2026)
-- Plans now: Wild (essential) → Wild+ (balanced, still the featured one, badge «El favorito de los aventureros») → Wild Max (`wild_max`, maximum protection).
+- Plans now: Wild (essential) → Wild+ (balanced, still the featured one, badge «Recomendado si haces deporte») → Wild Max (`wild_max`, maximum protection).
   Wild Max = medical 3,000,000 / 6,000,000 €, no excess, cancellation 5,000 €/traveller, search & rescue 30,000 €, sports equipment 1,500 €,
   trip interruption 3,000 €/traveller, trekking up to 6,000 m («Hasta 6.000 m: el Kilimanjaro, incluido» = the hook), diving 40 m, baggage 3,500 €, delay 450 €.
   Same or better than Wild+ in every line (tested). All values except the adventure ones are ASSUMPTIONS (`docs/pricing-research.md` §6).

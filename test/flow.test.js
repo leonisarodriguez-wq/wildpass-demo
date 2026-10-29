@@ -380,7 +380,7 @@ test('landing: complete server-rendered page with prices from the pricing engine
   for (const text of ['Ver mi precio', 'Gratis y sin compromiso: para ver tu precio no te pedimos datos personales.',
     'Viajeros y edad el día de la ida', 'La edad influye en el precio.', '+ Añadir viajero',
     'Tu asistente también puede contratarlo', 'Elige cómo quieres viajar',
-    'El favorito de los aventureros', '¿Preparado para empezar tu viaje?', 'Hecho con WebMCP']) {
+    'Recomendado si haces deporte', '¿Preparado para empezar tu viaje?', 'Hecho con WebMCP']) {
     assert.ok(html.includes(text.replace('’', "'")) || html.includes(text) || html.includes(text.replace('’', '&#39;')), `missing: ${text}`);
   }
   // "Desde X €" = 7 days, Europe, 1 adult, straight from the engine (never hardcoded).
@@ -505,8 +505,8 @@ test('AI block on the landing: only title, text, the example chat and the compat
   assert.ok(html.indexOf('class="trust"') > html.indexOf('id="quote-form"') && html.indexOf('class="trust"') < html.indexOf('id="plans-title"'));
   assert.ok(!html.includes('editorial-title') && !html.includes('Tú pon la aventura'), 'the duplicate editorial section is gone');
   assert.equal((html.match(/<li class="trust-item">/g) ?? []).length, 6);
-  for (const [main, sub] of [['Póliza en tu email en 2 min', 'sin papeleos'], ['Cancelación hasta 5.000 €', 'por viajero con Wild Max · 3.000 € con Wild+'],
-    ['Deportes de aventura incluidos', 'trekking, buceo, esquí… y rescate, con Wild+ y Wild Max'], ['Sin letra pequeña', 'condiciones claras'],
+  for (const [main, sub] of [['Póliza en tu email en 2 min', 'sin papeleos'], ['Cancelación por causas cubiertas', 'hasta 5.000 € por viajero con Wild Max · 3.000 € con Wild+'],
+    ['Deportes de aventura incluidos', 'trekking, buceo, esquí… y rescate, con Wild+ y Wild Max'], ['Condiciones claras', 'Consulta los límites y exclusiones de cada plan'],
     ['Lo esencial, bien cubierto', 'médicos, dentista, equipaje y retraso de maleta'], ['Sin franquicia en Wild+ y Wild Max', 'no pagas los primeros euros']]) {
     assert.ok(html.includes(`<span class="trust-main">${main}</span><span class="trust-sub">${sub}</span>`), main);
   }

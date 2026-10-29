@@ -68,6 +68,7 @@ export default {
     },
     // The claim stays in English (lang="en" on the h1); this Spanish line says what Wildpass is.
     // Under the English claim: brand.claimEs as a short turquoise line (Space Grotesk), then this sentence.
+    heroAdventureLine: 'Deportes de aventura incluidos con Wild+ y Wild Max.',
     heroSubtitle: 'Seguro de viaje con deportes de aventura y la póliza en tu email en 2 minutos.',
     // Experiment "hero", variant B (public/exp.js): this Spanish headline replaces the English claim and the Spanish line.
     heroB: 'El seguro de viaje que sí cubre tu aventura',
@@ -79,9 +80,9 @@ export default {
       { icon: 'mail', text: 'Póliza en tu email en 2 min', sub: 'sin papeleos' },
       { icon: 'shield', text: 'Lo esencial, bien cubierto', sub: 'médicos, dentista, equipaje y retraso de maleta' },
       { icon: 'mountain', text: 'Deportes de aventura incluidos', sub: 'trekking, buceo, esquí… y rescate, con Wild+ y Wild Max' },
-      { icon: 'cancel', text: 'Cancelación hasta {maxCancellation}', sub: 'por viajero con Wild Max · {plusCancellation} con Wild+' },
+      { icon: 'cancel', text: 'Cancelación por causas cubiertas', sub: 'hasta {maxCancellation} por viajero con Wild Max · {plusCancellation} con Wild+' },
       { icon: 'check', text: 'Sin franquicia en Wild+ y Wild Max', sub: 'no pagas los primeros euros' },
-      { icon: 'doc', text: 'Sin letra pequeña', sub: 'condiciones claras' },
+      { icon: 'doc', text: 'Condiciones claras', sub: 'Consulta los límites y exclusiones de cada plan' },
     ],
     trustLabel: 'Por qué Wildpass',
 
@@ -205,7 +206,7 @@ export default {
         { who: 'user', text: 'Necesito un seguro para Tailandia, del 10 al 24 de diciembre, 2 personas de 35 y 38 años.' },
         { who: 'assistant', text: '{plan}: {price} para los dos, con aventura y cancelación. ¿Te enseño el resumen?' },
         { who: 'user', text: 'Sí, y págalo.' },
-        { who: 'assistant', text: 'He revisado las condiciones contigo. ¿Confirmas el pago de {price}?' },
+        { who: 'assistant', text: 'Antes de pagar, revisa el resumen y las condiciones. ¿Confirmas el pago de {price}?' },
         { who: 'user', text: 'Confirmo.' },
         { who: 'done', text: '✓ Póliza enviada a tu email.' },
       ],
@@ -315,7 +316,7 @@ export default {
       wildDescription: 'Lo esencial para viajar tranquilo.',
       wildPlusDescription: 'Aventura y cancelación incluidas.',
       wildMaxDescription: 'La máxima protección: trekking hasta {maxTrekkingAltitude} m, rescate hasta {maxRescue} e interrupción del viaje.',
-      wildPlusBadge: 'El favorito de los aventureros',
+      wildPlusBadge: 'Recomendado si haces deporte',
       from: 'Desde {price}',
       fromNote: '7 días en Europa, 1 adulto.',
       seePrice: 'Ver mi precio',
@@ -637,7 +638,7 @@ export default {
         pay: 'Pagar {total}',
       },
 
-      step1Title: 'Tu viaje a {destination}, cubierto',
+      step1Title: 'Elige tu seguro para {destination}',
       step1Line: 'Precio total para {n} {travelersWord}. Sin sorpresas después.',
       compare: {
         feature: 'Cobertura',
@@ -713,7 +714,7 @@ export default {
         cancellation: 'Cancelación hasta {amount}',
         noCancellation: 'Sin cancelación',
       },
-      acceptToPay: 'Acepta las condiciones para pagar',
+      acceptToPay: 'Completa los datos de pago y acepta las condiciones para continuar.',
       instantPolicy: 'Póliza al instante en tu email',
       trip: 'Viaje',
       dates: 'Fechas',
@@ -824,7 +825,7 @@ export default {
       ],
       marca: [
         { title: 'Nombre', text: 'Wildpass: «wild» (la aventura) + «pass» (la tarjeta de embarque y el pase que te deja entrar). La confirmación de compra es literalmente una tarjeta de embarque con el sello «Cubierto».' },
-        { title: 'Tono', text: 'Directo, cercano y sin letra pequeña: «Travel wild. We\'ve got you.» y «Viaja salvaje. Nosotros te cubrimos.». Solo prometemos lo que cubren las condiciones, sin reseñas ni cifras inventadas. Cercano, directo y con energía de viaje: hablamos como un amigo que ya ha estado allí, no como una póliza. Cuando se trata de coberturas, límites y precio, la claridad va antes que el ingenio.' },
+        { title: 'Tono', text: 'Directo, cercano y con condiciones claras: «Travel wild. We\'ve got you.» y «Viaja salvaje. Nosotros te cubrimos.». Solo prometemos lo que cubren las condiciones, sin reseñas ni cifras inventadas. Cercano, directo y con energía de viaje: hablamos como un amigo que ya ha estado allí, no como una póliza. Cuando se trata de coberturas, límites y precio, la claridad va antes que el ingenio.' },
         { title: 'Ilustración por destino', text: 'La portada cambia de paisaje según el destino que eliges ({scenes} escenas propias en SVG, con paralaje suave): Tailandia, Japón, Perú, Islandia, México, EE. UU., una ciudad europea y la montaña por defecto. Sin fotos de stock.' },
         { title: 'Paleta y tipografía', text: 'Cielo, azul noche, turquesa y un amarillo reservado solo a los botones de acción, con contraste AA. Space Grotesk para titulares e Inter para el texto, alojadas en nuestro servidor.' },
       ],
@@ -923,7 +924,7 @@ export default {
       baselineAssumed: 'p₁ supuesto: {p}',
       baselineObserved: 'p₁ observado en A: {p}',
       experiments: {
-        hero: { title: 'Titular de la portada («hero»)', a: '«Travel wild. We\'ve got you.» + «Viaja salvaje. Nosotros te cubrimos.»', b: '«El seguro de viaje que sí cubre tu aventura»', metric: 'Métrica: % de sesiones en la portada que eligen un destino.' },
+        hero: { title: 'Titular de la portada («hero»)', a: 'titular «Travel wild. We\'ve got you.»', b: 'titular «El seguro de viaje que sí cubre tu aventura» (con el claim en pequeño encima). En las dos, el mismo subtítulo.', metric: 'Métrica: % de sesiones en la portada que eligen un destino.' },
         upsell: { title: 'Diferencia de precio de Wild+ («upsell», paso 1)', a: 'Solo el precio total de cada plan.', b: 'Bajo el precio de Wild+: «+X € al día por aventura y cancelación».', metric: 'Métrica: % de las elecciones de plan que son Wild+.' },
       },
       eventsTitle: 'Todos los eventos',
