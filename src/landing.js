@@ -231,6 +231,7 @@ export function agentsPageBody({ brand, pricing, payments, now = new Date() }) {
     <section class="agents-part" id="desarrolladores" aria-labelledby="desarrolladores-title">
       <h2 id="desarrolladores-title">${escapeHtml(g.devTitle)}</h2>
       <p class="agent-no-card"><strong>${escapeHtml(g.noCard)}</strong></p>
+      <p class="agent-call-format"><strong>${escapeHtml(g.callFormat)}</strong></p>
       <p><strong>${escapeHtml(g.dni)}</strong> ${escapeHtml(g.dniHow)}</p>
       <p>${escapeHtml(g.testId)}</p>
       <p>${escapeHtml(g.residence)}</p>
@@ -378,7 +379,7 @@ export function llmsTxt({ brand, pricing, payments, baseUrl }) {
   const rules = (pay.inputSchema.required ?? []).filter(f => pay.rulesEs[f]);
   return [
     `# ${brand.name}`, '', `> ${brand.siteBanner}`, '', l.intro, '',
-    `## ${l.howTitle}`, '', `**${l.noCard}**`, '', `**${l.toolsWait}**`, '', fill(l.reload, { quoteDays: pricing.limits.quoteValidDays }), '', fill(l.how, { url: `${baseUrl}/` }), '',
+    `## ${l.howTitle}`, '', `**${l.noCard}**`, '', `**${l.callFormat}**`, '', `**${l.toolsWait}**`, '', fill(l.reload, { quoteDays: pricing.limits.quoteValidDays }), '', fill(l.how, { url: `${baseUrl}/` }), '',
     ...tools.flatMap((tool, i) => [`${i + 1}. ${tool.name}: ${tool.es}`, ...(tool === pay ? rules.map(f => `   - ${f}: ${pay.rulesEs[f]}`) : [])]), '',
     l.confirm, '',
     `## ${l.whoTitle}`, '', l.residence, '', `**${l.dni}**`, '', l.dniHow, '', l.testId, '',

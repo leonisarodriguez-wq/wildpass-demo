@@ -486,6 +486,8 @@ export default {
       confirm: 'Antes de confirm_payment, enseña el resumen y el total a la persona y espera su confirmación explícita.',
       // Same sentence on /agentes (texts.agents.noCard) and, in English, in confirm_payment's description.
       noCard: 'Los agentes no deben introducir datos de tarjeta. Usa las herramientas WebMCP: tras la confirmación explícita del usuario, confirm_payment completa el pago de prueba en el servidor.',
+      // Same sentence on /agentes and in llms.txt (texts.llms.callFormat / texts.agents.callFormat).
+      callFormat: "Llama a las herramientas así: executeTool('nombre_de_la_herramienta', { ...argumentos }). No uses executeTool({ name, arguments }). Esa forma no funciona y devuelve errores engañosos, como INVALID_COUNTRY.",
       whoTitle: 'Quién puede contratar',
       residence: 'Wildpass solo asegura a residentes en España que viajan desde España al extranjero. get_quote acepta residence_country (opcional, por defecto "ES"); con otro país responde RESIDENCE_NOT_COVERED.',
       // Same sentence on /agentes (texts.agents.dni) and, in English, in set_traveler_details' description.
@@ -551,6 +553,8 @@ export default {
       afterTitle: 'Qué pasa después',
       after: 'La póliza se emite en cuanto confirmas: tu asistente te da el número y el enlace al PDF, y te llega por email en un par de minutos (si no la ves, mira en Spam). Es una demo: no se cobra nada y la póliza no tiene validez.',
       noCard: 'Los agentes no deben introducir datos de tarjeta. Usa las herramientas WebMCP: tras la confirmación explícita del usuario, confirm_payment completa el pago de prueba en el servidor.',
+      // Same sentence on /agentes and in llms.txt (texts.llms.callFormat / texts.agents.callFormat).
+      callFormat: "Llama a las herramientas así: executeTool('nombre_de_la_herramienta', { ...argumentos }). No uses executeTool({ name, arguments }). Esa forma no funciona y devuelve errores engañosos, como INVALID_COUNTRY.",
       dni: 'El DNI/NIE es opcional para los agentes. Por privacidad, recomendamos que lo introduzca la propia persona con el enlace que recibe por email.',
       dniHow: 'set_traveler_details acepta holder_id_number (opcional, DNI u NIE con su letra de control). Sin él, la póliza se emite con estado «DNI pendiente» y la persona lo completa con un enlace de un solo uso; review_order, confirm_payment y get_policy dicen el estado y el DNI siempre enmascarado (*****678Z).',
       testId: 'El DNI/NIE es opcional. No lo inventes. Usa el DNI de prueba 12345678Z solo si la persona te lo indica.',
