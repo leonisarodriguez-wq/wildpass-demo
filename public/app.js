@@ -489,19 +489,20 @@ function renderStep1() {
 
   // The same two plan cards at every width: side by side from 600 px, one under the other (full width) on phones.
   // Experiment "upsell" (public/exp.js): A = only each plan's total; B = under the Wild+ price, what it costs on top of
-  // Wild PER DAY, from this quote: (Wild+ − Wild) / trip days, always with cents ("+3,35 € al día por aventura y cancelación").
+  // Wild PER DAY, from this quote: (Wild+ − Wild) / trip days / travellers, always with cents ("+1,67 € al día por persona por aventura y cancelación").
+  const travellers = q.trip.traveler_ages?.length || q.traveler_ages?.length || 1;
   const base = q.plans.find(p => p.plan === 'wild');
   const cents = n => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
   const difference = p => {
     if ((window.__wildpassExp?.upsell ?? 'a') !== 'b' || p.plan !== 'wild_plus' || !base) return null;
-    const values = { perDay: cents(Math.round(((p.total_price_eur - base.total_price_eur) / q.trip.days) * 100) / 100), plan: base.plan_name };
+    const values = { perDay: cents(Math.round(((p.total_price_eur - base.total_price_eur) / q.trip.days / travellers) * 100) / 100), plan: base.plan_name };
     return el('p', { class: 'plan-diff' }, el('span', { 'aria-hidden': 'true', text: fill(cmp.upsellDaily, values) }), el('span', { class: 'sr-only', text: fill(cmp.upsellDailyLabel, values) }));
   };
   // Wild Max: the same rule one step up, (Wild Max − Wild+) / trip days, shown only when the experiment shows the Wild+ line.
   const plus = q.plans.find(p => p.plan === 'wild_plus');
   const differenceMax = p => {
     if ((window.__wildpassExp?.upsell ?? 'a') !== 'b' || p.plan !== 'wild_max' || !plus) return null;
-    const values = { perDay: cents(Math.round(((p.total_price_eur - plus.total_price_eur) / q.trip.days) * 100) / 100), plan: plus.plan_name,
+    const values = { perDay: cents(Math.round(((p.total_price_eur - plus.total_price_eur) / q.trip.days / travellers) * 100) / 100), plan: plus.plan_name,
       altitude: `${p.adventure_sports_limits.trekking_max_altitude_m.toLocaleString('es-ES', { useGrouping: 'always' })} m`, rescue: eur(p.search_and_rescue_eur) };
     return el('p', { class: 'plan-diff' }, el('span', { 'aria-hidden': 'true', text: fill(cmp.upsellDailyMax, values) }), el('span', { class: 'sr-only', text: fill(cmp.upsellDailyMaxLabel, values) }));
   };
@@ -514,7 +515,10 @@ function renderStep1() {
       featured && el('p', { class: 'badge', text: T.plans.wildPlusBadge }),
       el('h3', { id: nameId, text: p.plan_name }),
       el('div', { class: 'plan-price-box' }, el('p', { class: 'plan-price' }, el('span', { class: 'sr-only', text: `${cmp.price}: ` }), eur(p.total_price_eur)), difference(p), differenceMax(p)),
-      el('dl', { style: `grid-row: span ${features.length}` }, features.map(([label, value]) => el('div', { class: 'feature' }, el('dt', { text: label }), el('dd', { text: value(p) })))),
+      el('dl', { style: `grid-row: span ${features.length}` }, features.map(([label, value]) => (label === cmp.trekking && !p.adventure_sports_included
+        // Wild: no trekking row ("Deportes de aventura: No incluidos" already says it); an empty row keeps the subgrid aligned.
+        ? el('div', { class: 'feature feature-empty', 'aria-hidden': 'true' }, el('dt'), el('dd'))
+        : el('div', { class: 'feature' }, el('dt', { text: label }), el('dd', { text: value(p) }))))),
       el('button', { type: 'button', class: featured ? 'primary' : 'secondary', text: fill(C.choose, { plan: p.plan_name }), onclick: e => choosePlan(p.plan, e.currentTarget) }),
     );
   })));

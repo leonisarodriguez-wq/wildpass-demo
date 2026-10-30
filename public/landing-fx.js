@@ -173,11 +173,8 @@ if (reduced.matches) finalState();
 else {
   replay.hidden = false;
   replay.addEventListener('click', () => play());
-  let started = false;
-  new IntersectionObserver(([entry]) => {
-    visible = entry.isIntersecting;
-    if (visible && !started) { started = true; play(); }
-  }, { threshold: 0.35 }).observe(show);
+  // The conversation is complete from the first paint (it used to empty and retype itself on scroll, leaving blank
+  // zones when scrolling fast): it only plays when the visitor asks for it.
 }
 reduced.addEventListener?.('change', () => { if (reduced.matches) { run++; finalState(); replay.hidden = true; } parallax(); });
 
