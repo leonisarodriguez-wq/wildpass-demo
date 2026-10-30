@@ -32,7 +32,7 @@ agente ──► WebMCP ─────┘
 - **Fórmula:** precio por viajero = base de 7 días (zona × plan) × factor de duración × factor de edad. Total = suma.
 - **Zonas:** Europa · resto del mundo · EE. UU., Canadá y Japón. **Días:** se cuentan ida y vuelta (Tailandia del 10 al 24 de diciembre = 15 días).
 - **Edad:** 0–17 ×0,7 · 18–64 ×1 · 65–74 ×1,65 (dato de Intermundial) · 75–85 ×2,2.
-- **Calibración:** 13 presupuestos de Heymondo, IATI e Intermundial (28/10/2026); la comparación de 3 viajes tipo (Italia, Tailandia, EE. UU.) usa 26 de sus precios. Regla: **ligeramente por debajo de la mediana de los comparables**. `npm test` falla si un precio se aleja más de un ±5 % de su objetivo.
+- **Calibración:** 13 presupuestos reales de Heymondo, IATI e Intermundial (28/10/2026) dan **26 precios comparables** (el plan equivalente de cada aseguradora frente a Wild, Wild+ y Wild Max) en 3 viajes tipo: Italia, Tailandia y EE. UU. Es la cifra que muestra la web («26 precios de 3 aseguradoras»). Regla: **ligeramente por debajo de la mediana de los comparables**. `npm test` falla si un precio se aleja más de un ±5 % de su objetivo.
 - **Es supuesto (sin datos de mercado):** Wild Max, el factor de menores y de 75–85 años, los viajes de más de 15 días y las zonas (Japón y Canadá comparten tarifa con EE. UU.).
 - Detalle y tablas: [docs/pricing-research.md](docs/pricing-research.md).
 

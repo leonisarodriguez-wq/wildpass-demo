@@ -247,7 +247,7 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 - PDF/terms links use the request's public host (tailscaled sends X-Forwarded-Proto: https; `trust proxy` = loopback). Leave `PUBLIC_BASE_URL` empty.
 - Testing the PUBLIC path from this server: here the name resolves to the tailnet IP (100.x), which skips Funnel. Get the public IP with
   DNS-over-HTTPS (`cloudflare-dns.com/dns-query?name=…&type=A`) and use `curl --resolve wildpass.taile53924.ts.net:443:<ip>`.
-- Exposed to the internet: ONLY the website through Funnel (plus SSH, unchanged). No database, dev tools or browser debugging port.
+- Exposed to the internet: ONLY the website through Funnel. No database, dev tools or browser debugging port.
   Don't start hand-run copies (`npm start`) next to the service: port 3000 would clash.
 - The old Cloudflare Quick Tunnel (`wildpass-tunnel.service`, `cloudflared`, `wildpass-save-url`) was retired on 29 Oct 2026: files removed from `deploy/`,
   service stopped and disabled by the owner. Its trycloudflare.com address no longer works.
@@ -279,7 +279,7 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 - NEVER edit ~/travel-demo (branch `live`, served by wildpass-app: public/*.js are served live from disk, server code and the template only on restart → half-new files broke the public form once).
 - Work in the worktree ~/travel-demo-dev (own data/ and .env), instance `HOST=127.0.0.1 PORT=3001 node server.js`. Promote only after `npm test` + a full purchase there:
   fast-forward `live`, push, and tell the owner to restart wildpass-app (they do it themselves). Never touch Tailscale or the README.
-- Delivery scope (owner, 29 Oct 2026): Blocks 1–4 + the contact form. NOT public: Block 5 (JSON-LD, /api/pricing, sitemap… kept on branch `block5-later`),
+- Delivery scope (owner, 29 Oct 2026): Blocks 1–4 + the contact form. NOT public: Block 5 (JSON-LD, /api/pricing, sitemap… kept on the local branch `block5-later`; the remote branches dev, entrega, live and block5-later were deleted on 30 Oct 2026, main + tag entrega-tuio are the delivery),
   «Precio honesto» chart (6.1) and Block 7 (growth loops). /caso lists them as next steps.
 
 ## Third plan: Wild Max (29 Oct 2026)
