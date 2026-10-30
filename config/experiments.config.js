@@ -5,4 +5,5 @@ export default {
   observedFrom: 100,
   hero: { baseline: 0.40, liftPoints: 0.10 },   // % of landing sessions that choose a destination
   upsell: { baseline: 0.35, liftPoints: 0.10 }, // % of plan choices that are Wild+
+  cta: { baseline: 0.25, liftPoints: 0.05 },    // % of landing sessions that send the quote form
 };

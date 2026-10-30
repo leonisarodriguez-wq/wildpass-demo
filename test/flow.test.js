@@ -365,7 +365,7 @@ test('landing: complete server-rendered page with prices from the pricing engine
   // Header: skip link first, then menu links and "Calcular mi seguro"; phones fold them into "Menú".
   assert.ok(html.indexOf('class="skip-link" href="#contenido"') < html.indexOf('id="demo-banner"') && html.includes('id="contenido" tabindex="-1"'));
   for (const link of ['<a href="#preguntas" data-open-faq>Preguntas frecuentes</a>', '<a href="/agentes">Agentes</a>', '<a href="/condiciones">Condiciones</a>',
-    '<a class="primary nav-cta" href="#quote-form" data-focus-form>Calcular mi seguro</a>', 'id="menu-toggle" aria-expanded="false" aria-controls="site-nav"']) assert.ok(html.includes(link), link);
+    '<a class="primary nav-cta" href="#quote-form" data-focus-form><span class="cta-a">Calcular mi seguro</span><span class="cta-b">Ver precio de mi aventura</span></a>', 'id="menu-toggle" aria-expanded="false" aria-controls="site-nav"']) assert.ok(html.includes(link), link);
   // Sticky header: "Calcular mi seguro" sits in the bar, outside the folding menu; the landing's header is marked is-home
   // (CSS hides its button on phones, where the bottom sticky bar says it: never two at once).
   const header = html.slice(html.indexOf('<header class="site-header is-home">'), html.indexOf('</header>'));
@@ -377,7 +377,7 @@ test('landing: complete server-rendered page with prices from the pricing engine
   assert.ok(html.includes('id="faq-toggle" aria-expanded="false" aria-controls="faq-list"') && html.includes('<div class="faq-list" id="faq-list" hidden>'));
   assert.ok((html.match(/<details class="faq-item">/g) ?? []).length >= 9);
   assert.ok(html.includes('<a href="#quote-form" data-focus-form>Calcula tu precio</a>'));
-  for (const text of ['Calcular mi seguro', 'Gratis y sin compromiso: para ver tu precio no te pedimos datos personales.',
+  for (const text of ['Calcular mi seguro', 'Ver precio de mi aventura', 'Gratis y sin compromiso: para ver tu precio no te pedimos datos personales.',
     'Viajeros y edad el día de la ida', 'La edad influye en el precio.', '+ Añadir viajero',
     'Tu asistente también puede contratarlo', 'Elige cómo quieres viajar',
     'Recomendado si haces deporte', '¿Preparado para empezar tu viaje?', 'Hecho con WebMCP']) {

@@ -130,7 +130,7 @@ function showError(scope, message, field) {
 
 // While a request runs, its button says so and the action bar's button waits too (no double sends).
 async function busy(button, label, fn) {
-  const original = button.textContent;
+  const original = button.innerHTML; // may hold both experiment texts (.cta-a / .cta-b)
   const bar = $('#bar-action');
   button.disabled = true;
   bar.disabled = true;
@@ -140,7 +140,7 @@ async function busy(button, label, fn) {
     button.disabled = false;
     bar.disabled = false;
     button.removeAttribute('aria-busy');
-    button.textContent = original;
+    button.innerHTML = original;
     updateTotalBar();
   }
 }

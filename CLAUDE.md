@@ -323,3 +323,11 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 ## Primary button text (30 Oct 2026, owner's request)
 - Every yellow primary button now says «Calcular mi seguro» (was «Ver mi precio»): form, header, phone sticky bar, final CTAs, /condiciones. Older sections above were updated to the new text.
   Unchanged on purpose: form title «Calcula tu precio», «Tu precio: desde X €», the "para ver tu precio" note. The longer text (18 characters) was checked on 375×812 and desktop.
+
+## Experiment "cta" (30 Oct 2026, owner's request)
+- Third A/B test, same pattern as hero/upsell: `public/exp.js` (50/50 per browser, `?exp_cta=a|b`, html[data-exp-cta] before first paint), events column `exp_cta`
+  (small ALTER in `src/events.js`, next to the table's CREATE, keeps old data), `/metricas` card with its own sample size (`config/experiments.config.js`: baseline 25 %, +5 points, ASSUMPTIONS until A has 100 sessions).
+- A = «Calcular mi seguro», B = «Ver precio de mi aventura» (`texts.ctaB`). ONLY the landing's yellow buttons: form, header (is-home) and phone sticky bar; each holds `<span class="cta-a">` + `<span class="cta-b">` and CSS shows one
+  (no layout shift). The final CTA, other pages' headers, /condiciones and the 404 keep A. `busy()` in app.js restores innerHTML (not textContent) so both spans survive.
+- Metric: sessions that sent the quote form (`quote_viewed`, web) / sessions that saw the landing, by variant. Hypothesis (also on /caso): a button that names the trip's reason raises quote submissions over a generic one.
+  WebMCP and the agent flow are untouched. Tests: `test/events.test.js` (cta + migration), `test/flow.test.js` accepts both texts.

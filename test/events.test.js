@@ -115,3 +115,41 @@ test('experiments: assigned before the first paint, both hero variants server-re
   const app = await (await fetch(`${base}/app.js`)).text();
   assert.ok(app.includes("(window.__wildpassExp?.upsell ?? 'a') !== 'b'") && app.includes('/ q.trip.days'));
 });
+
+test('experiment "cta": variant stored with the events, bad value refused, shown on /metricas with its own sample size', async () => {
+  const ev = (n, event, extra = {}) => send({ event, session_id: sid(n), channel: 'web', ...extra });
+  assert.equal((await ev(20, 'page_view', { page: '/', exp_cta: 'x' })).error_code, 'INVALID_EVENT');
+  // A: 2 landings, 1 sends the quote form. B: 1 landing, sends it. Quote events without a landing view never count.
+  await ev(21, 'page_view', { page: '/', exp_cta: 'a' }); await ev(21, 'quote_viewed', { exp_cta: 'a' });
+  await ev(22, 'page_view', { page: '/', exp_cta: 'a' });
+  await ev(23, 'page_view', { page: '/', exp_cta: 'b' }); await ev(23, 'quote_viewed', { exp_cta: 'b' });
+  await ev(24, 'quote_viewed', { exp_cta: 'b' });
+  const { html } = await page();
+  assert.ok(html.includes('Texto del botón principal («cta», portada)'));
+  const card = html.slice(html.indexOf('id="exp-cta"'));
+  assert.ok(card.includes('«Calcular mi seguro».') && card.includes('«Ver precio de mi aventura».'));
+  assert.ok(card.includes('1 de 2 · 50 %') && card.includes('1 de 1 · 100 %'), 'conversions = quote_viewed among sessions that saw the landing');
+  assert.match(card, /mínimo recomendado: 1251 sesiones por variante/);
+  assert.ok(html.includes('?exp_cta=b'));
+  // The landing: both texts in the markup (CSS shows one), header/form/sticky bar only; the exp script knows "cta".
+  const { html: landing } = await page('/');
+  assert.equal((landing.match(/<span class="cta-b">Ver precio de mi aventura<\/span>/g) ?? []).length, 3, 'form, header, phone sticky bar');
+  assert.ok(!landing.includes('finalCta') && landing.includes('<a class="primary button-link" href="#quote-form" data-focus-form>Calcular mi seguro</a>'), 'final button is not part of the experiment');
+  const css = await (await fetch(`${base}/style.css`)).text();
+  assert.ok(css.includes('html[data-exp-cta="b"] .cta-a { display: none; }'));
+  assert.ok((await (await fetch(`${base}/exp.js`)).text()).includes("['hero', 'upsell', 'cta']"));
+});
+
+test('events table: an older database without exp_cta gets the column and keeps its rows', async () => {
+  const { DatabaseSync } = await import('node:sqlite');
+  const { createEvents } = await import('../src/events.js');
+  const db = new DatabaseSync(':memory:');
+  db.exec(`CREATE TABLE events (id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT NOT NULL, event TEXT NOT NULL, session_id TEXT NOT NULL, channel TEXT NOT NULL,
+    device TEXT, page TEXT, plan TEXT, exp_hero TEXT, exp_upsell TEXT)`);
+  db.prepare("INSERT INTO events (ts, event, session_id, channel, exp_hero) VALUES ('2026-10-29T10:00:00Z', 'page_view', 'old-session-000001', 'web', 'a')").run();
+  const events = createEvents({ db });
+  assert.ok(db.prepare('PRAGMA table_info(events)').all().some(c => c.name === 'exp_cta'));
+  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM events').get().n, 1);
+  assert.equal(events.record({ event: 'page_view', session_id: 'new-session-000002', channel: 'web', page: '/', exp_cta: 'b' }).ok, true);
+  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM events WHERE exp_cta = 'b'").get().n, 1);
+});

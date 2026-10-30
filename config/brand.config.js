@@ -309,6 +309,8 @@ export default {
 
     // Landing: sticky bar on phones once the hero is off screen
     stickyCta: 'Calcular mi seguro',
+    // Experiment "cta" (B): text of the yellow primary buttons on the landing (form, header, phone sticky bar). A = form.submit / stickyCta / nav.cta.
+    ctaB: 'Ver precio de mi aventura',
 
     // Landing: plans band
     plans: {
@@ -854,10 +856,11 @@ export default {
       experimentos: [
         { title: 'Titular de la portada', text: 'A: «Travel wild. We\'ve got you.». B: «El seguro de viaje que sí cubre tu aventura». Métrica: % de sesiones que eligen destino.', decision: 'Si el titular descriptivo (B) mejora claramente la elección de destino, daría prioridad a la claridad en la cabecera y llevaría el claim de marca a un segundo plano. Si no hay diferencia, mantendría el claim por su valor de marca.' },
         { title: 'Coste diario de Wild+', text: 'A: solo el total de cada plan. B: «+X € al día por aventura y cancelación» bajo Wild+. Métrica: % de elecciones que son Wild+.', decision: 'Si mostrar el coste diario sube la elección de Wild+, lo llevaría también al email del presupuesto y a las respuestas de los agentes. Si no, probaría otros argumentos, como la cancelación o el rescate.' },
+        { title: 'Texto del botón principal', text: 'A: «Calcular mi seguro». B: «Ver precio de mi aventura». Hipótesis: un botón que nombra el motivo del viaje aumenta los envíos del cotizador frente a uno genérico. Métrica: % de sesiones en la portada que envían el cotizador.', decision: 'Si B gana con claridad, llevaría ese lenguaje de aventura a los demás botones y a los emails. Si no hay diferencia, mantendría el texto genérico, que es más corto y sirve igual en todas las páginas.' },
       ],
       experimentsNote: 'No declaro ganador hasta llegar al mínimo de sesiones por variante que calcula /metricas (95 % de confianza, 80 % de potencia).',
       ruta: [
-        { when: 'Días 0–30', title: 'Medir y aprender', items: ['Lanzar con la medición actual y fijar la línea base del embudo.', '15 entrevistas con viajeros de aventura y 5 con agencias especializadas para validar coberturas, precio y mensajes.', 'Cerrar los dos experimentos si hay tráfico suficiente.'] },
+        { when: 'Días 0–30', title: 'Medir y aprender', items: ['Lanzar con la medición actual y fijar la línea base del embudo.', '15 entrevistas con viajeros de aventura y 5 con agencias especializadas para validar coberturas, precio y mensajes.', 'Cerrar los tres experimentos (titular, precio por día y texto del botón) si hay tráfico suficiente.'] },
         { when: 'Días 30–60', title: 'Activar los bucles', items: ['Presupuesto por email, compartir con acompañantes y código de amigo: medir cuántas compras traen.', 'Contenido por destino y actividad (trekking, buceo, esquí) pensado para buscadores y para asistentes de IA.', 'Alianzas con agencias de aventura, escuelas de buceo y esquí y comunidades outdoor, con códigos de referido.'] },
         { when: 'Días 60–90', title: 'Escalar lo que funciona', items: ['Invertir en el canal con mejor coste por póliza. El objetivo de coste de adquisición se fijaría con el margen real por póliza de la aseguradora: un canal solo escala si cada póliza se adquiere por debajo de ese margen.', 'Abrir la distribución por agentes a más asistentes y comparadores.', 'Evaluar un Pack Aventura anual para viajeros frecuentes y validar la entrada en un segundo mercado.'] },
       ],
@@ -918,7 +921,7 @@ export default {
       formula: [
         'Usamos la fórmula estándar del tamaño de muestra para comparar dos proporciones, con un 95 % de confianza (bilateral) y un 80 % de potencia:',
         'n = (z₀,₉₇₅ · √(2·p̄·(1 − p̄)) + z₀,₈₀ · √(p₁·(1 − p₁) + p₂·(1 − p₂)))² / (p₂ − p₁)², con z₀,₉₇₅ = 1,96, z₀,₈₀ = 0,84 y p̄ = (p₁ + p₂) / 2.',
-        'p₁ es la conversión de la variante A y p₂ la que queremos poder detectar en B (p₁ + {lift} puntos). Mientras la variante A tenga menos de {observedFrom} sesiones, p₁ es un supuesto de planificación ({hero} para «hero», {upsell} para «upsell»), no un dato; después usamos la conversión real de A.',
+        'p₁ es la conversión de la variante A y p₂ la que queremos poder detectar en B (p₁ + {lift} puntos; p₁ + {ctaLift} en «cta»). Mientras la variante A tenga menos de {observedFrom} sesiones, p₁ es un supuesto de planificación ({hero} para «hero», {upsell} para «upsell», {cta} para «cta»), no un dato; después usamos la conversión real de A.',
         'Cuando las dos variantes llegan al mínimo, comparamos con una prueba z de dos proporciones: si p < 0,05, la diferencia es significativa.',
       ],
       baselineAssumed: 'p₁ supuesto: {p}',
@@ -926,11 +929,12 @@ export default {
       experiments: {
         hero: { title: 'Titular de la portada («hero»)', a: 'titular «Travel wild. We\'ve got you.»', b: 'titular «El seguro de viaje que sí cubre tu aventura» (con el claim en pequeño encima). En las dos, el mismo subtítulo.', metric: 'Métrica: % de sesiones en la portada que eligen un destino.' },
         upsell: { title: 'Diferencia de precio de Wild+ («upsell», paso 1)', a: 'Solo el precio total de cada plan.', b: 'Bajo el precio de Wild+: «+X € al día por aventura y cancelación».', metric: 'Métrica: % de las elecciones de plan que son Wild+.' },
+        cta: { title: 'Texto del botón principal («cta», portada)', a: '«Calcular mi seguro».', b: '«Ver precio de mi aventura». Solo cambia el texto de los botones amarillos de la portada (formulario, cabecera y barra fija del móvil).', metric: 'Métrica: % de sesiones en la portada que envían el cotizador.' },
       },
       eventsTitle: 'Todos los eventos',
       eventCol: 'Evento',
       countCol: 'Veces',
-      forceNote: 'Para ver una variante concreta: añade ?exp_hero=b o ?exp_upsell=b a la dirección de la portada.',
+      forceNote: 'Para ver una variante concreta: añade ?exp_hero=b, ?exp_upsell=b o ?exp_cta=b a la dirección de la portada.',
       admin: {
         title: 'Borrar los datos de prueba',
         text: 'Borra TODOS los eventos de /metricas. No toca pólizas, pedidos ni presupuestos. No se puede deshacer.',

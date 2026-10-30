@@ -951,3 +951,8 @@ mark.todo { background: var(--mint); color: var(--night); font-weight: 700; bord
 /* Honeypot: off screen for people, still in the form for bots. */
 .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 .footer-links a.footer-quiet { opacity: 0.85; }
+
+/* Experiment "cta" (public/exp.js sets html[data-exp-cta] before the first paint): A = .cta-a, B = .cta-b, never both; the button keeps its size rules. */
+.cta-b { display: none; }
+html[data-exp-cta="b"] .cta-a { display: none; }
+html[data-exp-cta="b"] .cta-b { display: inline; }

@@ -10,7 +10,7 @@ export const EVENT_NAMES = [
 // Pages that send page_view (/metricas never does).
 export const TRACKED_PAGES = ['/', '/agentes', '/condiciones', '/terminos', '/privacidad', '/si-me-pasa-algo', '/caso'];
 const PLAN_IDS = ['wild', 'wild_plus', 'wild_max'];
-const FIELDS = ['event', 'session_id', 'channel', 'device', 'page', 'plan', 'exp_hero', 'exp_upsell'];
+const FIELDS = ['event', 'session_id', 'channel', 'device', 'page', 'plan', 'exp_hero', 'exp_upsell', 'exp_cta'];
 const SESSION_RE = /^[A-Za-z0-9_-]{16,64}$/;
 
 const LIMITS = {
@@ -32,10 +32,13 @@ export function createEvents({ db, now = () => new Date() }) {
       page TEXT,
       plan TEXT,                     -- wild | wild_plus | wild_max
       exp_hero TEXT,                 -- a | b
-      exp_upsell TEXT                -- a | b
+      exp_upsell TEXT,               -- a | b
+      exp_cta TEXT                   -- a | b
     );
     CREATE INDEX IF NOT EXISTS events_event ON events(event, session_id);
   `);
+  // Added later (experiment "cta"): ALTER keeps existing databases and their events.
+  if (!db.prepare('PRAGMA table_info(events)').all().some(c => c.name === 'exp_cta')) db.exec('ALTER TABLE events ADD COLUMN exp_cta TEXT');
 
   // In-memory counters (reset on restart; enough to stop anyone filling the database).
   const counters = new Map();
@@ -62,7 +65,7 @@ export function createEvents({ db, now = () => new Date() }) {
     if (typeof e.session_id !== 'string' || !SESSION_RE.test(e.session_id)) return fail('INVALID_EVENT', 'session_id no es válido.', 'Usa un identificador aleatorio de 16 a 64 caracteres (letras, números, - o _).');
     if (!['web', 'agent'].includes(e.channel)) return fail('INVALID_EVENT', 'channel debe ser "web" o "agent".', 'Indica el canal.');
     if (!oneOf(e.device, ['mobile', 'desktop']) || !oneOf(e.page, TRACKED_PAGES) || !oneOf(e.plan, PLAN_IDS)
-        || !oneOf(e.exp_hero, ['a', 'b']) || !oneOf(e.exp_upsell, ['a', 'b'])) {
+        || !oneOf(e.exp_hero, ['a', 'b']) || !oneOf(e.exp_upsell, ['a', 'b']) || !oneOf(e.exp_cta, ['a', 'b'])) {
       return fail('INVALID_EVENT', 'Algún valor no está permitido.', 'device: mobile|desktop; page: una página pública; plan: wild|wild_plus|wild_max; variantes: a|b.');
     }
     if (!allow(`s:${e.session_id}`, LIMITS.perSessionPerMinute, 60_000) || !allow(`st:${e.session_id}`, LIMITS.perSessionTotal, 86_400_000)
@@ -72,8 +75,8 @@ export function createEvents({ db, now = () => new Date() }) {
     if (db.prepare('SELECT COUNT(*) AS n FROM events').get().n >= LIMITS.maxRows) {
       return fail('EVENTS_FULL', 'La tabla de eventos está llena.', 'Borra los datos de prueba desde /metricas con la clave de administración.');
     }
-    db.prepare('INSERT INTO events (ts, event, session_id, channel, device, page, plan, exp_hero, exp_upsell) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .run(now().toISOString(), e.event, e.session_id, e.channel, e.device ?? null, e.page ?? null, e.plan ?? null, e.exp_hero ?? null, e.exp_upsell ?? null);
+    db.prepare('INSERT INTO events (ts, event, session_id, channel, device, page, plan, exp_hero, exp_upsell, exp_cta) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(now().toISOString(), e.event, e.session_id, e.channel, e.device ?? null, e.page ?? null, e.plan ?? null, e.exp_hero ?? null, e.exp_upsell ?? null, e.exp_cta ?? null);
     return { ok: true };
   }
 
@@ -112,12 +115,20 @@ export function createEvents({ db, now = () => new Date() }) {
       conversions: count("SELECT COUNT(DISTINCT session_id) AS n FROM events WHERE channel = 'web' AND event = 'plan_selected' AND exp_upsell = ? AND plan = 'wild_plus'", v),
     }));
 
+    // CTA text: sessions that viewed the landing, by variant → % that sent the quote form (quote_viewed).
+    const cta = ['a', 'b'].map(v => ({
+      variant: v,
+      sessions: count("SELECT COUNT(DISTINCT session_id) AS n FROM events WHERE channel = 'web' AND event = 'page_view' AND page = '/' AND exp_cta = ?", v),
+      conversions: count(`SELECT COUNT(DISTINCT session_id) AS n FROM events WHERE channel = 'web' AND event = 'quote_viewed' AND session_id IN
+        (SELECT session_id FROM events WHERE channel = 'web' AND event = 'page_view' AND page = '/' AND exp_cta = ?)`, v),
+    }));
+
     return {
       first_event_at: first, total_events: total,
       funnel: { all: funnel(null), web: funnel('web'), agent: funnel('agent') },
       plans: { selected: plans('plan_selected'), issued: plans('policy_issued') },
       events: otherEvents,
-      experiments: { hero, upsell },
+      experiments: { hero, upsell, cta },
     };
   }
 

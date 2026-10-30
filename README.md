@@ -54,6 +54,6 @@ El servicio asume el usuario `leonisa_prueba` y la carpeta `~/travel-demo` (ajus
 | Aventura (trekking / buceo) | — | 4.000 m / 30 m | 6.000 m / 40 m |
 | Búsqueda y rescate | — | 15.000 € | 30.000 € |
 
-Tres planes: Wild Max ancla el precio y hace de Wild+ la elección natural. Sin reseñas inventadas; métricas propias sin cookies (embudo y dos pruebas A/B, explicadas en [/caso](https://wildpass.taile53924.ts.net/caso)).
+Tres planes: Wild Max ancla el precio y hace de Wild+ la elección natural. Sin reseñas inventadas; métricas propias sin cookies (embudo y tres pruebas A/B: titular, precio por día y texto del botón, explicadas en [/caso](https://wildpass.taile53924.ts.net/caso)).
 
 **Con más tiempo:** dominio y email propios, webhook de Stripe, KYC real, hosting gestionado y otros países de origen.

@@ -28,7 +28,7 @@ export function track(event, { channel = 'web', plan, page } = {}) {
     event, session_id: sessionId(), channel,
     device: window.innerWidth < 700 ? 'mobile' : 'desktop',
     ...(plan && { plan }), ...(page && { page }),
-    ...(exp.hero && { exp_hero: exp.hero }), ...(exp.upsell && { exp_upsell: exp.upsell }),
+    ...(exp.hero && { exp_hero: exp.hero }), ...(exp.upsell && { exp_upsell: exp.upsell }), ...(exp.cta && { exp_cta: exp.cta }),
   };
   try {
     fetch('/api/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), keepalive: true }).catch(() => {});

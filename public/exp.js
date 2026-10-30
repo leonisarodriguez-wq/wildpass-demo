@@ -1,8 +1,8 @@
 // A/B experiments: each browser gets variant a or b (50/50) per experiment, kept in localStorage; ?exp_hero=a|b and
-// ?exp_upsell=a|b force (and keep) a variant. A classic <head> script, so html[data-exp-hero] is set before the first
+// ?exp_upsell=a|b / ?exp_cta=a|b force (and keep) a variant. A classic <head> script, so html[data-exp-hero] is set before the first
 // paint: the right headline shows at once, nothing swaps or moves later. The variants go with every event (public/track.js).
 (function () {
-  var names = ['hero', 'upsell'];
+  var names = ['hero', 'upsell', 'cta'];
   var exp = {};
   var saved = {};
   try { saved = JSON.parse(localStorage.getItem('wildpass-exp') || '{}') || {}; } catch (e) { /* storage blocked */ }

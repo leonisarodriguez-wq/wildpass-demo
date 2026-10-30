@@ -106,7 +106,7 @@ export function headerHtml(brand, { home = false } = {}) {
   <nav class="site-nav" id="site-nav" aria-label="${escapeHtml(n.label)}">
     <ul><li><a href="${root}#preguntas" data-open-faq>${escapeHtml(n.faq)}</a></li><li><a href="/agentes">${escapeHtml(n.agents)}</a></li><li><a href="/condiciones">${escapeHtml(n.terms)}</a></li></ul>
   </nav>
-  <a class="primary nav-cta" href="${root}#quote-form"${home ? ' data-focus-form' : ''}>${escapeHtml(n.cta)}</a>
+  <a class="primary nav-cta" href="${root}#quote-form"${home ? ' data-focus-form' : ''}>${home ? `<span class="cta-a">${escapeHtml(n.cta)}</span><span class="cta-b">${escapeHtml(brand.texts.ctaB)}</span>` : escapeHtml(n.cta)}</a>
   <button type="button" class="menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="site-nav" data-open="${escapeHtml(n.menu)}" data-close="${escapeHtml(n.close)}">${escapeHtml(n.menu)}</button>
 </div></header>`;
 }

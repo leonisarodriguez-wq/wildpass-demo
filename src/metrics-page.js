@@ -64,8 +64,8 @@ export function metricsPageBody({ brand, data, experiments, admin = null, flash 
   const planName = id => ({ wild: 'Wild', wild_plus: 'Wild+', wild_max: 'Wild Max' })[id] ?? id;
   const channel = key => `<section class="metrics-card" aria-labelledby="ch-${key}"><h3 id="ch-${key}">${escapeHtml(m[key])}</h3>${funnelList(f[key], m)}</section>`;
   const formula = m.formula.map(line => `<p>${escapeHtml(fill(line, {
-    lift: num(experiments.hero.liftPoints * 100), observedFrom: num(experiments.observedFrom),
-    hero: pct(experiments.hero.baseline, 0), upsell: pct(experiments.upsell.baseline, 0),
+    lift: num(experiments.hero.liftPoints * 100), ctaLift: num(experiments.cta.liftPoints * 100), observedFrom: num(experiments.observedFrom),
+    hero: pct(experiments.hero.baseline, 0), upsell: pct(experiments.upsell.baseline, 0), cta: pct(experiments.cta.baseline, 0),
   }))}</p>`).join('');
   const adminHtml = admin ? `<section class="metrics-admin" aria-labelledby="admin-title"><h2 id="admin-title">${escapeHtml(m.admin.title)}</h2><p>${escapeHtml(m.admin.text)}</p>
     <form method="post" action="/metricas/borrar"><input type="hidden" name="admin" value="${escapeHtml(admin.key)}">
@@ -89,7 +89,7 @@ export function metricsPageBody({ brand, data, experiments, admin = null, flash 
     </div>
     <h2>${escapeHtml(m.experimentsTitle)}</h2>
     <p>${escapeHtml(m.forceNote)}</p>
-    <div class="metrics-grid">${experimentHtml('hero', data.experiments.hero, m, experiments)}${experimentHtml('upsell', data.experiments.upsell, m, experiments)}</div>
+    <div class="metrics-grid">${experimentHtml('hero', data.experiments.hero, m, experiments)}${experimentHtml('upsell', data.experiments.upsell, m, experiments)}${experimentHtml('cta', data.experiments.cta, m, experiments)}</div>
     <details class="review-more metrics-formula"><summary>${escapeHtml(m.formulaTitle)}</summary>${formula}</details>
     <h2>${escapeHtml(m.eventsTitle)}</h2>
     <div class="table-scroll"><table class="metrics-table"><thead><tr><th scope="col">${escapeHtml(m.eventCol)}</th><th scope="col">${escapeHtml(m.countCol)}</th></tr></thead>
