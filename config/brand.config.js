@@ -56,6 +56,7 @@ export default {
       faq: 'Preguntas frecuentes',
       agents: 'Agentes',
       terms: 'Condiciones',
+      contact: 'Contacto',
       cta: 'Calcular mi seguro',
     },
     pageTitle: 'Seguros Wildpass · Seguro de viaje con deportes de aventura (demo)',
@@ -363,7 +364,8 @@ export default {
     // [text](#quote-form) becomes a link to the quote form. The contact question shows only when CONTACT_EMAIL is set in .env.
     faqTitle: 'Preguntas frecuentes',
     faqIntro: 'Respuestas rápidas sobre los planes, la póliza y los asistentes de IA.',
-    faqMore: '¿Tienes otra pregunta? Escríbenos', // under the FAQ, always visible; goes to the contact form on /terminos (only when CONTACT_EMAIL is set)
+    faqMoreTitle: '¿No encuentras tu respuesta?', // under the FAQ, always visible; with the button it goes to the contact form on /terminos (only when CONTACT_EMAIL is set)
+    faqMore: 'Escríbenos',
     faqShow: 'Ver preguntas frecuentes',
     faqHide: 'Ocultar preguntas frecuentes',
     faq: [
@@ -387,6 +389,7 @@ export default {
     footerTerms: 'Condiciones del seguro',
     footerContracting: 'Términos de contratación',
     footerPrivacy: 'Privacidad',
+    footerContact: 'Contacto',
     footerIncident: 'Si me pasa algo',
     footerAgents: 'Para desarrolladores y agentes de IA',
     footerCaso: 'Sobre esta demo', // the only link to /caso (hidden page: noindex, not in the menu)

@@ -409,6 +409,7 @@ html:has(.agent-pill:not([hidden])) .site-footer { padding-bottom: 90px; }
 /* During the purchase (steps 1–4, success screen) the header's yellow button is hidden: the person is already buying.
    Step 1 also has no fixed bar (the plans are on screen and every card has its own button). */
 html:has(#checkout:not([hidden])) .site-header .nav-cta { display: none; }
+html:has(#checkout:not([hidden])) .site-header .nav-contact { display: none; } /* no extra exits in the header while buying (the footer keeps «Contacto») */
 html:has(#step-1:not([hidden])) .total-bar { display: none; }
 html:has(#step-1:not([hidden])) .checkout-wrap { padding-bottom: 32px; }
 html:has(#step-1:not([hidden])) .agent-pill { bottom: 0; }
@@ -962,8 +963,9 @@ mark.todo { background: var(--mint); color: var(--night); font-weight: 700; bord
 .contact-success p { margin: 0; }
 .contact-success-actions { display: grid; gap: 12px; width: 100%; max-width: 20rem; margin-top: 8px; }
 .contact-success-actions .button-link, .contact-success-actions button { width: 100%; justify-content: center; text-align: center; }
-.faq-more { text-align: center; margin: 8px 0 0; }
-.faq-more a { display: inline-block; padding: 12px 8px; font-weight: 600; color: var(--turquoise-text); }
+.faq-more { text-align: center; margin: 24px 0 0; }
+.faq-more-title { margin: 0 0 12px; font-weight: 600; }
+.faq-more .button-link { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 24px; }
 .faq .section-intro { text-align: center; }
 /* Honeypot: off screen for people, still in the form for bots. */
 .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }

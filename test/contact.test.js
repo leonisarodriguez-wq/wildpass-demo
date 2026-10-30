@@ -82,11 +82,12 @@ test('each session can send 3 messages a day', async () => {
   assert.equal(json.error_code, 'CONTACT_LIMIT_REACHED');
 });
 
-test('FAQ: a centred «¿Tienes otra pregunta? Escríbenos» link outside the folded list, going to /terminos#contacto', async () => {
+test('FAQ: «¿No encuentras tu respuesta?» + secondary «Escríbenos» button outside the folded list, going to /terminos#contacto', async () => {
   const home = await (await fetch(`${base}/`)).text();
   const faq = home.slice(home.indexOf('id="preguntas"'), home.indexOf('class="final-cta"'));
   const list = faq.slice(faq.indexOf('id="faq-list"'), faq.indexOf('class="faq-more"'));
-  assert.ok(faq.includes('<p class="faq-more"><a href="/terminos#contacto">¿Tienes otra pregunta? Escríbenos</a></p>'));
+  assert.ok(faq.includes('<p class="faq-more-title">¿No encuentras tu respuesta?</p><a class="secondary button-link" href="/terminos#contacto">Escríbenos</a>'));
+  assert.ok(!home.includes('¿Tienes otra pregunta?'));
   assert.ok(faq.indexOf('class="faq-more"') > faq.indexOf('id="faq-list"') && !list.includes('faq-more'), 'after the list, not inside it');
   assert.match(await (await fetch(`${base}/terminos`)).text(), /<h2 id="contacto">Contacto<\/h2>/);
 });
@@ -108,5 +109,13 @@ test('no page, email or llms.txt tells the reader to call a phone number', async
     const text = (await (await fetch(`${base}${path}`)).text()).replace(/<[^>]*>/g, ' ');
     assert.ok(!/Llama antes de acudir|llama a los servicios|Llama a un teléfono/i.test(text), path);
     assert.ok(!/\[Teléfono/i.test(text), path);
+  }
+});
+
+test('«Contacto» in the menu (after «Condiciones») and in the footer of every page, going to /terminos#contacto', async () => {
+  for (const path of ['/', '/condiciones', '/terminos', '/privacidad', '/agentes', '/si-me-pasa-algo', '/no-existe']) {
+    const html = await (await fetch(`${base}${path}`)).text();
+    assert.ok(html.includes('<a href="/condiciones">Condiciones</a></li><li class="nav-contact"><a href="/terminos#contacto">Contacto</a></li>'), `menu on ${path}`);
+    assert.ok(html.includes('<a href="/privacidad">Privacidad</a><a href="/terminos#contacto">Contacto</a>'), `footer on ${path}`);
   }
 });

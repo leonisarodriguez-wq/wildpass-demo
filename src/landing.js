@@ -85,7 +85,7 @@ function footerHtml(brand) {
   const t = brand.texts;
   return `<footer class="site-footer"><div class="wrap">
     <p class="footer-legal">${escapeHtml(t.footerLegal)}</p>
-    <p class="footer-links"><a href="/condiciones">${escapeHtml(t.footerTerms)}</a><a href="/terminos">${escapeHtml(t.footerContracting)}</a><a href="/privacidad">${escapeHtml(t.footerPrivacy)}</a><a href="/si-me-pasa-algo">${escapeHtml(t.footerIncident)}</a><a href="/agentes">${escapeHtml(t.footerAgents)}</a><a class="footer-quiet" href="/caso">${escapeHtml(t.footerCaso)}</a></p>
+    <p class="footer-links"><a href="/condiciones">${escapeHtml(t.footerTerms)}</a><a href="/terminos">${escapeHtml(t.footerContracting)}</a><a href="/privacidad">${escapeHtml(t.footerPrivacy)}</a><a href="/terminos#contacto">${escapeHtml(t.footerContact)}</a><a href="/si-me-pasa-algo">${escapeHtml(t.footerIncident)}</a><a href="/agentes">${escapeHtml(t.footerAgents)}</a><a class="footer-quiet" href="/caso">${escapeHtml(t.footerCaso)}</a></p>
   </div></footer>`;
 }
 
@@ -106,7 +106,7 @@ export function headerHtml(brand, { home = false } = {}) {
   // visible, except on landing phones (<700 px), where the bottom sticky bar shows it instead: never two at once.
   return `<header class="site-header${home ? ' is-home' : ''}"><div class="wrap header-bar">${logoHtml()}
   <nav class="site-nav" id="site-nav" aria-label="${escapeHtml(n.label)}">
-    <ul><li><a href="${root}#preguntas" data-open-faq>${escapeHtml(n.faq)}</a></li><li><a href="/agentes">${escapeHtml(n.agents)}</a></li><li><a href="/condiciones">${escapeHtml(n.terms)}</a></li></ul>
+    <ul><li><a href="${root}#preguntas" data-open-faq>${escapeHtml(n.faq)}</a></li><li><a href="/agentes">${escapeHtml(n.agents)}</a></li><li><a href="/condiciones">${escapeHtml(n.terms)}</a></li><li class="nav-contact"><a href="/terminos#contacto">${escapeHtml(n.contact)}</a></li></ul>
   </nav>
   <a class="primary nav-cta" href="${root}#quote-form"${home ? ' data-focus-form' : ''}>${home ? `<span class="cta-a">${escapeHtml(n.cta)}</span><span class="cta-b">${escapeHtml(brand.texts.ctaB)}</span>` : escapeHtml(n.cta)}</a>
   <button type="button" class="menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="site-nav" data-open="${escapeHtml(n.menu)}" data-close="${escapeHtml(n.close)}">${escapeHtml(n.menu)}</button>
@@ -523,7 +523,7 @@ export function createLanding({ brand, pricing, business, market, countries, tem
       whatIf: whatIfHtml({ brand, pricing, values }),
       destinations: destinationsHtml({ brand, pricing, business, countries }),
       faq: faqHtml({ brand, values, contactEmail }),
-      faqMore: contactEmail ? `<p class="faq-more"><a href="/terminos#contacto">${escapeHtml(t.faqMore)}</a></p>` : '',
+      faqMore: contactEmail ? `<div class="faq-more"><p class="faq-more-title">${escapeHtml(t.faqMoreTitle)}</p><a class="secondary button-link" href="/terminos#contacto">${escapeHtml(t.faqMore)}</a></div>` : '',
       trust: trustHtml({ brand, values }),
       travelerRow: firstTravelerRow(t.form, pricing.limits),
       maxTravelersNote: escapeHtml(fill(t.form.maxTravelersNote, pricing.limits)),
