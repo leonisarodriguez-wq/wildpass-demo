@@ -1,17 +1,20 @@
 # Seguros Wildpass
 
-Seguro de viaje con deportes de aventura que se contrata en la web o con un agente de IA mediante WebMCP.
-**Demo — no es un seguro real. Ningún pago es real** (Stripe en modo test). Caso práctico para Tuio.
+Seguro de viaje con deportes de aventura que se contrata en la web o con un agente de IA mediante WebMCP. Caso práctico para Tuio.
+
+> **Es una demo:** no hay aseguradora ni pagos reales (Stripe en modo test) y los precios son provisionales.
 
 ## Pruébalo
 **https://wildpass.taile53924.ts.net**
-
-- **Como persona:** «Probar con un ejemplo» (Tailandia, 2 viajeros de 35 y 38 años, 15 días) → elige plan → DNI de prueba `12345678Z` y tarjeta `4242 4242 4242 4242` (fecha futura, CVC cualquiera). La póliza en PDF llega por email (si no la ves, mira en Spam o usa «Reenviar»).
-- **Con un agente:** abre la web en un navegador con WebMCP (Chrome nativo o polyfill MCP-B) y pídele un seguro. Guía: [/agentes](https://wildpass.taile53924.ts.net/agentes) · [/llms.txt](https://wildpass.taile53924.ts.net/llms.txt) · Coberturas: [/condiciones](https://wildpass.taile53924.ts.net/condiciones)
+- **Como persona:** «Probar con un ejemplo» (Tailandia, 2 viajeros de 35 y 38 años) → elige plan → DNI de prueba `12345678Z` y tarjeta `4242 4242 4242 4242` (fecha futura, CVC cualquiera). La póliza en PDF llega por email (si no la ves, mira en Spam).
+- **Con un agente:** guía en [/agentes](https://wildpass.taile53924.ts.net/agentes) y [/llms.txt](https://wildpass.taile53924.ts.net/llms.txt). Coberturas en [/condiciones](https://wildpass.taile53924.ts.net/condiciones).
 
 ## Arquitectura
-Node 24 + Express 5 + SQLite (`node:sqlite`) + PDFKit + Brevo (email por API HTTP) + Stripe (test). Sin paso de compilación.
-**Toda la lógica de negocio vive en el servidor** (`src/business.js`): la web y el agente llaman a la misma API, así que nunca discrepan. Precios y coberturas en `config/pricing.config.js`; marca y textos en `config/brand.config.js`.
+- **Servidor:** Node 24 + Express 5, sin paso de compilación. Frontend en HTML/CSS/JS plano (`public/`).
+- **Base de datos:** SQLite con `node:sqlite` (archivo en `data/`, fuera de Git). Pólizas en PDF con PDFKit.
+- **Toda la lógica de negocio está en el servidor** (`src/business.js`). La web y las herramientas WebMCP llaman a la misma API, así que no pueden discrepar. Precios y coberturas: `config/pricing.config.js`; marca y textos: `config/brand.config.js`.
+- **WebMCP:** las herramientas se registran en `document.modelContext`; si el navegador solo tiene `navigator.modelContext`, ahí, y los dos nombres apuntan al mismo objeto. Si no tiene ninguno, se carga el polyfill MCP-B (`@mcp-b/global`).
+- **Pagos:** Stripe en modo test (la clave «live» se rechaza al arrancar). **Emails:** Brevo por API HTTP, con el PDF adjunto.
 
 ```
 persona ─► formulario ─┐
@@ -19,41 +22,35 @@ persona ─► formulario ─┐
 agente ──► WebMCP ─────┘
 ```
 
-**6 herramientas WebMCP:** `get_quote` → `select_plan` → `set_traveler_details` → `review_order` → `confirm_payment` → `get_policy`.
+## Las 6 herramientas WebMCP
+`get_quote` calcula el precio de los tres planes · `select_plan` abre el pedido con el plan elegido · `set_traveler_details` guarda quién contrata y los viajeros · `review_order` devuelve el resumen y un `review_token` · `confirm_payment` paga y emite la póliza · `get_policy` consulta una póliza (número + email).
 
-**Controles antes de pagar:** código de revisión de un solo uso (caduca si cambian los datos), `accept_terms`, confirmación explícita y total exacto; reglas comprobadas en el servidor; errores con `error_code` y `how_to_fix`; pagos idempotentes; claves Stripe «live» rechazadas. **El agente nunca toca la tarjeta y el DNI es opcional para él:** sin DNI, la póliza queda «DNI pendiente» y la persona lo completa con un enlace de un solo uso.
-
-## Despliegue
-Servidor Ubuntu 24.04. Servicio systemd `wildpass-app` (solo en 127.0.0.1:3000, se reinicia solo) publicado con **Tailscale Funnel** (HTTPS, dirección fija). Publico la web con Tailscale Funnel en lugar del túnel rápido de Cloudflare: la URL es estable (no cambia al reiniciar) y el HTTPS viene incluido; además, trycloudflare.com servía su propio robots.txt y bloqueaba a los agentes de IA.
-
-```
-# En el servidor (Tailscale instalado y con sesión iniciada)
-git clone https://github.com/leonisarodriguez-wq/wildpass-demo ~/travel-demo && cd ~/travel-demo
-npm install && cp .env.example .env    # rellenar las claves
-sudo sh deploy/install.sh              # instala el servicio y activa Funnel
-
-# En local
-npm start   # http://127.0.0.1:3000
-npm test    # pruebas automáticas
-```
-El servicio asume el usuario `leonisa_prueba` y la carpeta `~/travel-demo` (ajustar `deploy/wildpass-app.service` si cambian). Claves en `.env` (ver `.env.example`), nunca en Git. Sin claves, el pago es simulado y el email no se envía.
+**`confirm_payment` se rechaza salvo que haya:** `review_token` del último resumen · `accept_terms: true` · `confirmed_total_eur` igual al total revisado · `user_confirmed: true`. Los errores devuelven `error_code` y `how_to_fix`.
+**El agente nunca toca la tarjeta. El DNI/NIE es opcional para él**, por privacidad: sin DNI la póliza queda «DNI pendiente» y la persona lo completa con un enlace de un solo uso.
 
 ## Metodología de precios
-- **Fórmula:** precio por viajero = base de 7 días (zona × plan) × factor de duración × factor de edad. Total = suma de viajeros.
-- **Variables del brief:** destino (3 zonas: Europa · resto del mundo · EE. UU., Canadá y Japón), días, número y edad de viajeros, y plan. **Origen:** de momento solo viajes desde España para residentes en España, el mercado de las tres aseguradoras de referencia. Otro origen exigiría otra tarifa base; la API lo rechaza con `ORIGIN_NOT_SUPPORTED` (y otra residencia, con `RESIDENCE_NOT_COVERED`).
-- **Calibración:** 13 presupuestos reales de Heymondo, IATI e Intermundial (28/10/2026) con los mismos destinos y fechas. Regla: **ligeramente por debajo de la mediana** de los planes comparables de cada nivel. Las pruebas automáticas fallan si un precio se aleja más de un ±5 % de su objetivo.
-- **Edad:** 65–74 años ×1,65 (dato de Intermundial). **Supuestos marcados:** menores, mayores de 75, viajes de más de 15 días, los límites de Wild Max y las zonas (Japón y Canadá comparten la tarifa de EE. UU.; Marruecos, Turquía, Egipto y Túnez cuentan como «resto del mundo»; ninguno tiene presupuesto propio).
+- **Fórmula:** precio por viajero = base de 7 días (zona × plan) × factor de duración × factor de edad. Total = suma.
+- **Zonas:** Europa · resto del mundo · EE. UU., Canadá y Japón. **Días:** se cuentan ida y vuelta (Tailandia del 10 al 24 de diciembre = 15 días).
+- **Edad:** 0–17 ×0,7 · 18–64 ×1 · 65–74 ×1,65 (dato de Intermundial) · 75–85 ×2,2.
+- **Calibración:** 13 presupuestos de Heymondo, IATI e Intermundial (28/10/2026); la comparación de 3 viajes tipo (Italia, Tailandia, EE. UU.) usa 26 de sus precios. Regla: **ligeramente por debajo de la mediana de los comparables**. `npm test` falla si un precio se aleja más de un ±5 % de su objetivo.
+- **Es supuesto (sin datos de mercado):** Wild Max, el factor de menores y de 75–85 años, los viajes de más de 15 días y las zonas (Japón y Canadá comparten tarifa con EE. UU.).
 - Detalle y tablas: [docs/pricing-research.md](docs/pricing-research.md).
 
-## Producto
-| | **Wild** | **Wild+** (recomendado) | **Wild Max** |
-|---|---|---|---|
-| Médicos (Europa / fuera) | 500.000 € / 1 M € | 2 M € / 5 M € | 3 M € / 6 M € |
-| Franquicia | 75 € | 0 € | 0 € |
-| Cancelación por viajero | — | 3.000 € | 5.000 € |
-| Aventura (trekking / buceo) | — | 4.000 m / 30 m | 6.000 m / 40 m |
-| Búsqueda y rescate | — | 15.000 € | 30.000 € |
+## Despliegue (servidor Ubuntu nuevo)
+1. Instala Node 24, git y Tailscale (con sesión iniciada, HTTPS y Funnel activados en tu tailnet).
+2. `git clone https://github.com/leonisarodriguez-wq/wildpass-demo ~/travel-demo && cd ~/travel-demo && npm install`
+3. `cp .env.example .env` y rellena las variables (nunca van a Git): `BREVO_API_KEY`, `SENDER_EMAIL`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY` (solo claves de prueba), `METRICS_ADMIN_KEY`, y opcionales `CONTACT_EMAIL`, `PUBLIC_BASE_URL`, `HOST`, `PORT`. Sin claves, el pago es simulado y el email no se envía.
+4. `sudo sh deploy/install.sh` instala el servicio y publica la web con Funnel.
+5. Tras cambiar código: `sudo systemctl restart wildpass-app`.
 
-Tres planes: Wild Max ancla el precio y hace de Wild+ la elección natural. Sin reseñas inventadas; métricas propias sin cookies (embudo y tres pruebas A/B: titular, precio por día y texto del botón, explicadas en [/caso](https://wildpass.taile53924.ts.net/caso)).
+El servicio `wildpass-app` (systemd) escucha solo en `127.0.0.1:3000`, arranca con el servidor, se reinicia solo y solo puede escribir en `data/`. Asume el usuario `leonisa_prueba` y la carpeta `~/travel-demo` (ajusta `deploy/wildpass-app.service` si cambian).
+**Por qué Tailscale Funnel y no el túnel rápido de Cloudflare:** la URL es fija (no cambia al reiniciar) y el HTTPS viene incluido; además trycloudflare.com servía su propio `robots.txt` y bloqueaba a los agentes de IA.
 
-**Con más tiempo:** dominio y email propios, webhook de Stripe, KYC real, hosting gestionado y otros países de origen.
+## Pruebas
+`npm test`: 109 pruebas automáticas (Node 24, base de datos temporal, sin enviar emails ni cobros reales).
+
+## Qué haría con más tiempo
+- Verificación de identidad real (KYC) en lugar de un DNI escrito a mano.
+- Abrir Wildpass a residentes y viajes de otros países de origen.
+- Un servidor MCP remoto o endpoint HTTP con el mismo motor, para asistentes sin navegador.
+- Estado del pedido recuperable con el `order_id`.
