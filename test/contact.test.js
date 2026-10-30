@@ -81,3 +81,32 @@ test('each session can send 3 messages a day', async () => {
   assert.equal(status, 429);
   assert.equal(json.error_code, 'CONTACT_LIMIT_REACHED');
 });
+
+test('FAQ: a centred «¿Tienes otra pregunta? Escríbenos» link outside the folded list, going to /terminos#contacto', async () => {
+  const home = await (await fetch(`${base}/`)).text();
+  const faq = home.slice(home.indexOf('id="preguntas"'), home.indexOf('class="final-cta"'));
+  const list = faq.slice(faq.indexOf('id="faq-list"'), faq.indexOf('class="faq-more"'));
+  assert.ok(faq.includes('<p class="faq-more"><a href="/terminos#contacto">¿Tienes otra pregunta? Escríbenos</a></p>'));
+  assert.ok(faq.indexOf('class="faq-more"') > faq.indexOf('id="faq-list"') && !list.includes('faq-more'), 'after the list, not inside it');
+  assert.match(await (await fetch(`${base}/terminos`)).text(), /<h2 id="contacto">Contacto<\/h2>/);
+});
+
+test('contact form: yellow primary button, success block in the same card, and the texts the owner asked for', async () => {
+  const html = await (await fetch(`${base}/terminos`)).text();
+  const card = html.slice(html.indexOf('id="contact-card"'));
+  assert.match(card, /<button type="submit" class="primary" id="contact-send">Enviar mensaje<\/button>/);
+  assert.ok(card.includes('id="contact-success"') && card.includes('aria-live="polite"') && card.includes('hidden'));
+  assert.ok(card.includes('¡Mensaje enviado!') && card.includes('Enviar otra consulta') && card.includes('Volver a Wildpass'));
+  assert.match(card, /id="contact-again">Enviar otra consulta<\/button>/);
+  assert.ok(card.includes('data-success="Te contestaremos a {email} lo antes posible. Recuerda que esto es una demo."'));
+  assert.ok(card.includes('data-generic="No se ha podido enviar el mensaje. Inténtalo de nuevo en unos minutos."'));
+  assert.ok(card.includes('data-sending="Enviando…"'));
+});
+
+test('no page, email or llms.txt tells the reader to call a phone number', async () => {
+  for (const path of ['/', '/terminos', '/privacidad', '/condiciones', '/si-me-pasa-algo', '/agentes', '/llms.txt']) {
+    const text = (await (await fetch(`${base}${path}`)).text()).replace(/<[^>]*>/g, ' ');
+    assert.ok(!/Llama antes de acudir|llama a los servicios|Llama a un teléfono/i.test(text), path);
+    assert.ok(!/\[Teléfono/i.test(text), path);
+  }
+});

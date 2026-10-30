@@ -197,9 +197,7 @@ export function buildPolicyPdf({ policy_number, issued_at, summary, brand, terms
     const boxInner = rightW - 28;
     const emergency = [
       [t.emergencyTitle, 'heading', 12],
-      [t.emergencyText, 'text', 9.5],
       [t.emergencyPhone, 'bold', 10],
-      [t.emergencyKeepNumber, 'text', 9.5],
     ];
     const emerH = 22 + emergency.reduce((sum, [s, f, size]) => sum + measure(s, { f, size, width: boxInner }) + 5, 0);
     ensure(Math.max(exclH, emerH));

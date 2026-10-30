@@ -453,9 +453,9 @@ function trustHtml({ brand, values }) {
 function contactFormHtml(brand) {
   const c = brand.texts.contact;
   const e = escapeHtml;
-  const data = { 'missing-name': c.missingName, 'missing-email': c.missingEmail, 'missing-message': c.missingMessage, 'missing-consent': c.missingConsent, 'invalid-email': c.invalidEmail, sent: c.sent, sending: c.sending, generic: c.generic };
+  const data = { 'missing-name': c.missingName, 'missing-email': c.missingEmail, 'missing-message': c.missingMessage, 'missing-consent': c.missingConsent, 'invalid-email': c.invalidEmail, success: c.successText, sending: c.sending, generic: c.generic };
   const attrs = Object.entries(data).map(([k, v]) => ` data-${k}="${e(v)}"`).join('');
-  return `<p>${e(c.intro)}</p><form id="contact-form" class="contact-form"${attrs} novalidate>`
+  const form = `<p>${e(c.intro)}</p><form id="contact-form" class="contact-form"${attrs} novalidate>`
     + `<div class="field"><label for="contact-name">${e(c.name)}</label><input id="contact-name" name="name" autocomplete="name" maxlength="100" aria-required="true"></div>`
     + `<div class="field"><label for="contact-email">${e(c.email)}</label><p class="hint" id="contact-email-hint">${e(c.emailHelp)}</p><input id="contact-email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" aria-required="true" aria-describedby="contact-email-hint"></div>`
     + `<div class="field"><label for="contact-message">${e(c.message)}</label><textarea id="contact-message" name="message" rows="5" maxlength="2000" aria-required="true"></textarea></div>`
@@ -463,8 +463,13 @@ function contactFormHtml(brand) {
     + `<p class="muted privacy-link"><a href="/privacidad">${e(brand.texts.checkout.privacyLink)}</a></p>`
     + `<label class="check" for="contact-consent"><input type="checkbox" id="contact-consent" name="consent" aria-required="true"> <span>${e(c.consent)}</span></label>`
     + `<p class="error" role="alert" hidden></p>`
-    + `<button type="submit" class="secondary" id="contact-send">${e(c.send)}</button>`
-    + `<p class="contact-status" id="contact-status" role="status"></p></form>`;
+    + `<button type="submit" class="primary" id="contact-send">${e(c.send)}</button></form>`;
+  // After a good send the form is hidden and this block takes its place in the same card (aria-live: read out once; focus goes to its title).
+  const success = `<div class="contact-success" id="contact-success" aria-live="polite" hidden>`
+    + `<span class="contact-success-icon">${art.iconCheck}</span>`
+    + `<h3 id="contact-success-title" tabindex="-1">${e(c.successTitle)}</h3><p id="contact-success-text"></p>`
+    + `<div class="contact-success-actions"><button type="button" class="primary" id="contact-again">${e(c.again)}</button><a class="secondary button-link" href="/">${e(c.backHome)}</a></div></div>`;
+  return `<div class="contact-card" id="contact-card">${form}${success}</div>`;
 }
 
 function faqHtml({ brand, values, contactEmail }) {
@@ -518,6 +523,7 @@ export function createLanding({ brand, pricing, business, market, countries, tem
       whatIf: whatIfHtml({ brand, pricing, values }),
       destinations: destinationsHtml({ brand, pricing, business, countries }),
       faq: faqHtml({ brand, values, contactEmail }),
+      faqMore: contactEmail ? `<p class="faq-more"><a href="/terminos#contacto">${escapeHtml(t.faqMore)}</a></p>` : '',
       trust: trustHtml({ brand, values }),
       travelerRow: firstTravelerRow(t.form, pricing.limits),
       maxTravelersNote: escapeHtml(fill(t.form.maxTravelersNote, pricing.limits)),

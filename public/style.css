@@ -950,8 +950,21 @@ mark.todo { background: var(--mint); color: var(--night); font-weight: 700; bord
 .contact-form textarea { width: 100%; min-height: 8rem; resize: vertical; font: inherit; padding: 12px; border: 2px solid var(--field-border); border-radius: 12px; background: var(--white); color: var(--night); }
 .contact-form .check { margin: 4px 0; font-weight: 400; font-size: 0.95rem; }
 .contact-form button { justify-self: start; }
-.contact-status:empty { display: none; }
-.contact-status { padding: 0; margin: 0; font-weight: 600; color: var(--turquoise-text); }
+/* The form and its confirmation live in one card; the confirmation replaces the form after a good send. */
+.contact-card { max-width: 36rem; padding: 20px; background: var(--white); border: 1px solid var(--border); border-radius: 16px; }
+.contact-card > p:first-child { margin-top: 0; }
+.contact-success { display: grid; justify-items: center; gap: 12px; text-align: center; padding: 8px 0; }
+.contact-success[hidden], .contact-form[hidden] { display: none; }
+.contact-success-icon { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: var(--mint); color: var(--turquoise); }
+.contact-success-icon .icon { width: 40px; height: 40px; }
+.contact-success h3 { margin: 0; font-size: 1.5rem; }
+.contact-success h3:focus { outline: none; }
+.contact-success p { margin: 0; }
+.contact-success-actions { display: grid; gap: 12px; width: 100%; max-width: 20rem; margin-top: 8px; }
+.contact-success-actions .button-link, .contact-success-actions button { width: 100%; justify-content: center; text-align: center; }
+.faq-more { text-align: center; margin: 8px 0 0; }
+.faq-more a { display: inline-block; padding: 12px 8px; font-weight: 600; color: var(--turquoise-text); }
+.faq .section-intro { text-align: center; }
 /* Honeypot: off screen for people, still in the form for bots. */
 .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 .footer-links a.footer-quiet { opacity: 0.85; }

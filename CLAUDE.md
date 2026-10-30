@@ -12,7 +12,7 @@ The owner is not a programmer: explain things simply, report test results honest
   The template is read at start-up: restart the server after editing it. Never write triple braces inside an HTML comment there.
   `public/app.js` runs the quote form and the 4-step checkout (Paso X de 4: compare plans → who travels → review + pay (Stripe test mode, or simulated when Stripe is off) → done),
   with browser history per step, a trip summary card (steps 1–2, "Editar" goes back to the form) and a fixed 64 px action bar
-  ("Elige un plan" + price range until a plan is chosen; its yellow button = the step's action, `barAction()` in app.js:
+  (step 1 has NO bar any more: the plans are on screen; "Elige un plan" + price range was removed there. Steps 2–4: its yellow button = the step's action, `barAction()` in app.js:
   "Ver planes"/"Continuar con X" → "Continuar" → "Ir al pago" (focuses the terms box) → "Pagar {total}").
   Step 1: Wild+ price line depends on the "upsell" experiment (see Measurement). Step 3 = compact review card ("Tu seguro" + Editar, one-line rows,
   "Zona de precio", 3 chips, coverage/exclusions in closed `<details>`), "Acepta las condiciones para pagar" under the disabled
@@ -61,11 +61,11 @@ The owner is not a programmer: explain things simply, report test results honest
   tool is really called; expands to a timed log of FIXED phrases (never names, emails, ids, tokens or links); hides after 2 min idle.
   In the checkout it docks as a strip on top of the total bar (and the page gets extra bottom room) so it never covers a button.
   Hero: form heading "Calcula tu precio" (h2 #quote-title, names the form) with "Seguros Wildpass" small under it; the pass notches use
-  --notch-y, so keep .pass-title/.pass-brand line heights in sync. Sunrise 3.5 s + warm glow, once per visit (public/sun-once.js, a
+  --notch-y, so keep .pass-title line height in sync (the .pass-brand label is gone). Sunrise 3.5 s + warm glow, once per visit (public/sun-once.js, a
   classic <head> script setting html.sun-seen from sessionStorage). Parallax far 0.14 / mid 0.07. Phones/tablets (<960 px): copy →
   the WHOLE 3:1 landscape band (sky strip on top holds the route; phones <600 px: 20 px strip, ground cropped 8 %, sun lifted via .sun-pos) → card on a turquoise "ground" (.hero-grid::after); nothing overlaps.
   Phones: compact first screen — on 375×812 "Calcular mi seguro" is visible without scrolling (re-check after any hero/form change).
-  Headline = two .claim-part blocks ("Travel wild." / "We've got you.") on an h1 with lang="en"; under it `.hero-tagline` = `brand.claimEs` (Space Grotesk bold, turquoise #0E7C86: large text, AA-large) and `.hero-sub` (`texts.heroSubtitle`, Inter, #3C5368) explains the offer; form and headline have NO entrance animation.
+  Headline = two .claim-part blocks ("Travel wild." / "We've got you.") on an h1 with lang="en"; under it `.hero-sub` (`texts.heroSubtitle`, Inter, #3C5368) explains the offer; form and headline have NO entrance animation.
   Live price ABOVE the button (#price-preview: .pp-main "Tu precio: desde X €" + .pp-sub "plan Wild · n viajeros"), hidden until
   there IS a price (owner's choice: no placeholder; the button moves down once). Sticky phone bar: hidden only while the form's
   #quote-submit is on screen (and in the checkout); body gets 80 px padding.
@@ -74,7 +74,7 @@ The owner is not a programmer: explain things simply, report test results honest
   full-width strip whose first card lines up with the content column (--edge), ‹ › buttons ≥700 px (hidden when it all fits), a progress
   line under it, no native scrollbar. Desktop hero: landscape height max(380px, 33.34vw) so it stays 3:1 (sun and pines never cut), hero
   bottom padding = 27 % of it so the card ends above the pines. "Calcula tu precio" = 1.6rem title on a mint stub (--notch-y follows it).
-  AI chat: unplayed bubbles take no space, but the white .chat box keeps its final min-height (landing-fx.js), so no turquoise gap and nothing below moves.
+  AI chat (`#showcase`): COMPLETE from the first paint; it only animates when the visitor presses «Repetir» (the old play-on-scroll emptied the box and left blank zones with fast scrolling; nothing else is lazy-rendered).
 - Destination field: the server renders a `<select id="destination">` ("Destinos populares" optgroup first from `texts.form.popularDestinations`,
   then A–Z); `public/destination-picker.js` hides it (bug fixed 29 Oct 2026: `items.map(optionEl)` passed the index as the alias note, so "Italia 1", "Portugal 2"… showed) and puts an accessible searchable combobox (`#destination-search`) in front. The select stays
   the source of truth (`.value` + `change`). Remote territories (AQ BV HM GS TF IO UM) are not in `config/countries.js`.
@@ -87,9 +87,9 @@ The owner is not a programmer: explain things simply, report test results honest
   sideways row from the content edge with edge fades + "Desliza para ver más situaciones", ≥960 px all wrapped) and ONE card (all panels share
   one grid cell, so its height never changes); the FIRST is covered by both plans; limits from pricing config,
   optional big figure counts up once; "Cubierto/No cubierto" badges are content-wide) and "¿A dónde te escapas?"
-  (`destinationsHtml`, 10 countries in `texts.destinations.countries`: scroll-snap cards, mini scene, "7 días desde X €" = Wild, 1 adult, engine; tap → sets destination + scene, scrolls to form).
-  Sections fade in once (opacity only: moving them counted as layout shift); FAQ (10 questions, `faqHtml`: "[text](#quote-form)" in an answer = link to
-  the form; the contact question shows only if CONTACT_EMAIL is in .env; its answer is a contact form (`contactFormHtml` in landing.js → POST /api/contact, `src/contact.js`: name, email, message, required consent, honeypot `website`, 3 messages per browser session and 10 per IP a day, in memory; sent with Brevo to CONTACT_EMAIL with reply-to = the visitor; the owner's address is never in the HTML, the answers or Git; `test/contact.test.js`) is closed behind
+  (`destinationsHtml`, 9 countries (no Marruecos) in `texts.destinations.countries`: scroll-snap cards, mini scene, "7 días desde X €" = Wild, 1 adult, engine; tap → sets destination + scene, scrolls to form).
+  Sections are visible at once (no scroll-reveal); FAQ (`faqHtml`, centered intro, `faqHtml`: "[text](#quote-form)" in an answer = link to
+  the form; the FAQ has NO contact question: under it (visible even when folded) «¿Tienes otra pregunta? Escríbenos» → /terminos#contacto (only if CONTACT_EMAIL is in .env), where the contact form lives (`contactFormHtml` in landing.js, `public/contact.js` → POST /api/contact, `src/contact.js`: name, email, message, required consent, honeypot `website`, 3 messages per browser session and 10 per IP a day, in memory; sent with Brevo to CONTACT_EMAIL with reply-to = the visitor; the owner's address is never in the HTML, the answers or Git; `test/contact.test.js`) (the list) is closed behind
   "Ver preguntas frecuentes"; each answer opens smoothly via `::details-content` (Chrome/Safari; others
   open at once); phones get a sticky "Calcular mi seguro" bar once the hero is off screen (inside #landing, so never in the checkout).
 - Success step, under "Descargar mi póliza": "Reenviar póliza" and "Enviar la póliza a quien viaja contigo" (highlighted when >1 traveller).
@@ -130,7 +130,7 @@ The owner is not a programmer: explain things simply, report test results honest
   never in the sitemap. `?admin=<METRICS_ADMIN_KEY from .env>` shows "Borrar los datos de prueba" (POST /metricas/borrar, checkbox required).
 - Experiments: `public/exp.js` (classic <head> script) assigns a|b 50/50 per browser (localStorage `wildpass-exp`), `?exp_hero=` / `?exp_upsell=`
   force and keep it; sets html[data-exp-*] before the first paint. Hero B = `texts.heroB` (hides the English claim and claimEs, same subtitle).
-  Upsell: A = totals only (the old "+X € (Y € al día)" line is gone), B = "+X € al día por aventura y cancelación" = (Wild+ − Wild)/days.
+  Upsell: A = totals only, B = "+X € al día por persona por aventura y cancelación" = (Wild+ − Wild)/days/travellers (Wild Max line: (Wild Max − Wild+)/days/travellers; Tailandia 10–24 dic, 35 + 38 → 1,67 € and 1,43 €).
   Sample size: two proportions, 95 %/80 % (`sampleSizePerVariant`), planning assumptions in `config/experiments.config.js` until A has 100 sessions.
 
 ## Brand
@@ -140,7 +140,7 @@ The owner is not a programmer: explain things simply, report test results honest
   PNGs `public/favicon-32.png`, `public/apple-touch-icon.png`, `public/brand/logo-symbol-email.png` were rendered from the SVG with headless Chrome:
   re-render them if the symbol or colours change. Emails use that PNG hosted in our Brevo image gallery (`brand.emailLogoUrl`, uploaded with
   `POST /v3/emailCampaigns/images`): Gmail blocks SVG and Brevo does NOT support CID-embedded images (confirmed by Brevo staff, Oct 2025).
-- Claim "Travel wild. We've got you." + hero subtitle (`texts.heroSubtitle`) + Spanish line "Viaja salvaje. Nosotros te cubrimos."
+- Claim "Travel wild. We've got you." + hero subtitle (`texts.heroSubtitle`). The Spanish line "Viaja salvaje. Nosotros te cubrimos." is no longer used on the web (it stays in `brand.claimEs` / the config API only).
 - Website banner (`brand.siteBanner`, sticky red strip on every page): "Demo — no es un seguro real. Ningún pago es real."
   Phones (<600 px) show the one-line `brand.siteBannerShort` "Demo · sin pagos reales"
 - Colours (`brand.colors`, exposed as CSS variables in /brand.css): sky #E3F4FB page background; white cards; night #0B1F3A main text; secondary #3C5368;
@@ -285,7 +285,7 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 ## Third plan: Wild Max (29 Oct 2026)
 - Plans now: Wild (essential) → Wild+ (balanced, still the featured one, badge «Recomendado si haces deporte») → Wild Max (`wild_max`, maximum protection).
   Wild Max = medical 3,000,000 / 6,000,000 €, no excess, cancellation 5,000 €/traveller, search & rescue 30,000 €, sports equipment 1,500 €,
-  trip interruption 3,000 €/traveller, trekking up to 6,000 m («Hasta 6.000 m: el Kilimanjaro, incluido» = the hook), diving 40 m, baggage 3,500 €, delay 450 €.
+  trip interruption 3,000 €/traveller, trekking up to 6,000 m («Hasta 6.000 m (el Kilimanjaro, incluido)» = the hook), diving 40 m, baggage 3,500 €, delay 450 €.
   Same or better than Wild+ in every line (tested). All values except the adventure ones are ASSUMPTIONS (`docs/pricing-research.md` §6).
   New coverage lines `sports_equipment_eur` and `trip_interruption_per_traveler_eur` exist in every plan (0 = not included, left out of the certificate).
 - Price: slightly below the median of the premium plans of the 13 quotes (Heymondo Premium, IATI Estrella, Intermundial Premium); Wild and Wild+ prices
@@ -298,7 +298,7 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
   («Acepto las condiciones del seguro y los términos de contratación» → /condiciones + /terminos; `accept_terms` covers both), step 2 and the contact form
   («Consulta cómo tratamos tus datos»). `review_order` also returns `contracting_terms_url`. `/si-me-pasa-algo` (`incidentPageBody`, texts `texts.incident`): 4 steps,
   no phone numbers, «teléfono de asistencia 24 h» only as «en un seguro real…»; linked in the footer and on the success step.
-- «Probar con un ejemplo» (secondary, under «Calcular mi seguro»; `texts.form.example` = TH, departure in 42 days (6 weeks) from today in Madrid, 14 trip days counting both ends, ages 35 + 38; the dates move so it never expires; asks inline before replacing typed data;
+- «Probar con un ejemplo» (secondary, under «Calcular mi seguro»; `texts.form.example` = TH, next 10 Dec from today in Madrid, 15 trip days counting both ends, ages 35 + 38; the dates move so it never expires; asks inline before replacing typed data;
   event `example_used`, 11th name in `EVENT_NAMES`).
 
 ## Policyholder DNI/NIE and residence (29 Oct 2026)
@@ -343,3 +343,11 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 - DNI wording is one message everywhere: optional for agents, we recommend the person completes it via the emailed link, otherwise «DNI pendiente».
 - The contact form left the FAQ: it is now in /terminos «Contacto» (`public/contact.js`, shown only if CONTACT_EMAIL is set). The FAQ has no contact question. Scroll-reveal was removed (everything visible at once).
 - /caso: new «Cómo calibré el precio» (3-trip table vs Heymondo/IATI/Intermundial from `config/market-quotes.js` + engine), «Siguientes pasos», «Experimentos preparados». Web funnel now counts `destination_selected` (also from the example button and destination cards).
+
+## Last batches (30 Oct 2026): current state
+- Purchase flow screens (`#checkout` visible: steps 1–4 and the issued-policy screen): the header's yellow button is hidden (`html:has(#checkout:not([hidden])) .nav-cta`); step 1 also hides the fixed `.total-bar`. Everywhere else the header is unchanged. Step 1 cards: Wild has an empty (invisible) trekking row only to keep the subgrid aligned.
+- Contact form (/terminos#contacto, texts.contact): yellow primary «Enviar mensaje»; while sending the button is disabled and says «Enviando…»; success hides the whole form (fields, consent, privacy link, button) and shows, in the same `.contact-card`, a centred block with a turquoise check, «¡Mensaje enviado!» and «Te contestaremos a {email} lo antes posible. Recuerda que esto es una demo.» (aria-live, focus on the title, scrolled into view), plus «Enviar otra consulta» (yellow, empties the form and unticks the box) and «Volver a Wildpass». Failure keeps the form and typed data and shows `texts.contact.generic` above the button (the shared error box: red border, night text — brand rule). The visitor's email is the Brevo `replyTo`; the sender never changes.
+- Certificate and policy email: the emergency box says only «¿Una emergencia?» + «En un seguro real, aquí tendrías un teléfono de asistencia 24 h. Esta demo no ofrece asistencia.» (no «Llama antes…», no phone, no brackets). /si-me-pasa-algo step 1 says «ponte a salvo y avisa a los servicios de emergencia del lugar donde estés» (no «llama»). A test (`test/final-batch.test.js`) fails if any text keeps `[`, `]`, TODO, placeholder or lorem.
+- `get_policy`: ONE field for the DNI state at the top, `id_status` = "completed" | "pending", next to `status` (`active` | `pending_id` | `expired`). `details` no longer carries the frozen review fields (`policy_status_after_payment`, `policyholder.id_status`, `id_status`, `status_text`); the frozen snapshot is still stored and used by the PDF and email. review_order and confirm_payment still say «DNI pendiente» when it applies. Tested in `test/dni-residence.test.js` (no «pendiente»/«pending» anywhere after completing).
+- «Darse de baja» in Gmail comes from a header Brevo adds; it is left as it is (owner's decision, 30 Oct 2026).
+- Public checks done on the public address with test policies: WILD-2026-7RDJJ3 (Wild+, agent, with DNI), WILD-2026-F472R3 (Wild Max, website, card 4242), WILD-2026-HLTUP5 (Wild+, agent without DNI → completed with 12345678Z).

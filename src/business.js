@@ -700,6 +700,16 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
   }
 
   // ---------- 6. get_policy ----------
+  // The summary saved at review time says «DNI pendiente» when the holder had not given the DNI yet, and it must not change
+  // (the PDF and the email are drawn from it). get_policy hides those frozen fields so an agent reads the real state only
+  // from `status` / `id_status` at the top of the answer.
+  function withoutFrozenIdState(summary) {
+    const { id_status, status_text, policy_status_after_payment, policyholder, ...rest } = summary;
+    if (!policyholder) return rest;
+    const { id_status: frozenHolderState, ...holder } = policyholder;
+    return { ...rest, policyholder: holder };
+  }
+
   async function getPolicy(input, ctx = {}) {
     const shapeError = checkShape(input, ['policy_number', 'email'], 'get_policy');
     if (shapeError) return shapeError;
@@ -720,13 +730,15 @@ export function createBusiness({ db, pricing, brand, pdfDir, buildPdf, email, st
       policy_number: policy.policy_number,
       status: coverage_period === 'ended' ? 'expired' : (policy.id_status ?? 'active'),
       status_text: coverage_period === 'ended' ? 'Caducada' : ID_STATUS_TEXT[policy.id_status ?? 'active'],
+      // The ONE field that says where the holder's DNI/NIE stands today: "completed" or "pending" (older policies count as completed).
+      id_status: policy.id_status === 'pending_id' ? 'pending' : 'completed',
       holder_id_number_masked: maskIdNumber(policy.holder_id_number),
       ...(policy.id_status === 'pending_id' && { complete_id_note: 'DNI/NIE pending: the person completes it with the one-time link in the policy email.' }),
       coverage_period,
       issued_at: policy.issued_at,
       // Always the snapshot saved when the policy was sold. Only test policies issued before
       // snapshots existed fall back to the current config, and say so.
-      details: policy.snapshot_json ? JSON.parse(policy.snapshot_json) : orderSummary(order, quote),
+      details: withoutFrozenIdState(policy.snapshot_json ? JSON.parse(policy.snapshot_json) : orderSummary(order, quote)),
       coverage_source: policy.snapshot_json ? 'snapshot_at_sale' : 'current_config_legacy_policy',
       payment: paymentText(policy.payment_ref),
       ...(policy.payment_ref && { payment_ref: policy.payment_ref }),

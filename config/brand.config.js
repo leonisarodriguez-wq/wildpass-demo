@@ -344,7 +344,10 @@ export default {
       honeypot: 'No rellenes este campo',
       send: 'Enviar mensaje',
       sending: 'Enviando…',
-      sent: 'Mensaje enviado. Te contestaremos a {email}.',
+      successTitle: '¡Mensaje enviado!',
+      successText: 'Te contestaremos a {email} lo antes posible. Recuerda que esto es una demo.',
+      again: 'Enviar otra consulta',
+      backHome: 'Volver a Wildpass',
       missingName: 'Escribe tu nombre.',
       missingEmail: 'Escribe tu email para que podamos contestarte.',
       missingMessage: 'Escribe tu mensaje.',
@@ -352,7 +355,7 @@ export default {
       subject: 'Mensaje desde la web de Wildpass (demo) · {name}',
       demoLine: 'Demo — no es un seguro real',
       emailIntro: 'Mensaje enviado con el formulario de contacto de la web.',
-      generic: 'No hemos podido enviar el mensaje. Inténtalo de nuevo en un rato.',
+      generic: 'No se ha podido enviar el mensaje. Inténtalo de nuevo en unos minutos.',
       invalidEmail: 'Revisa el email: debe tener la forma nombre@dominio.com.',
     },
 
@@ -360,6 +363,7 @@ export default {
     // [text](#quote-form) becomes a link to the quote form. The contact question shows only when CONTACT_EMAIL is set in .env.
     faqTitle: 'Preguntas frecuentes',
     faqIntro: 'Respuestas rápidas sobre los planes, la póliza y los asistentes de IA.',
+    faqMore: '¿Tienes otra pregunta? Escríbenos', // under the FAQ, always visible; goes to the contact form on /terminos (only when CONTACT_EMAIL is set)
     faqShow: 'Ver preguntas frecuentes',
     faqHide: 'Ocultar preguntas frecuentes',
     faq: [
@@ -460,7 +464,7 @@ export default {
       notice: 'Esto es una demo: no es un seguro real.',
       intro: 'Así sería el proceso en un seguro de viaje. Aquí es solo una ilustración.',
       steps: [
-        { title: 'Ponte a salvo', text: 'Lo primero es tu seguridad y la de quienes viajan contigo. Si hay peligro, llama a los servicios de emergencia del lugar donde estés.' },
+        { title: 'Ponte a salvo', text: 'Lo primero es tu seguridad y la de quienes viajan contigo. Si hay peligro, ponte a salvo y avisa a los servicios de emergencia del lugar donde estés.' },
         { title: 'Ten a mano tu número de póliza', text: 'Lo encuentras en el email que te enviamos y en el PDF de tu póliza. Empieza por WILD-.' },
         { title: 'Guarda los documentos', text: 'Facturas y tickets, informes médicos, y la denuncia si te han robado algo. Sin ellos es difícil demostrar lo que pasó.' },
         { title: 'Cómo se declararía un siniestro', text: 'En un seguro real contarías qué ha pasado, con tu número de póliza y los documentos, al equipo de asistencia, y te dirían los pasos siguientes. Todo se haría con tu póliza delante.' },
@@ -1100,9 +1104,7 @@ export default {
       excess: 'Franquicia por siniestro médico',
       exclusionsTitle: 'Principales exclusiones',
       emergencyTitle: '¿Una emergencia?',
-      emergencyText: 'Llama antes de acudir al médico y no adelantes dinero.',
       emergencyPhone: 'En un seguro real, aquí tendrías un teléfono de asistencia 24 h. Esta demo no ofrece asistencia.',
-      emergencyKeepNumber: 'Ten a mano tu nº de póliza.',
       footer: 'Seguros Wildpass es un producto ficticio creado para una demostración. Este certificado no tiene validez legal ni ofrece cobertura real.',
       termsLabel: 'Condiciones:',
     },
@@ -1126,7 +1128,7 @@ export default {
       days: 'días',
       button: 'Descargar mi póliza',
       attachedNote: 'También va adjunta a este correo.',
-      emergency: '¿Una emergencia? Llama antes de acudir al médico y no adelantes dinero. En un seguro real, aquí tendrías un teléfono de asistencia 24 h. Esta demo no ofrece asistencia. Ten a mano tu nº de póliza.',
+      emergency: '¿Una emergencia? En un seguro real, aquí tendrías un teléfono de asistencia 24 h. Esta demo no ofrece asistencia.',
       footer: 'Seguros Wildpass es un producto ficticio creado para una demostración. Este correo y el certificado no tienen validez legal ni ofrecen cobertura real.',
       // Copy forwarded from the success step to a travel companion. {name} = the policyholder's first name.
       forwardSubject: '{name} te envía la póliza Wildpass {number} · {destination} (demo)',

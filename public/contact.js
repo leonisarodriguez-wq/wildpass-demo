@@ -5,7 +5,6 @@ import { sessionId } from './track.js';
 const form = document.getElementById('contact-form');
 if (form) {
   const box = form.querySelector('.error');
-  const status = document.getElementById('contact-status');
   const f = id => document.getElementById(`contact-${id}`);
   const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const checks = () => [
@@ -47,13 +46,16 @@ if (form) {
     const live = () => { if (field.getAttribute('aria-invalid') === 'true' && !check()) setError(field, null); };
     field.addEventListener(field.type === 'checkbox' ? 'change' : 'input', live);
   }
+  const card = document.getElementById('contact-card');
+  const success = document.getElementById('contact-success');
+  const title = document.getElementById('contact-success-title');
+  const button = document.getElementById('contact-send');
+  const label = button.textContent;
   form.addEventListener('submit', async e => {
     e.preventDefault();
-    status.textContent = '';
     box.hidden = true;
+    if (button.disabled) return; // already sending: no double sends
     if (!validateAll()) return;
-    const button = document.getElementById('contact-send');
-    const label = button.textContent;
     button.disabled = true;
     button.textContent = form.dataset.sending;
     let result;
@@ -69,11 +71,26 @@ if (form) {
     button.disabled = false;
     button.textContent = label;
     if (!result.ok) {
-      box.textContent = result.message || form.dataset.generic;
+      // The form stays as it was (nothing typed is lost) and the message sits right above the button.
+      box.textContent = form.dataset.generic;
       box.hidden = false;
       return;
     }
-    status.textContent = form.dataset.sent.replace('{email}', f('email').value.trim());
-    f('message').value = '';
+    // Good send: the whole form (fields, checkbox, privacy link, button) gives way to the confirmation in the same card.
+    document.getElementById('contact-success-text').textContent = form.dataset.success.replace('{email}', f('email').value.trim());
+    form.hidden = true;
+    form.previousElementSibling?.matches('p') && (form.previousElementSibling.hidden = true); // the intro line above the form
+    success.hidden = false;
+    title.focus({ preventScroll: true });
+    card.scrollIntoView({ block: 'start' }); // html's scroll-padding-top keeps it below the sticky header
+  });
+  document.getElementById('contact-again').addEventListener('click', () => {
+    form.reset(); // empty fields and the consent box unticked
+    for (const [field] of checks()) setError(field, null);
+    box.hidden = true;
+    success.hidden = true;
+    form.hidden = false;
+    form.previousElementSibling?.matches('p') && (form.previousElementSibling.hidden = false);
+    f('name').focus();
   });
 }

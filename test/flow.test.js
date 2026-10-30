@@ -213,10 +213,14 @@ test('a sold policy keeps its original coverage when the config changes later', 
     assert.equal(policy.coverage_source, 'snapshot_at_sale');
     // What was reviewed, plus how it was paid (Stripe is off in these tests).
     // Plus the policy status set at issue (no DNI/NIE sent → «DNI pendiente»).
-    const { payment, id_status, status_text, ...sold } = policy.details;
-    assert.deepEqual(sold, review.summary);
-    assert.equal(id_status, 'pending_id');
-    assert.equal(status_text, 'DNI pendiente');
+    // get_policy leaves out the frozen review fields about the DNI (the state is `status` / `id_status` at the top of the answer).
+    const { payment, ...sold } = policy.details;
+    const { policy_status_after_payment, ...reviewed } = review.summary;
+    const { id_status: frozenHolderState, ...reviewedHolder } = reviewed.policyholder;
+    assert.deepEqual(sold, { ...reviewed, policyholder: reviewedHolder });
+    assert.equal(policy.status, 'pending_id');
+    assert.equal(policy.id_status, 'pending');
+    assert.equal(policy.status_text, 'DNI pendiente');
     assert.deepEqual(payment, { provider: 'simulated', ref: null, text: 'Pago simulado' });
     assert.equal(policy.payment, 'Pago simulado');
     assert.equal(policy.details.plan.coverage_limits_eur.baggage_theft_damage_eur, original.baggage);

@@ -20,6 +20,9 @@ test('certificate and email: no phone placeholder, an honest "this demo offers n
   const line = 'En un seguro real, aquí tendrías un teléfono de asistencia 24 h. Esta demo no ofrece asistencia.';
   assert.equal(brand.texts.certificate.emergencyPhone, line);
   assert.ok(brand.texts.email.emergency.includes(line));
+  // The box says only that (no «Llama antes de acudir al médico…», no «Ten a mano…»): the demo offers no assistance.
+  assert.ok(!('emergencyText' in brand.texts.certificate) && !('emergencyKeepNumber' in brand.texts.certificate));
+  assert.equal(brand.texts.email.emergency, `¿Una emergencia? ${line}`);
 });
 
 test('step 1: the daily difference is per person; Kilimanjaro goes in brackets', () => {

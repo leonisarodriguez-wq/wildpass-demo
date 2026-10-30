@@ -107,7 +107,11 @@ test('agent purchase WITHOUT a DNI works as before, then the person completes it
   await new Promise(r => setTimeout(r, 50));
   const mail = sent.slice(before).find(m => m.to[0].email === HOLDER);
   assert.ok(mail.htmlContent.includes(paid.complete_id_url) && mail.textContent.includes('Completa tu DNI para activar tu póliza'));
-  assert.equal((await call('get_policy', { policy_number: paid.policy_number, email: HOLDER })).status_text, 'DNI pendiente');
+  const pendingPolicy = await call('get_policy', { policy_number: paid.policy_number, email: HOLDER });
+  assert.equal(pendingPolicy.status_text, 'DNI pendiente');
+  assert.equal(pendingPolicy.id_status, 'pending');
+  // The frozen review fields are not part of get_policy's details (one clear field at the top instead).
+  assert.ok(!('policy_status_after_payment' in pendingPolicy.details) && !('id_status' in pendingPolicy.details.policyholder));
 
   // The page opens; a wrong letter is refused; the right one activates the policy and resends the PDF.
   assert.equal((await fetch(`${base}/poliza/completar/${token}`)).status, 200);
@@ -124,6 +128,9 @@ test('agent purchase WITHOUT a DNI works as before, then the person completes it
   const policy = await call('get_policy', { policy_number: paid.policy_number, email: HOLDER });
   assert.equal(policy.status, 'active');
   assert.equal(policy.holder_id_number_masked, '*****678Z');
+  // Once the DNI is completed nothing in get_policy says pending, in any field (an agent must not misread it).
+  assert.equal(policy.id_status, 'completed');
+  assert.ok(!/pendiente|pending/i.test(JSON.stringify(policy)), 'no "pendiente"/"pending" anywhere in the answer');
 
   // One-time link: used once, then refused.
   assert.equal((await call('complete_holder_id', { token, id_number: '12345678Z' })).error_code, 'ID_LINK_INVALID');
