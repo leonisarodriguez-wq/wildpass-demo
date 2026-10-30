@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../src/app.js';
 import pricing from '../config/pricing.config.js';
-import marketQuotes, { quoteCount } from '../config/market-quotes.js';
+import marketQuotes, { quoteCount, comparedPriceCount } from '../config/market-quotes.js';
 import { fromPrices } from '../src/landing.js';
 import { buildTools } from '../public/webmcp-tools.js';
 import { sceneFor } from '../src/scenes.js';
@@ -393,7 +393,8 @@ test('landing: complete server-rendered page with prices from the pricing engine
   assert.equal(q.plans[1].total_price_eur, from.wild_plus);
   // The FAQ quote count is computed from the market data; the methodology line and page are gone.
   assert.equal(quoteCount(marketQuotes), 13);
-  assert.ok(html.includes('Lo calibramos con 13 presupuestos reales de otras aseguradoras.'));
+  assert.equal(comparedPriceCount(marketQuotes), 26);
+  assert.ok(html.includes('Lo calibramos con 26 precios de 3 aseguradoras (Heymondo, IATI e Intermundial) para 3 viajes tipo.'));
   assert.ok(!html.includes('/metodologia') && !html.includes('Precios calibrados'));
   // Traveller ages: a dropdown per traveller, 0–85, "Menos de 1 año" for 0, 30 años selected by default.
   const options = [...html.matchAll(/<option value="(\d+)"( selected)?>([^<]+)<\/option>/g)];

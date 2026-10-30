@@ -8,7 +8,7 @@ import { logoHtml } from './logo.js';
 import * as art from './illustrations.js';
 import { heroScene, miniScene, routeStrip, sceneFor, sceneSprite, SCENE_IDS } from './scenes.js';
 import { EVENT_NAMES } from './events.js';
-import { quoteCount } from '../config/market-quotes.js';
+import { quoteCount, comparedPriceCount, calibrationTrips } from '../config/market-quotes.js';
 
 export const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 export const fill = (template, values) => String(template).replace(/\{(\w+)\}/g, (m, key) => (key in values ? values[key] : m));
@@ -66,6 +66,8 @@ export function copyValues(pricing, market) {
     trekkingAltitude: plus.adventure_sports_limits.trekking_max_altitude_m.toLocaleString('es-ES', { useGrouping: 'always' }),
     divingDepth: plus.adventure_sports_limits.scuba_diving_max_depth_m,
     count: quoteCount(market),
+    comparedPrices: comparedPriceCount(market),
+    comparedTrips: calibrationTrips.length,
   };
 }
 
@@ -469,6 +471,7 @@ function faqHtml({ brand, values, contactEmail }) {
   const t = brand.texts;
   return t.faq.map(f => {
     const answer = escapeHtml(fill(f.a, values))
+      .replace(/\[([^\]]+)\]\((\/caso#calibracion)\)/g, '<a href="$2">$1</a>')
       .replace(/\[([^\]]+)\]\(#quote-form\)/g, '<a href="#quote-form" data-focus-form>$1</a>');
     return `<details class="faq-item"><summary>${escapeHtml(f.q)}</summary><p>${answer}</p></details>`;
   }).join('');

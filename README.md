@@ -6,7 +6,7 @@ Seguro de viaje con deportes de aventura que se contrata en la web o con un agen
 ## Pruébalo
 **https://wildpass.taile53924.ts.net**
 
-- **Como persona:** «Probar con un ejemplo» (Tailandia, 2 viajeros de 35 y 38 años, 14 días) → elige plan → DNI de prueba `12345678Z` y tarjeta `4242 4242 4242 4242` (fecha futura, CVC cualquiera). La póliza en PDF llega por email (si no la ves, mira en Spam o usa «Reenviar»).
+- **Como persona:** «Probar con un ejemplo» (Tailandia, 2 viajeros de 35 y 38 años, 15 días) → elige plan → DNI de prueba `12345678Z` y tarjeta `4242 4242 4242 4242` (fecha futura, CVC cualquiera). La póliza en PDF llega por email (si no la ves, mira en Spam o usa «Reenviar»).
 - **Con un agente:** abre la web en un navegador con WebMCP (Chrome nativo o polyfill MCP-B) y pídele un seguro. Guía: [/agentes](https://wildpass.taile53924.ts.net/agentes) · [/llms.txt](https://wildpass.taile53924.ts.net/llms.txt) · Coberturas: [/condiciones](https://wildpass.taile53924.ts.net/condiciones)
 
 ## Arquitectura

@@ -322,8 +322,8 @@ export default {
       // Three parallel points per plan: medical · adventure · cancellation (values from the pricing config).
       points: {
         wild: ['Médicos hasta {wildMedWorld} fuera de Europa', 'Sin deportes de aventura', 'Sin cancelación'],
-        wild_plus: ['Médicos hasta {plusMedWorld}', 'Trekking hasta {trekkingAltitude} m y buceo hasta {divingDepth} m, rescate {rescue}', 'Cancelación hasta {plusCancellation}'],
-        wild_max: ['Médicos hasta {maxMedWorld}', 'Trekking hasta {maxTrekkingAltitude} m y buceo hasta {maxDivingDepth} m, rescate {maxRescue}', 'Cancelación hasta {maxCancellation} e interrupción del viaje'],
+        wild_plus: ['Médicos hasta {plusMedWorld} fuera de Europa', 'Trekking hasta {trekkingAltitude} m y buceo hasta {divingDepth} m, rescate {rescue}', 'Cancelación hasta {plusCancellation}'],
+        wild_max: ['Médicos hasta {maxMedWorld} fuera de Europa', 'Trekking hasta {maxTrekkingAltitude} m y buceo hasta {maxDivingDepth} m, rescate {maxRescue}', 'Cancelación hasta {maxCancellation} e interrupción del viaje'],
       },
       wildPlusBadge: 'Recomendado si haces deporte',
       from: 'Desde {price}',
@@ -369,7 +369,7 @@ export default {
       { q: '¿Quién puede contratarlo?', a: 'Residentes en España, para viajes que salen de España, de hasta {maxTripDays} días, de {minTravelers} a {maxTravelers} viajeros por póliza y de {minAge} a {maxAge} años. Para ver el precio no te pedimos datos personales; al contratar te pedimos nombre, email, fecha de nacimiento y el DNI o NIE de quien contrata. [Calcula tu precio](#quote-form).' },
       { q: '¿Puedo contratarlo si no vivo en España?', a: 'Por ahora no: Wildpass solo asegura a residentes en España que viajan desde España al extranjero. Pronto, más países.' },
       { q: '¿Por qué me pedís el DNI?', a: 'Para emitir la póliza a tu nombre, como cualquier aseguradora. Solo lo pedimos al contratar en la web, nunca para ver el precio, y lo mostramos siempre enmascarado. Si contrata un agente de IA sin DNI, la póliza queda como «DNI pendiente» y lo completa la persona con un enlace de un solo uso.' },
-      { q: '¿Cómo calculáis el precio?', a: 'El precio depende del destino (Europa, resto del mundo, o EE. UU., Canadá y Japón), de los días de viaje y de la edad de cada viajero. Lo calibramos con {count} presupuestos reales de otras aseguradoras. [Mira cuánto cuesta tu viaje](#quote-form).' },
+      { q: '¿Cómo calculáis el precio?', a: 'El precio depende del destino (Europa, resto del mundo, o EE. UU., Canadá y Japón), de los días de viaje y de la edad de cada viajero. Lo calibramos con {comparedPrices} precios de 3 aseguradoras (Heymondo, IATI e Intermundial) para {comparedTrips} viajes tipo. [Mira cómo lo calibré](/caso#calibracion). [Mira cuánto cuesta tu viaje](#quote-form).' },
       { q: '¿Cuánto tarda en llegar la póliza?', a: 'La póliza se emite en cuanto se confirma el pago (de prueba): puedes descargarla al momento y te la enviamos por email, donde suele llegar en un par de minutos. Si no la ves, mira en Spam.' },
       { q: '¿A qué destinos no podéis asegurar?', a: 'A los países donde el Ministerio de Asuntos Exteriores recomienda no viajar. Si eliges uno, el formulario te lo dice al momento.' },
       { q: '¿Qué no cubre ningún plan?', a: 'Las enfermedades preexistentes (salvo la primera asistencia urgente), los incidentes bajo los efectos del alcohol o las drogas, los deportes profesionales y las actividades extremas, los viajes en contra de las recomendaciones oficiales, los actos intencionados y los viajes de más de {maxTripDays} días.' },
@@ -474,7 +474,7 @@ export default {
     llms: {
       intro: 'Wildpass es una web de demostración de un seguro de viaje (planes Wild, Wild+ y Wild Max) que pueden usar tanto personas como agentes de IA.',
       howTitle: 'Cómo comprar (agentes de IA)',
-      how: 'La compra se hace con las herramientas WebMCP que la página principal ({url}) registra en el navegador (document.modelContext). Llámalas en este orden:',
+      how: 'La compra se hace con las herramientas WebMCP que la página principal ({url}) registra en el navegador (navigator.modelContext, también disponible como document.modelContext). Llámalas en este orden:',
       confirm: 'Antes de confirm_payment, enseña el resumen y el total a la persona y espera su confirmación explícita.',
       // Same sentence on /agentes (texts.agents.noCard) and, in English, in confirm_payment's description.
       noCard: 'Los agentes no deben introducir datos de tarjeta. Usa las herramientas WebMCP: tras la confirmación explícita del usuario, confirm_payment completa el pago de prueba en el servidor.',
@@ -518,7 +518,7 @@ export default {
       can: [
         'Calcular el precio de tu viaje y enseñarte los tres planes: Wild, Wild+ y Wild Max.',
         'Ayudarte a elegir: si vas a hacer trekking, buceo o esquí, solo Wild+ y Wild Max lo cubren.',
-        'Guardar tus datos y los de cada viajero: nombre y fecha de nacimiento. Tu DNI o NIE lo escribes tú con el enlace que recibes por email, y la tarjeta nunca la toca.',
+        'Guardar tus datos y los de cada viajero: nombre y fecha de nacimiento. Tu DNI o NIE es opcional para el asistente: recomendamos que lo escribas tú con el enlace que recibes por email. La tarjeta nunca la toca.',
         'Enseñarte el resumen completo, con el total, antes de pagar.',
         'Pagar (es un pago de prueba) solo cuando tú le digas que sí.',
         'Consultar tu póliza más tarde, con su número y tu email.',
@@ -851,7 +851,7 @@ export default {
       },
       marca: [
         { title: 'Nombre', text: 'Wildpass: «wild» (la aventura) + «pass» (la tarjeta de embarque y el pase que te deja entrar). La confirmación de compra es literalmente una tarjeta de embarque con el sello «Cubierto».' },
-        { title: 'Tono', text: 'Directo, cercano y con condiciones claras: «Travel wild. We\'ve got you.» y «Viaja salvaje. Nosotros te cubrimos.». Solo prometemos lo que cubren las condiciones, sin reseñas ni cifras inventadas. Hablamos como un amigo que ya ha estado allí, no como una póliza. Cuando se trata de coberturas, límites y precio, la claridad va antes que el ingenio.' },
+        { title: 'Tono', text: 'Directo, cercano y con condiciones claras: «Travel wild. We\'ve got you.». Solo prometemos lo que cubren las condiciones, sin reseñas ni cifras inventadas. Hablamos como un amigo que ya ha estado allí, no como una póliza. Cuando se trata de coberturas, límites y precio, la claridad va antes que el ingenio.' },
         { title: 'Ilustración por destino', text: 'La portada cambia de paisaje según el destino que eliges ({scenes} escenas propias en SVG, con paralaje suave): Tailandia, Japón, Perú, Islandia, México, EE. UU., una ciudad europea y la montaña por defecto. Sin fotos de stock.' },
         { title: 'Paleta y tipografía', text: 'Cielo, azul noche, turquesa y un amarillo reservado solo a los botones de acción, con contraste AA. Space Grotesk para titulares e Inter para el texto, alojadas en nuestro servidor.' },
       ],

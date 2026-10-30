@@ -56,5 +56,10 @@ export default {
   ],
 };
 
+// The trips shown in the /caso calibration table (and counted in the FAQ answer).
+export const calibrationTrips = ['Italia', 'Tailandia', 'EE. UU.'];
+// Competitor prices in that table: one per insurer and comparable plan that has a quote.
+export const comparedPriceCount = data => data.trips.filter(t => calibrationTrips.includes(t.label)).reduce((n, t) => n + Object.values(data.comparable).reduce((m, byInsurer) => m + data.insurers.filter(ins => t.quotes[ins]?.[byInsurer[ins]] !== undefined).length, 0), 0);
+
 // Number of quotes (one per insurer per trip).
 export const quoteCount = data => data.trips.reduce((n, trip) => n + Object.keys(trip.quotes).length, 0);
