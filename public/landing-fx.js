@@ -290,18 +290,6 @@ for (const card of document.querySelectorAll('.dest-card')) {
   });
 }
 
-// ---------- sections slide in once when they come into view ----------
-if (!reduced.matches && 'IntersectionObserver' in window) {
-  const sections = [...document.querySelectorAll('#landing > section:not(.hero)')];
-  const revealObserver = new IntersectionObserver(entries => {
-    for (const e of entries) if (e.isIntersecting) { e.target.classList.add('is-in'); revealObserver.unobserve(e.target); }
-  }, { rootMargin: '0px 0px -10% 0px' });
-  for (const section of sections) {
-    // Only sections still below the screen get the effect, so nothing already visible blinks.
-    if (section.getBoundingClientRect().top > innerHeight) { section.classList.add('reveal'); revealObserver.observe(section); }
-  }
-}
-
 // ---------- phones: sticky "Calcular mi seguro" bar ----------
 // Hidden only while the form's own button is on screen (and in the checkout: it lives inside #landing).
 // The page gets bottom padding while it shows (CSS), so it never hides content.

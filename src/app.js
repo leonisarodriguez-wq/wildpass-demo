@@ -174,7 +174,7 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
 
   for (const [path, kind] of [['/terminos', 'terminos'], ['/privacidad', 'privacidad']]) {
     app.get(path, (req, res) => {
-      res.type('html').send(pageShell({ brand, title: brand.texts.legal[kind].pageTitle, body: legalPageBody({ brand, kind }), pageClass: 'readable', scripts: ['/page-view.js'] }));
+      res.type('html').send(pageShell({ brand, title: brand.texts.legal[kind].pageTitle, body: legalPageBody({ brand, kind, contactEmail: env.CONTACT_EMAIL ?? '' }), pageClass: 'readable', scripts: [...(kind === 'terminos' ? ['/contact.js'] : []), '/page-view.js'] }));
     });
   }
 
@@ -184,7 +184,7 @@ export function createApp({ dataDir = join(ROOT, 'data'), env = process.env, fet
 
   // Hidden page: noindex, not in the menu; linked only from the footer's «Sobre esta demo».
   app.get('/caso', (req, res) => {
-    res.set('X-Robots-Tag', 'noindex').type('html').send(pageShell({ brand, title: brand.texts.caso.title, body: casePageBody({ brand, pricing, market: marketQuotes, payments }), scripts: ['/page-view.js'], head: '<meta name="robots" content="noindex">' }));
+    res.set('X-Robots-Tag', 'noindex').type('html').send(pageShell({ brand, title: brand.texts.caso.title, body: casePageBody({ brand, pricing, market: marketQuotes, payments, business }), scripts: ['/page-view.js'], head: '<meta name="robots" content="noindex">' }));
   });
 
   // /metricas: real data of this demo. noindex (meta + header), not in the sitemap, never cached.

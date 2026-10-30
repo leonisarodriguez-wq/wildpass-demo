@@ -109,7 +109,7 @@ test('experiments: assigned before the first paint, both hero variants server-re
   assert.ok(html.indexOf('<script src="/exp.js"></script>') < html.indexOf('</head>'), 'classic script in <head>');
   assert.ok(html.includes('<span class="hero-b">El seguro de viaje que sí cubre tu aventura</span>'));
   const css = await (await fetch(`${base}/style.css`)).text();
-  assert.ok(css.includes('html[data-exp-hero="b"] .hero-a, html[data-exp-hero="b"] .hero-tagline { display: none; }'));
+  assert.ok(css.includes('html[data-exp-hero="b"] .hero-a { display: none; }'));
   const exp = await (await fetch(`${base}/exp.js`)).text();
   assert.ok(exp.includes("params.get('exp_' + name)") && exp.includes('localStorage') && exp.includes('Math.random() < 0.5'));
   const app = await (await fetch(`${base}/app.js`)).text();

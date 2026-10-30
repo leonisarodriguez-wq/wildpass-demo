@@ -45,7 +45,6 @@
         <div class="hero-copy">
           <span class="hero-claim-b" lang="en">Travel wild. We've got you.</span>
           <h1 id="hero-title"><span class="hero-a" lang="en">{{{heroTitle}}}</span><span class="hero-b">{{t.heroB}}</span></h1>
-          <p class="hero-tagline">{{brand.claimEs}}</p>
           <p class="hero-sub">{{t.heroSubtitle}}</p>
         </div>
         <div class="route" id="route" aria-hidden="true">
@@ -54,7 +53,7 @@
           <span class="route-to" id="route-to"></span>
         </div>
         <form id="quote-form" class="quote-card pass" aria-labelledby="quote-title" novalidate>
-          <h2 class="pass-head" id="quote-title"><span class="pass-title">{{t.form.passLabel}}</span><span class="pass-brand" aria-hidden="true">{{brand.name}}</span></h2>
+          <h2 class="pass-head" id="quote-title"><span class="pass-title">{{t.form.passLabel}}</span></h2>
           <!-- Under the title: the discreet example link (right on computers, first on phones) and the adventure line. -->
           <div class="card-aid">
             <button type="button" class="link-button example-btn" id="example-fill">{{t.form.exampleButton}}</button>
@@ -111,6 +110,7 @@
           <li class="plan-card">
             <h3>{{planNames.wild}}</h3>
             <p class="desc">{{t.plans.wildDescription}}</p>
+            {{{pointsWild}}}
             <p class="from-price">{{price.wild}}<sup aria-hidden="true">*</sup></p>
             <a class="secondary block card-button" href="#quote-form" data-focus-form data-plan="wild">{{choose.wild}}</a>
           </li>
@@ -118,12 +118,14 @@
             <h3>{{planNames.wild_plus}}</h3>
             <p class="badge">{{t.plans.wildPlusBadge}}</p>
             <p class="desc">{{t.plans.wildPlusDescription}}</p>
+            {{{pointsWildPlus}}}
             <p class="from-price">{{price.wild_plus}}<sup aria-hidden="true">*</sup></p>
             <a class="secondary block card-button" href="#quote-form" data-focus-form data-plan="wild_plus">{{choose.wild_plus}}</a>
           </li>
           <li class="plan-card">
             <h3>{{planNames.wild_max}}</h3>
             <p class="desc">{{maxDescription}}</p>
+            {{{pointsWildMax}}}
             <p class="from-price">{{price.wild_max}}<sup aria-hidden="true">*</sup></p>
             <a class="secondary block card-button" href="#quote-form" data-focus-form data-plan="wild_max">{{choose.wild_max}}</a>
           </li>

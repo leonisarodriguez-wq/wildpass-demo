@@ -306,6 +306,8 @@ $('#quote-form').addEventListener('submit', async e => {
   const form = $('#quote-form');
   const ages = ageInputs();
   if (!validateAll(quoteChecks())) return;
+  // Also here, not only on the select's change event: a destination restored by the browser (back button, autofill) sets no change event.
+  if ($('#destination').value) track('destination_selected');
 
   await busy($('#quote-submit'), T.form.loading, async () => {
     const result = await callApi('get_quote', {
@@ -342,8 +344,11 @@ function formHasData() {
 }
 function fillExample() {
   const ex = T.form.example;
-  // Departure = today + startInDays; the return keeps `tripDays` days counting both ends (like the server).
-  const departure = addDays(todayMadrid(), ex.startInDays);
+  // Departure = the next «day/month» after today (strictly later, like the server); the return keeps `tripDays` days counting both ends.
+  const today = todayMadrid();
+  const md = `-${String(ex.month).padStart(2, '0')}-${String(ex.day).padStart(2, '0')}`;
+  const year = Number(today.slice(0, 4));
+  const departure = `${year}${md}` > today ? `${year}${md}` : `${year + 1}${md}`;
   const returnDate = addDays(departure, ex.tripDays - 1);
   $('#destination').value = ex.destination;
   $('#destination').dispatchEvent(new Event('change', { bubbles: true }));
@@ -919,36 +924,6 @@ $('#forward-form').addEventListener('submit', async e => {
   syncSendButtons();
 });
 liveCheck($('#forward-form'), () => [[$('#forward-email'), () => (EMAIL_SHAPE.test($('#forward-email').value.trim()) ? null : A().missingEmail)]]);
-
-// ---------- contact form (FAQ) ----------
-// Sent to /api/contact; the server validates again, limits per session and never shows the owner's address.
-const contactForm = $('#contact-form');
-if (contactForm) {
-  const K = () => T.contact;
-  const f = id => $(`#contact-${id}`);
-  const checks = () => [
-    [f('name'), () => (f('name').value.trim().length >= 2 ? null : K().missingName)],
-    [f('email'), () => (!f('email').value.trim() ? K().missingEmail : EMAIL_SHAPE.test(f('email').value.trim()) ? null : E.INVALID_EMAIL)],
-    [f('message'), () => (f('message').value.trim().length >= 2 ? null : K().missingMessage)],
-    [f('consent'), () => (f('consent').checked ? null : K().missingConsent)],
-  ];
-  contactForm.addEventListener('submit', async e => {
-    e.preventDefault();
-    $('#contact-status').textContent = '';
-    if (!validateAll(checks())) return;
-    await busy($('#contact-send'), K().sending, async () => {
-      const result = await callApi('contact', {
-        name: f('name').value, email: f('email').value.trim(), message: f('message').value,
-        consent: f('consent').checked, website: f('website').value, session_id: sessionId(),
-      });
-      if (!result.ok) return showError(contactForm, friendly(result));
-      showError(contactForm, null);
-      $('#contact-status').textContent = fill(K().sent, { email: f('email').value.trim() });
-      f('message').value = '';
-    });
-  });
-  liveCheck(contactForm, checks);
-}
 
 // ---------- navigation ----------
 for (const b of document.querySelectorAll('[data-go]')) {

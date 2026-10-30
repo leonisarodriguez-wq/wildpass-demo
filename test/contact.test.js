@@ -37,11 +37,16 @@ const post = async body => {
 };
 const good = { name: 'Ana Prueba', email: 'ana@example.com', message: 'Hola, una pregunta.', consent: true, website: '', session_id: 'sessionAAAAAAAAAAAAAAAA' };
 
-test('the landing has the contact form but never the owner address', async () => {
-  const html = await (await fetch(`${base}/`)).text();
-  assert.ok(html.includes('id="contact-form"'));
+test('the contact form lives in /terminos → Contacto (not in the FAQ), and no page shows the owner address', async () => {
+  const html = await (await fetch(`${base}/terminos`)).text();
+  assert.ok(html.indexOf('<h2 id="contacto">') < html.indexOf('id="contact-form"'), 'the form is inside the Contacto section');
   assert.ok(html.includes('id="contact-website"'), 'honeypot field');
-  assert.ok(!html.includes(OWNER) && !html.includes('mailto:'), 'no owner address in the page');
+  assert.ok(html.includes('<script type="module" src="/contact.js"></script>'));
+  const home = await (await fetch(`${base}/`)).text();
+  assert.ok(!home.includes('id="contact-form"') && !home.includes('¿Cómo contacto con vosotros?'), 'no contact form or question in the FAQ');
+  const privacy = await (await fetch(`${base}/privacidad`)).text();
+  assert.ok(privacy.includes('href="/terminos#contacto"') && !privacy.includes('id="contact-form"'));
+  for (const page of [html, home, privacy]) assert.ok(!page.includes(OWNER) && !page.includes('mailto:'), 'no owner address in the page');
 });
 
 test('a valid message goes to CONTACT_EMAIL with reply-to and the demo line', async () => {

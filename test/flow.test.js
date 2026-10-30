@@ -456,8 +456,9 @@ test('brand: name, claim, colours and self-hosted fonts', async () => {
     assert.ok(html.includes('href="/favicon.svg"'), 'favicon link missing');
   }
   assert.ok(home.includes('<!--logo-->') === false);
-  // Under the English claim: the short Spanish line (turquoise, Space Grotesk), then the explanation.
-  assert.ok(home.includes('<p class="hero-tagline">Viaja salvaje. Nosotros te cubrimos.</p>\n          <p class="hero-sub">Seguro de viaje con deportes de aventura y la póliza en tu email en 2 minutos.</p>'));
+  // The hero has no Spanish tagline line any more (owner, 30 Oct 2026): the headline is followed by the explanation, and the form stub has no small brand label.
+  assert.ok(!home.includes('hero-tagline') && !home.includes('Viaja salvaje. Nosotros te cubrimos.</p>') && !home.includes('pass-brand'));
+  assert.ok(home.includes('</h1>\n          <p class="hero-sub">Seguro de viaje con deportes de aventura y la póliza en tu email en 2 minutos.</p>'));
   const favicon = await fetch(`${base}/favicon.svg`);
   assert.equal(favicon.headers.get('content-type'), 'image/svg+xml; charset=utf-8');
   assert.ok((await favicon.text()).includes('rx="12"'));
@@ -507,7 +508,7 @@ test('AI block on the landing: only title, text, the example chat and the compat
   assert.equal((html.match(/<li class="trust-item">/g) ?? []).length, 6);
   for (const [main, sub] of [['Póliza en tu email en 2 min', 'sin papeleos'], ['Cancelación por causas cubiertas', 'hasta 5.000 € por viajero con Wild Max · 3.000 € con Wild+'],
     ['Deportes de aventura incluidos', 'trekking, buceo, esquí… y rescate, con Wild+ y Wild Max'], ['Condiciones claras', 'Consulta los límites y exclusiones de cada plan'],
-    ['Lo esencial, bien cubierto', 'médicos, dentista, equipaje y retraso de maleta'], ['Sin franquicia en Wild+ y Wild Max', 'no pagas los primeros euros']]) {
+    ['Lo esencial, bien cubierto', 'médicos, dentista, equipaje y retraso de maleta'], ['Sin franquicia en Wild+ y Wild Max', 'en Wild, 75 € por siniestro médico']]) {
     assert.ok(html.includes(`<span class="trust-main">${main}</span><span class="trust-sub">${sub}</span>`), main);
   }
   // The success step shows no payment reference (it stays in the API, the PDF and the email).
@@ -745,10 +746,10 @@ test('landing: what-if scenarios and destination cards use the real limits and e
   assert.ok(!panels[0][0].includes(' hidden>') && panels.slice(1).every(p => p[0].includes(' hidden>')), 'only the first card shows');
   assert.equal((panels[0][1].match(/verdict is-ok/g) ?? []).length, 3, 'first situation covered by the three plans');
   assert.ok(html.includes('Desliza para ver más situaciones') && !html.includes('id="whatif-strip"'));
-  // 10 destination cards.
-  assert.equal((html.match(/class="dest-card"/g) ?? []).length, 10);
+  // 9 destination cards (Marruecos is out until its zone is calibrated).
+  assert.equal((html.match(/class="dest-card"/g) ?? []).length, 9);
   // "Wild desde X €" = Wild, 7 days, 1 adult, from the engine for that country's zone.
-  for (const code of ['TH', 'IT', 'US', 'FR', 'MA', 'CA']) {
+  for (const code of ['TH', 'IT', 'US', 'FR', 'CA']) {
     const q = await call('get_quote', quoteInput({ destination_country: code, return_date: addDays(DEP, 6), traveler_ages: [35] }));
     const wild = q.plans.find(p => p.plan === 'wild').total_price_eur.toLocaleString('es-ES', { minimumFractionDigits: 2 });
     assert.ok(html.includes(`data-country="${code}"`) && html.includes(`Wild desde ${wild} €`), `${code} ${wild}`);
@@ -803,15 +804,15 @@ test('quote form helpers: destination aliases point at real, coverable countries
   assert.equal(brand.texts.checkout.birthDateHint, 'Formato dd/mm/aaaa, por ejemplo 07/03/1990.');
 });
 
-test('/caso: hidden case page (noindex, only «Sobre esta demo» in the footer), 9 parts, roadmap, nothing left to fill in', async () => {
+test('/caso: hidden case page (noindex, only «Sobre esta demo» in the footer), 11 parts, roadmap, nothing left to fill in', async () => {
   const res = await fetch(`${base}/caso`);
   assert.equal(res.status, 200);
   assert.equal(res.headers.get('x-robots-tag'), 'noindex');
   const html = nbsp(await res.text());
   assert.ok(html.includes('Demo — no es un seguro real'));
-  const parts = ['El reto', 'Para quién', 'La propuesta', 'Marca', 'Distribución en la era de los agentes', 'Cómo mido', 'Experimentos en marcha', 'Hoja de ruta a 90 días', 'Con un equipo y un presupuesto reales'];
+  const parts = ['El reto', 'Para quién', 'La propuesta', 'Cómo calibré el precio', 'Marca', 'Distribución en la era de los agentes', 'Cómo mido', 'Experimentos preparados', 'Hoja de ruta a 90 días', 'Con un equipo y un presupuesto reales', 'Siguientes pasos'];
   const at = parts.map(p => html.indexOf(`-title">${p}</h2>`));
-  assert.ok(!at.includes(-1) && [...at].sort((a, b) => a - b).join() === at.join(), 'all 9 parts, in order');
+  assert.ok(!at.includes(-1) && [...at].sort((a, b) => a - b).join() === at.join(), 'all 11 parts, in order');
   assert.equal((html.match(/<li class="phase">/g) ?? []).length, 3);
   for (const when of ['Días 0–30', 'Días 30–60', 'Días 60–90']) assert.ok(html.includes(when), when);
   assert.ok(html.includes('href="/metricas"') && html.includes('<code>policy_forwarded</code>'));
@@ -819,7 +820,15 @@ test('/caso: hidden case page (noindex, only «Sobre esta demo» in the footer),
   assert.ok(!/COMPLETAR|DATO A VERIFICAR|mark class="todo"/.test(html), 'no placeholders left');
   assert.ok(html.includes('<a href="https://www.ine.es/dyngs/Prensa/ETR4T25.htm" rel="noopener">'));
   for (const step of ['KYC', 'residentes de otros países', 'JSON-LD', 'email_quote']) assert.ok(html.includes(step), step);
-  assert.ok(html.includes('Los datos sensibles (tarjeta y DNI) los introduce siempre la persona, nunca el agente'));
+  assert.ok(html.includes('La tarjeta la introduce siempre la persona, nunca el agente. El DNI es opcional para el agente: recomendamos que lo complete la persona con un enlace de un solo uso.'));
+  assert.ok(!html.includes('Mi lectura del reto: para mí') && html.includes('lanza un seguro de viajes que una persona pueda contratar en la web') && !html.includes('undefined'));
+  assert.ok(html.includes('<code>example_used</code> Usa el botón Probar con un ejemplo.'));
+  // Calibration: three real trips, our engine price next to the real competitor quotes of config/market-quotes.js.
+  const calib = html.slice(html.indexOf('id="calibracion"'), html.indexOf('id="marca"'));
+  for (const label of ['Italia · 8 días', 'Tailandia · 15 días', 'EE. UU. · 11 días']) assert.ok(calib.includes(label), label);
+  for (const price of ['<strong>22 €</strong>', '<strong>29,50 €</strong>', '<strong>59,99 €</strong>', '<strong>85,08 €</strong>', '<strong>57 €</strong>', '<strong>80 €</strong>', '30,50 € <span class="muted">(Top)</span>', '109,37 € <span class="muted">(Premium)</span>', 'sin presupuesto']) assert.ok(calib.includes(price), price);
+  assert.ok(calib.includes('Cómo funcionan las zonas') && calib.includes('Cómo cuentan los días') && calib.includes('El recargo por edad'));
+  assert.ok(html.includes('-title">Siguientes pasos</h2>') && !html.includes('Siguiente paso:'));
   for (const thing of ['Render', 'Railway', 'Dominio propio', 'aseguradora real']) assert.ok(html.includes(thing), thing);
   for (const path of ['/', '/agentes', '/condiciones', '/caso']) {
     const page = await (await fetch(`${base}${path}`)).text();

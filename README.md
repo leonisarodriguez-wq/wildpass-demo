@@ -24,7 +24,7 @@ agente ──► WebMCP ─────┘
 **Controles antes de pagar:** código de revisión de un solo uso (caduca si cambian los datos), `accept_terms`, confirmación explícita y total exacto; reglas comprobadas en el servidor; errores con `error_code` y `how_to_fix`; pagos idempotentes; claves Stripe «live» rechazadas. **El agente nunca toca la tarjeta y el DNI es opcional para él:** sin DNI, la póliza queda «DNI pendiente» y la persona lo completa con un enlace de un solo uso.
 
 ## Despliegue
-Servidor Ubuntu 24.04. Servicio systemd `wildpass-app` (solo en 127.0.0.1:3000, se reinicia solo) publicado con **Tailscale Funnel** (HTTPS, dirección fija). Usé Funnel en lugar del Cloudflare Quick Tunnel sugerido porque trycloudflare.com servía su propio robots.txt y bloqueaba a los agentes de IA.
+Servidor Ubuntu 24.04. Servicio systemd `wildpass-app` (solo en 127.0.0.1:3000, se reinicia solo) publicado con **Tailscale Funnel** (HTTPS, dirección fija). Publico la web con Tailscale Funnel en lugar del túnel rápido de Cloudflare: la URL es estable (no cambia al reiniciar) y el HTTPS viene incluido; además, trycloudflare.com servía su propio robots.txt y bloqueaba a los agentes de IA.
 
 ```
 # En el servidor (Tailscale instalado y con sesión iniciada)

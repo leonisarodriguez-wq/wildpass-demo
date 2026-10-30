@@ -54,7 +54,7 @@ test('both documents are linked in the footer of every kind of page; step 3, ste
   const home = await get('/');
   assert.ok(home.includes('Acepto las <a href="/condiciones" target="_blank" rel="noopener">condiciones del seguro</a> y los <a href="/terminos" target="_blank" rel="noopener">términos de contratación</a>'));
   assert.ok(home.includes('<a href="/privacidad">Consulta cómo tratamos tus datos</a>'));
-  assert.ok(home.split('Consulta cómo tratamos tus datos').length - 1 >= 2, 'step 2 and the contact form both link to /privacidad');
+  assert.ok(home.split('Consulta cómo tratamos tus datos').length - 1 >= 1, 'step 2 links to /privacidad (the contact form moved to /terminos)');
   const llms = await get('/llms.txt');
   assert.ok(llms.includes('/terminos') && llms.includes('/privacidad'));
 });
@@ -89,17 +89,34 @@ test('«Probar con un ejemplo»: secondary button in the quote form, example dat
   assert.ok(html.includes('<button type="button" class="link-button example-btn" id="example-fill">Probar con un ejemplo</button>'));
   assert.ok(html.includes('id="example-confirm"') && html.includes('Sí, usar el ejemplo') && html.includes('No, mantener mis datos'));
   const config = await (await fetch(`${base}/api/config`)).json();
-  assert.deepEqual(config.texts?.form?.example ?? config.brand?.texts?.form?.example, { destination: 'TH', startInDays: 42, tripDays: 14, ages: [35, 38] });
+  assert.deepEqual(config.texts?.form?.example ?? config.brand?.texts?.form?.example, { destination: 'TH', month: 12, day: 10, tripDays: 15, ages: [35, 38] });
   const ev = await fetch(`${base}/api/events`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ event: 'example_used', session_id: 'abcdefghijklmnop1234', channel: 'web', device: 'desktop' }) });
   assert.equal((await ev.json()).ok, true);
 });
 
-test('the example trip moves with the calendar: departure in 6 weeks, 14 days, never in the past', async () => {
+test('one example trip everywhere: Tailandia, 10–24 Dec, ages 35 + 38 (button, chat, /agentes, code), price = get_quote', async () => {
   const { default: brand } = await import('../config/brand.config.js');
   const ex = brand.texts.form.example;
-  assert.equal(ex.startInDays, 42);
-  assert.equal(ex.tripDays, 14);
+  assert.deepEqual([ex.destination, ex.month, ex.day, ex.tripDays, ...ex.ages], ['TH', 12, 10, 15, 35, 38]);
+  // Next 10 Dec strictly after today (Madrid): the same rule as app.js, so the example never expires.
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date());
+  const y = Number(today.slice(0, 4));
+  const departure = `${y}-12-10` > today ? `${y}-12-10` : `${y + 1}-12-10`;
+  const ret = `${departure.slice(0, 4)}-12-24`;
   const js = await (await fetch(`${base}/app.js`)).text();
-  assert.ok(js.includes('addDays(todayMadrid(), ex.startInDays)') && js.includes('addDays(departure, ex.tripDays - 1)'));
+  assert.ok(js.includes('ex.month') && js.includes('addDays(departure, ex.tripDays - 1)'));
   assert.ok(!/2026-12-10/.test(js), 'no fixed example date in app.js');
+  const agents = await get('/agentes');
+  assert.ok(agents.includes(`departure_date: &#39;${departure}&#39;, return_date: &#39;${ret}&#39;`), 'code example dates');
+  assert.ok(agents.includes('del 10 al 24 de diciembre'));
+  const home = await get('/');
+  assert.ok(home.includes('Necesito un seguro para Tailandia, del 10 al 24 de diciembre, 2 personas de 35 y 38 años.'));
+  const res = await fetch(`${base}/api/get_quote`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ origin_country: 'ES', destination_country: 'TH', departure_date: departure, return_date: ret, traveler_ages: [35, 38] }) });
+  const q = await res.json();
+  assert.equal(q.ok, true);
+  assert.equal(q.trip.days, 15);
+  const plus = q.plans.find(p => p.plan === 'wild_plus').total_price_eur;
+  const shown = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(plus).replace(/\s/g, ' ');
+  assert.ok(home.replace(/&nbsp;/g, ' ').replace(/\u00a0/g, ' ').includes(`Wild+: ${shown.replace(/\s/g, ' ')} para los dos`), `the chat shows Wild+ = ${shown}`);
+  assert.equal(plus, 170.16);
 });

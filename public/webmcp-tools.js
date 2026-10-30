@@ -103,7 +103,7 @@ export function buildTools({ limits, plans, brand, payments }) {
     },
     {
       name: 'confirm_payment',
-      es: stripeOn ? 'Paga (pago de prueba con Stripe, el asistente nunca ve datos de tarjeta) y emite la póliza, solo si se cumplen todas estas reglas:' : 'Paga (pago simulado) y emite la póliza, solo si se cumplen todas estas reglas:',
+      es: stripeOn ? 'Paga (pago de prueba con Stripe, el asistente nunca ve datos de tarjeta) y emite la póliza, solo si se cumplen sus reglas de seguridad.' : 'Paga (pago simulado) y emite la póliza, solo si se cumplen sus reglas de seguridad.',
       // One plain Spanish line per safety field (test/webmcp-tools.test.js checks every required field has one).
       rulesEs: {
         review_token: 'el código del último resumen revisado. Caduca si cambian los datos o se vuelve a revisar.',

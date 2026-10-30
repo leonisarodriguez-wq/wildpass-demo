@@ -335,3 +335,11 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 ## Text fixes: /api/pricing link, zone assumption (30 Oct 2026, owner's request)
 - /caso «Distribución en la era de los agentes» no longer links /api/pricing (it is not public: Block 5 stays on `block5-later`); the line is «Agentes · llms.txt». The only other mention is the internal note above.
 - The zone assumption is written down: README «Edad» bullet, `docs/pricing-research.md` §7 «Zone limitations», and the first 90-day roadmap point on /caso (quote Japan, Canada, Morocco, Turkey, Egypt at the three insurers). Prices and zones unchanged.
+
+## Final review batch (30 Oct 2026, owner's request; payment logic and confirm_payment checks untouched)
+- Example trip everywhere = Tailandia, 10–24 Dec (15 days counting both ends), 2 travellers 35 + 38: button (`texts.form.example`: `month/day/tripDays/ages`, next 10 Dec from today in Madrid, so it rolls to next year after 10 Dec; supersedes the older "42 days" note), landing chat, /agentes text and code (2026-12-10 → 2026-12-24; Wild+ 170,16 € = get_quote).
+- Hero: no `.hero-tagline` / «Viaja salvaje…» and no `.pass-brand` label any more (notch offsets in style.css were recalculated: desktop +43 px, <600 px +37 px). On phones (<600 px) the adventure line under the form title is hidden so «Calcular mi seguro» fits on 375×812 (bottom at 809 px).
+- Plan cards: short phrase + 3 bullets (`texts.plans.points`, `planPoints()` in landing.js → template keys `{{{pointsWild}}}` etc.; triple braces accept `\w` names only, NO dots). Benefits card: «Sin franquicia en Wild+ y Wild Max / en Wild, 75 € por siniestro médico». Marruecos removed from the destination cards (still in the dropdown) → 9 cards.
+- DNI wording is one message everywhere: optional for agents, we recommend the person completes it via the emailed link, otherwise «DNI pendiente».
+- The contact form left the FAQ: it is now in /terminos «Contacto» (`public/contact.js`, shown only if CONTACT_EMAIL is set). The FAQ has no contact question. Scroll-reveal was removed (everything visible at once).
+- /caso: new «Cómo calibré el precio» (3-trip table vs Heymondo/IATI/Intermundial from `config/market-quotes.js` + engine), «Siguientes pasos», «Experimentos preparados». Web funnel now counts `destination_selected` (also from the example button and destination cards).

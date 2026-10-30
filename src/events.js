@@ -96,7 +96,8 @@ export function createEvents({ db, now = () => new Date() }) {
       ? count('SELECT COUNT(DISTINCT session_id) AS n FROM events WHERE event = ? AND channel = ?', event, channel)
       : count('SELECT COUNT(DISTINCT session_id) AS n FROM events WHERE event = ?', event));
     const STEPS = ['quote_viewed', 'plan_selected', 'details_completed', 'review_viewed', 'payment_started', 'policy_issued'];
-    const funnel = channel => [{ step: 'sessions', n: sessionsFor(channel) }, ...STEPS.map(step => ({ step, n: stepFor(step, channel) }))];
+    // Agents never pick a destination in the form (they pass it to get_quote), so that step is only in the web funnel.
+    const funnel = channel => [{ step: 'sessions', n: sessionsFor(channel) }, ...(channel === 'web' ? ['destination_selected'] : []).concat(STEPS).map(step => ({ step, n: stepFor(step, channel) }))];
 
     const plans = event => Object.fromEntries(PLAN_IDS.map(p => [p, count('SELECT COUNT(DISTINCT session_id) AS n FROM events WHERE event = ? AND plan = ?', event, p)]));
     const otherEvents = Object.fromEntries(EVENT_NAMES.map(name => [name, count('SELECT COUNT(*) AS n FROM events WHERE event = ?', name)]));

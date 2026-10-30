@@ -189,10 +189,15 @@ export function agentsPageBody({ brand, pricing, payments, now = new Date() }) {
   const tools = realTools({ brand, pricing, payments });
   const pay = tools.find(tool => tool.name === 'confirm_payment');
   const rules = (pay.inputSchema.required ?? []).filter(f => pay.rulesEs[f]);
-  // Copyable examples with dates that are always valid (about six weeks ahead, a 15-day trip).
-  const day = n => new Date(now.getTime() + n * 86400000).toISOString().slice(0, 10);
+  // Copyable examples with dates that are always valid: the same trip as the button (next 10 Dec after today, 15 days counting both ends).
+  const ex = brand.texts.form.example;
+  const todayMadridIso = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(now);
+  const md = `-${String(ex.month).padStart(2, '0')}-${String(ex.day).padStart(2, '0')}`;
+  const y = Number(todayMadridIso.slice(0, 4));
+  const departure = `${y}${md}` > todayMadridIso ? `${y}${md}` : `${y + 1}${md}`;
+  const day = n => new Date(Date.parse(`${departure}T00:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
   const examples = [
-    [g.exampleCall, `const mc = document.modelContext ?? navigator.modelContext;\nconst quote = await mc.executeTool('get_quote', {\n  origin_country: 'ES', destination_country: 'TH',\n  departure_date: '${day(45)}', return_date: '${day(59)}',\n  traveler_ages: [35, 38],\n});\nconsole.log(quote.plans.map(p => [p.plan_name, p.total_price_eur]));`],
+    [g.exampleCall, `const mc = document.modelContext ?? navigator.modelContext;\nconst quote = await mc.executeTool('get_quote', {\n  origin_country: 'ES', destination_country: 'TH',\n  departure_date: '${day(0)}', return_date: '${day(ex.tripDays - 1)}',\n  traveler_ages: [35, 38],\n});\nconsole.log(quote.plans.map(p => [p.plan_name, p.total_price_eur]));`],
     [g.exampleError, JSON.stringify({ ok: false, error_code: 'TOTAL_MISMATCH', message: 'El total confirmado no coincide con el total revisado (170,16 €).', how_to_fix: 'Envía confirmed_total_eur como número, exactamente igual al total_eur que devolvió review_order y que el usuario ha aceptado.' }, null, 2)],
     [g.examplePay, `await mc.executeTool('confirm_payment', {\n  order_id: order.order_id,\n  review_token: review.review_token,\n  accept_terms: true,       // the user accepted the terms\n  user_confirmed: true,     // the user said yes to this total\n  confirmed_total_eur: review.total_eur,\n});`],
   ];
@@ -230,12 +235,12 @@ export function agentsPageBody({ brand, pricing, payments, now = new Date() }) {
       <h3>${escapeHtml(g.webmcpTitle)}</h3>
       <p>${escapeHtml(g.webmcpText)}</p>
       <h3>${escapeHtml(fill(g.toolsTitle, { count: tools.length }))}</h3>
-      <ol class="dev-tool-list">${tools.map(tool => `<li><code>${escapeHtml(tool.name)}</code> ${escapeHtml(tool.es)}</li>`).join('')}</ol>
+      <ol class="dev-tool-list">${tools.map(tool => `<li><code>${escapeHtml(tool.name)}</code> ${escapeHtml(tool.es)}${tool === pay ? ` <a href="#reglas-confirm-payment">${escapeHtml(g.rulesLink)}</a>` : ''}</li>`).join('')}</ol>
       <p>${escapeHtml(g.where)}</p>
       <h3>${escapeHtml(g.flowTitle)}</h3>
       <p class="dev-flow">${flow.join(' → ')} · <code>get_policy</code></p>
       <p>${escapeHtml(g.flowText)}</p>
-      <h3>${escapeHtml(g.rulesTitle)}</h3>
+      <h3 id="reglas-confirm-payment">${escapeHtml(g.rulesTitle)}</h3>
       <p>${escapeHtml(g.rulesIntro)}</p>
       <ul class="dev-rules">${rules.map(f => `<li><code>${escapeHtml(f)}</code>: ${escapeHtml(pay.rulesEs[f])}</li>`).join('')}</ul>
       <h3>${escapeHtml(g.compatTitle)}</h3>
@@ -293,19 +298,19 @@ export function incidentPageBody({ brand }) {
 }
 
 // /terminos and /privacidad: demo documents (texts.legal). `[text](/path)` in a paragraph = an internal link.
-export function legalPageBody({ brand, kind }) {
+export function legalPageBody({ brand, kind, contactEmail = '' }) {
   const t = brand.texts.legal;
   const doc = t[kind];
   const link = line => escapeHtml(line).replace(/\[([^\]]+)\]\((\/[^)\s]*)\)/g, '<a href="$2">$1</a>');
   return `<h1>${escapeHtml(doc.title)}</h1><p class="legal-notice" role="note"><strong>${escapeHtml(doc.notice)}</strong></p>
     <nav class="terms-index" aria-label="${escapeHtml(t.indexLabel)}"><p class="terms-index-label">${escapeHtml(t.indexLabel)}</p>
       <ol>${doc.sections.map(sec => `<li><a href="#${sec.id}">${escapeHtml(sec.title)}</a></li>`).join('')}</ol></nav>
-    ${doc.sections.map(sec => `<h2 id="${sec.id}">${escapeHtml(sec.title)}</h2>${(sec.paragraphs ?? []).map(x => `<p>${link(x)}</p>`).join('')}${sec.list ? `<ul>${sec.list.map(x => `<li>${link(x)}</li>`).join('')}</ul>` : ''}`).join('')}
+    ${doc.sections.map(sec => `<h2 id="${sec.id}">${escapeHtml(sec.title)}</h2>${(sec.paragraphs ?? []).map(x => `<p>${link(x)}</p>`).join('')}${sec.list ? `<ul>${sec.list.map(x => `<li>${link(x)}</li>`).join('')}</ul>` : ''}${sec.form && contactEmail ? contactFormHtml(brand) : ''}`).join('')}
     <p><a href="/">← ${escapeHtml(brand.texts.back)}</a></p>`;
 }
 
 // /caso: the case study (draft). Product numbers come from the configs; [COMPLETAR] / [DATO A VERIFICAR] are highlighted.
-export function casePageBody({ brand, pricing, market, payments }) {
+export function casePageBody({ brand, pricing, market, payments, business }) {
   const t = brand.texts;
   const k = t.caso;
   const values = { ...copyValues(pricing, market), scenes: SCENE_IDS.length, tools: realTools({ brand, pricing, payments }).length };
@@ -314,6 +319,25 @@ export function casePageBody({ brand, pricing, market, payments }) {
     .replace(/\[([^\]]+)\]\((https:\/\/[^)\s]+)\)/g, '<a href="$2" rel="noopener">$1</a>')
     .replace(/\[(COMPLETAR|DATO A VERIFICAR)[^\]]*\]/g, m => `<mark class="todo">${m}</mark>`);
   const cards = list => `<div class="case-cards">${list.map(c => `<div class="case-card"><h3>${escapeHtml(c.title)}</h3><p>${text(c.text)}</p></div>`).join('')}</div>`;
+  // "Cómo calibré el precio": the real quotes of config/market-quotes.js next to our engine's price for the same trip and plan.
+  const calibration = () => {
+    const c = k.calibracion;
+    const dayCount = (from, to) => Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000) + 1;
+    const tables = market.trips.filter(trip => c.trips[trip.label]).map(trip => {
+      const days = dayCount(trip.from, trip.to);
+      const rows = Object.entries(pricing.plans).map(([planId, plan]) => {
+        const ours = formatEur(business.pricePerTravelerCents(trip.zone, planId, days, trip.age) / 100);
+        const cells = market.insurers.map(ins => {
+          const name = market.comparable[planId][ins];
+          const price = trip.quotes[ins]?.[name];
+          return `<td>${price === undefined ? escapeHtml(c.noQuote) : `${escapeHtml(formatEur(price))} <span class="muted">(${escapeHtml(name)})</span>`}</td>`;
+        }).join('');
+        return `<tr><th scope="row">${escapeHtml(plan.name)}</th><td><strong>${escapeHtml(ours)}</strong></td>${cells}</tr>`;
+      }).join('');
+      return `<h3>${escapeHtml(c.trips[trip.label])}</h3><div class="table-scroll"><table class="metrics-table"><thead><tr><th scope="col">${escapeHtml(c.planCol)}</th><th scope="col">${escapeHtml(c.ours)}</th>${market.insurers.map(i => `<th scope="col">${escapeHtml(i)}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`;
+    }).join('');
+    return `<p>${text(c.intro)}</p>${tables}<p>${text(c.note)}</p>${c.explain.map(p => `<p>${text(p)}</p>`).join('')}`;
+  };
   const section = (id, inner) => `<section class="case-section" id="${id}" aria-labelledby="${id}-title"><h2 id="${id}-title">${escapeHtml(k.sections[id])}</h2>${inner}</section>`;
   const swatches = Object.entries(k.paletteNames).map(([key, name]) => `<li><svg class="swatch" viewBox="0 0 28 28" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="27" height="27" rx="8" fill="${brand.colors[key]}" stroke="${brand.colors.border}"/></svg>${escapeHtml(name)} <code>${escapeHtml(brand.colors[key])}</code></li>`).join('');
   const roadmap = `<ol class="roadmap">${k.ruta.map(phase => `<li class="phase"><p class="phase-when">${escapeHtml(phase.when)}</p><h3>${escapeHtml(phase.title)}</h3><ul>${phase.items.map(i => `<li>${text(i)}</li>`).join('')}</ul></li>`).join('')}</ol>`;
@@ -323,6 +347,7 @@ export function casePageBody({ brand, pricing, market, payments }) {
     ${section('reto', k.reto.map(p => `<p>${text(p)}</p>`).join(''))}
     ${section('quien', k.quien.map(p => `<p>${text(p)}</p>`).join(''))}
     ${section('propuesta', cards(k.propuesta))}
+    ${section('calibracion', calibration())}
     ${section('marca', `${cards(k.marca)}<h3>${escapeHtml(k.paletteLabel)}</h3><ul class="swatches">${swatches}</ul>`)}
     ${section('agentes', `${cards(k.agentes)}<p><a href="/agentes">${escapeHtml(t.nav.agents)}</a> · <a href="/llms.txt">llms.txt</a></p>`)}
     ${section('medicion', `<p>${text(k.medicion)}</p><p><a class="secondary button-link" href="/metricas">${escapeHtml(k.metricsLink)}</a></p>
@@ -330,6 +355,7 @@ export function casePageBody({ brand, pricing, market, payments }) {
     ${section('experimentos', `${k.experimentos.map(x => `<div class="case-card"><h3>${escapeHtml(x.title)}</h3><p>${text(x.text)}</p><p><strong>${text(x.decision)}</strong></p></div>`).join('')}<p>${text(k.experimentsNote)}</p>`)}
     ${section('ruta', roadmap)}
     ${section('distinto', `<ul>${k.distinto.map(i => `<li>${text(i)}</li>`).join('')}</ul>`)}
+    ${section('siguientes', `<ul>${k.siguientes.map(i => `<li>${text(i)}</li>`).join('')}</ul>`)}
     <p><a href="/">← ${escapeHtml(t.back)}</a></p>`;
 }
 
@@ -420,13 +446,14 @@ function trustHtml({ brand, values }) {
     + `<span class="trust-text"><span class="trust-main">${escapeHtml(fill(item.text, values))}</span><span class="trust-sub">${escapeHtml(fill(item.sub, values))}</span></span></li>`).join('');
 }
 
-// FAQ answers: escaped text, then [text](#quote-form) → a link to the quote form, {contactLink} → a mailto link.
-// The contact question's answer: a form posted to /api/contact (src/contact.js). The owner's address stays on the
+// The contact form (shown in /terminos → Contacto when CONTACT_EMAIL is set): posted to /api/contact (src/contact.js) by public/contact.js. The owner's address stays on the
 // server. "website" is a honeypot: hidden from people and screen readers, bots fill it in.
 function contactFormHtml(brand) {
   const c = brand.texts.contact;
   const e = escapeHtml;
-  return `<p>${e(c.intro)}</p><form id="contact-form" class="contact-form" novalidate>`
+  const data = { 'missing-name': c.missingName, 'missing-email': c.missingEmail, 'missing-message': c.missingMessage, 'missing-consent': c.missingConsent, 'invalid-email': c.invalidEmail, sent: c.sent, sending: c.sending, generic: c.generic };
+  const attrs = Object.entries(data).map(([k, v]) => ` data-${k}="${e(v)}"`).join('');
+  return `<p>${e(c.intro)}</p><form id="contact-form" class="contact-form"${attrs} novalidate>`
     + `<div class="field"><label for="contact-name">${e(c.name)}</label><input id="contact-name" name="name" autocomplete="name" maxlength="100" aria-required="true"></div>`
     + `<div class="field"><label for="contact-email">${e(c.email)}</label><p class="hint" id="contact-email-hint">${e(c.emailHelp)}</p><input id="contact-email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="254" aria-required="true" aria-describedby="contact-email-hint"></div>`
     + `<div class="field"><label for="contact-message">${e(c.message)}</label><textarea id="contact-message" name="message" rows="5" maxlength="2000" aria-required="true"></textarea></div>`
@@ -440,8 +467,7 @@ function contactFormHtml(brand) {
 
 function faqHtml({ brand, values, contactEmail }) {
   const t = brand.texts;
-  return t.faq.filter(f => !f.needsContact || contactEmail).map(f => {
-    if (f.needsContact) return `<details class="faq-item"><summary>${escapeHtml(f.q)}</summary><div class="faq-answer">${contactFormHtml(brand)}</div></details>`;
+  return t.faq.map(f => {
     const answer = escapeHtml(fill(f.a, values))
       .replace(/\[([^\]]+)\]\(#quote-form\)/g, '<a href="#quote-form" data-focus-form>$1</a>');
     return `<details class="faq-item"><summary>${escapeHtml(f.q)}</summary><p>${answer}</p></details>`;
@@ -475,6 +501,7 @@ export function createLanding({ brand, pricing, business, market, countries, tem
   // baseUrl = this request's public address: link previews need absolute URLs (the public address comes from the request).
   function landingHtml({ baseUrl = '' } = {}) {
     const prices = fromPrices(business, pricing);
+    const planPoints = id => `<ul class="plan-points">${t.plans.points[id].map(x => `<li>${escapeHtml(fill(x, values))}</li>`).join('')}</ul>`;
     const html = {
       iconLinks, fontPreloads,
       skipLink: skipLinkHtml(brand),
@@ -491,6 +518,7 @@ export function createLanding({ brand, pricing, business, market, countries, tem
       trust: trustHtml({ brand, values }),
       travelerRow: firstTravelerRow(t.form, pricing.limits),
       maxTravelersNote: escapeHtml(fill(t.form.maxTravelersNote, pricing.limits)),
+      pointsWild: planPoints('wild'), pointsWildPlus: planPoints('wild_plus'), pointsWildMax: planPoints('wild_max'),
       iconPin: art.iconPin, iconCalendar: art.iconCalendar, iconPeople: art.iconPeople, iconRemove: art.iconRemove, iconCard: art.iconCard,
     };
     return render(template, {
