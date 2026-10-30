@@ -42,7 +42,7 @@ El servicio asume el usuario `leonisa_prueba` y la carpeta `~/travel-demo` (ajus
 - **Fórmula:** precio por viajero = base de 7 días (zona × plan) × factor de duración × factor de edad. Total = suma de viajeros.
 - **Variables del brief:** destino (3 zonas: Europa · resto del mundo · EE. UU., Canadá y Japón), días, número y edad de viajeros, y plan. **Origen:** de momento solo viajes desde España para residentes en España, el mercado de las tres aseguradoras de referencia. Otro origen exigiría otra tarifa base; la API lo rechaza con `ORIGIN_NOT_SUPPORTED` (y otra residencia, con `RESIDENCE_NOT_COVERED`).
 - **Calibración:** 13 presupuestos reales de Heymondo, IATI e Intermundial (28/10/2026) con los mismos destinos y fechas. Regla: **ligeramente por debajo de la mediana** de los planes comparables de cada nivel. Las pruebas automáticas fallan si un precio se aleja más de un ±5 % de su objetivo.
-- **Edad:** 65–74 años ×1,65 (dato de Intermundial). **Supuestos marcados:** menores, mayores de 75, viajes de más de 15 días y los límites de Wild Max.
+- **Edad:** 65–74 años ×1,65 (dato de Intermundial). **Supuestos marcados:** menores, mayores de 75, viajes de más de 15 días, los límites de Wild Max y las zonas (Japón y Canadá comparten la tarifa de EE. UU.; Marruecos, Turquía, Egipto y Túnez cuentan como «resto del mundo»; ninguno tiene presupuesto propio).
 - Detalle y tablas: [docs/pricing-research.md](docs/pricing-research.md).
 
 ## Producto

@@ -324,7 +324,7 @@ export function casePageBody({ brand, pricing, market, payments }) {
     ${section('quien', k.quien.map(p => `<p>${text(p)}</p>`).join(''))}
     ${section('propuesta', cards(k.propuesta))}
     ${section('marca', `${cards(k.marca)}<h3>${escapeHtml(k.paletteLabel)}</h3><ul class="swatches">${swatches}</ul>`)}
-    ${section('agentes', `${cards(k.agentes)}<p><a href="/agentes">${escapeHtml(t.nav.agents)}</a> · <a href="/llms.txt">llms.txt</a> · <a href="/api/pricing">/api/pricing</a></p>`)}
+    ${section('agentes', `${cards(k.agentes)}<p><a href="/agentes">${escapeHtml(t.nav.agents)}</a> · <a href="/llms.txt">llms.txt</a></p>`)}
     ${section('medicion', `<p>${text(k.medicion)}</p><p><a class="secondary button-link" href="/metricas">${escapeHtml(k.metricsLink)}</a></p>
       <h3>${escapeHtml(k.eventsLabel)}</h3><ul class="case-events">${EVENT_NAMES.map(e => `<li><code>${e}</code> ${escapeHtml(k.events[e])}</li>`).join('')}</ul>`)}
     ${section('experimentos', `${k.experimentos.map(x => `<div class="case-card"><h3>${escapeHtml(x.title)}</h3><p>${text(x.text)}</p><p><strong>${text(x.decision)}</strong></p></div>`).join('')}<p>${text(k.experimentsNote)}</p>`)}

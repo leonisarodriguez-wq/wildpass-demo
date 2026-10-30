@@ -331,3 +331,7 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
   (no layout shift). The final CTA, other pages' headers, /condiciones and the 404 keep A. `busy()` in app.js restores innerHTML (not textContent) so both spans survive.
 - Metric: sessions that sent the quote form (`quote_viewed`, web) / sessions that saw the landing, by variant. Hypothesis (also on /caso): a button that names the trip's reason raises quote submissions over a generic one.
   WebMCP and the agent flow are untouched. Tests: `test/events.test.js` (cta + migration), `test/flow.test.js` accepts both texts.
+
+## Text fixes: /api/pricing link, zone assumption (30 Oct 2026, owner's request)
+- /caso «Distribución en la era de los agentes» no longer links /api/pricing (it is not public: Block 5 stays on `block5-later`); the line is «Agentes · llms.txt». The only other mention is the internal note above.
+- The zone assumption is written down: README «Edad» bullet, `docs/pricing-research.md` §7 «Zone limitations», and the first 90-day roadmap point on /caso (quote Japan, Canada, Morocco, Turkey, Egypt at the three insurers). Prices and zones unchanged.

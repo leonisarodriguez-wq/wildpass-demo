@@ -137,3 +137,11 @@ Calibrated 7-day base prices (the same length and age formula as the other plans
 Common exclusions stay (extreme activities, professional sports, trips over 90 days). Because coverage was not compared line by line (§5.6), the price position of Wild Max is **a market-price position, not proof that the coverage is equivalent**. **Collect real premium-plan limits before treating these as final.**
 
 **Why three plans.** The top plan anchors the price and makes Wild+ the natural choice. We will measure it with the plan split in `/metricas` (`plan_selected`, `policy_issued` by plan). The upsell experiment still compares Wild+ with Wild (the daily-cost line is shown only under Wild+).
+
+## 7. Zone limitations
+
+The real quotes only cover Italy (Europe), Thailand (rest of world), the USA and Mexico. Japan and Canada share the "USA, Canada and Japan" zone rate, and Morocco, Turkey, Egypt and Tunisia count as "Rest of world" (Europe means geographic Europe only). None of these has a quote of its own.
+
+- Heymondo prices Mexico and the USA almost identically, while IATI and Intermundial charge more for the USA.
+- The zone split follows two of the three competitors.
+- Next to quote: Japan, Canada, Morocco, Turkey and Egypt, at all three insurers.
