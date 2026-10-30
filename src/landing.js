@@ -236,6 +236,7 @@ export function agentsPageBody({ brand, pricing, payments, now = new Date() }) {
       <p>${escapeHtml(g.residence)}</p>
       <h3>${escapeHtml(g.webmcpTitle)}</h3>
       <p>${escapeHtml(g.webmcpText)}</p>
+      <p class="agent-wait"><strong>${escapeHtml(g.toolsWait)}</strong> ${escapeHtml(fill(g.reload, { quoteDays: pricing.limits.quoteValidDays }))}</p>
       <h3>${escapeHtml(fill(g.toolsTitle, { count: tools.length }))}</h3>
       <ol class="dev-tool-list">${tools.map(tool => `<li><code>${escapeHtml(tool.name)}</code> ${escapeHtml(tool.es)}${tool === pay ? ` <a href="#reglas-confirm-payment">${escapeHtml(g.rulesLink)}</a>` : ''}</li>`).join('')}</ol>
       <p>${escapeHtml(g.where)}</p>
@@ -377,7 +378,7 @@ export function llmsTxt({ brand, pricing, payments, baseUrl }) {
   const rules = (pay.inputSchema.required ?? []).filter(f => pay.rulesEs[f]);
   return [
     `# ${brand.name}`, '', `> ${brand.siteBanner}`, '', l.intro, '',
-    `## ${l.howTitle}`, '', `**${l.noCard}**`, '', fill(l.how, { url: `${baseUrl}/` }), '',
+    `## ${l.howTitle}`, '', `**${l.noCard}**`, '', `**${l.toolsWait}**`, '', fill(l.reload, { quoteDays: pricing.limits.quoteValidDays }), '', fill(l.how, { url: `${baseUrl}/` }), '',
     ...tools.flatMap((tool, i) => [`${i + 1}. ${tool.name}: ${tool.es}`, ...(tool === pay ? rules.map(f => `   - ${f}: ${pay.rulesEs[f]}`) : [])]), '',
     l.confirm, '',
     `## ${l.whoTitle}`, '', l.residence, '', `**${l.dni}**`, '', l.dniHow, '', l.testId, '',

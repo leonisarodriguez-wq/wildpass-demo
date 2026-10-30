@@ -199,6 +199,7 @@ export default {
       compatNote: 'Funciona con asistentes y navegadores compatibles con WebMCP, un estándar nuevo que se está incorporando a Chrome.', // /agentes
       // A discreet link at the end of the AI block, in the served HTML (agents reading the raw HTML find it).
       agentsLink: 'Ver cómo funciona',
+      assistantsNote: 'Instrucciones para asistentes:',
       devTitle: 'Para desarrolladores',
       devIntro: 'Esta página ofrece {count} herramientas WebMCP a los asistentes de IA:',
       // Animated example (an illustration, not a live chat). {price}/{plan} come from the pricing engine for `example`.
@@ -490,7 +491,9 @@ export default {
       // Same sentence on /agentes (texts.agents.dni) and, in English, in set_traveler_details' description.
       dni: 'El DNI/NIE es opcional para los agentes. Por privacidad, recomendamos que lo introduzca la propia persona con el enlace que recibe por email.',
       dniHow: 'set_traveler_details acepta holder_id_number (opcional). Sin él, la póliza se emite con estado «DNI pendiente» y la persona lo completa con un enlace de un solo uso. Siempre se muestra enmascarado (*****678Z).',
-      testId: 'DNI de prueba válido para esta demo (dato de prueba, no es de nadie): 12345678Z.',
+      testId: 'El DNI/NIE es opcional. No lo inventes. Usa el DNI de prueba 12345678Z solo si la persona te lo indica.',
+      toolsWait: 'Las herramientas se registran 1–2 segundos después de cargar la página: espera a que navigator.modelContext las liste antes de concluir que no existen.',
+      reload: 'Recargar la página no borra nada en el servidor: quote_id (válido {quoteDays} días), order_id y review_token siguen valiendo, pero solo los conoces tú (no hay herramienta para recuperarlos), y si pierdes el review_token basta volver a llamar a review_order para obtener otro.',
       moreTitle: 'Más información',
       agentsLink: 'Instrucciones para agentes y desarrolladores',
       termsLink: 'Condiciones del seguro',
@@ -550,10 +553,12 @@ export default {
       noCard: 'Los agentes no deben introducir datos de tarjeta. Usa las herramientas WebMCP: tras la confirmación explícita del usuario, confirm_payment completa el pago de prueba en el servidor.',
       dni: 'El DNI/NIE es opcional para los agentes. Por privacidad, recomendamos que lo introduzca la propia persona con el enlace que recibe por email.',
       dniHow: 'set_traveler_details acepta holder_id_number (opcional, DNI u NIE con su letra de control). Sin él, la póliza se emite con estado «DNI pendiente» y la persona lo completa con un enlace de un solo uso; review_order, confirm_payment y get_policy dicen el estado y el DNI siempre enmascarado (*****678Z).',
-      testId: 'DNI de prueba válido para esta demo (dato de prueba, no es de nadie): 12345678Z.',
+      testId: 'El DNI/NIE es opcional. No lo inventes. Usa el DNI de prueba 12345678Z solo si la persona te lo indica.',
       residence: 'Wildpass solo asegura a residentes en España que viajan desde España al extranjero. get_quote acepta residence_country (opcional, por defecto "ES"); con otro país responde RESIDENCE_NOT_COVERED: pregunta a la persona su país de residencia.',
       webmcpTitle: 'Qué es WebMCP',
       webmcpText: 'WebMCP es un estándar web nuevo (en preparación en el W3C y en pruebas en Chrome) que permite a una página ofrecer «herramientas» a los asistentes de IA del navegador: en vez de leer la pantalla y pulsar botones, el asistente llama a funciones con datos claros. La página principal de Wildpass registra sus herramientas al cargarse, y cada una usa las mismas reglas del servidor que la web.',
+      toolsWait: 'Las herramientas se registran 1–2 segundos después de cargar la página: espera a que navigator.modelContext las liste antes de concluir que no existen.',
+      reload: 'Recargar la página no borra nada en el servidor: quote_id (válido {quoteDays} días), order_id y review_token siguen valiendo, pero solo los conoces tú (no hay herramienta para recuperarlos), y si pierdes el review_token basta volver a llamar a review_order para obtener otro.',
       toolsTitle: 'Las {count} herramientas, en orden',
       where: 'Las herramientas están disponibles en la página principal.',
       flowTitle: 'El flujo',
@@ -913,6 +918,9 @@ export default {
         'Un botón para compartir la póliza con quien viaja contigo.',
         'Un programa de referidos con un código de amigo.',
         'La herramienta WebMCP email_quote, para que un asistente envíe el presupuesto con el permiso de la persona.',
+        'Un servidor MCP remoto o endpoint HTTP con el mismo motor, para asistentes sin navegador.',
+        'Estado del pedido recuperable con el order_id.',
+        'Resumen en texto plano en review_order, listo para mostrar a la persona.',
       ],
     },
 

@@ -264,6 +264,8 @@ select[hidden] { display: none; } /* the plain <select> once the search box repl
 .prompt-text::before { content: open-quote; } .prompt-text::after { content: close-quote; }
 .copy-prompt { min-height: 44px; padding: 8px 20px; font-size: 1rem; }
 .ai-note { font-size: 0.95rem; margin: 16px auto 0; max-width: 40rem; }
+.ai-assistants { white-space: nowrap; font-size: 0.8125rem; margin: 12px auto 0; max-width: 40rem; color: var(--white); }
+.ai-assistants a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 2px; color: var(--white); font-weight: 600; text-underline-offset: 3px; }
 .ai-agents { font-size: 1rem; margin: 16px auto 0; max-width: 40rem; }
 /* Short link, one line, 44 px touch target, centred like the rest of the block. */
 .ai-agents a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 8px; color: var(--white); font-weight: 700; text-underline-offset: 4px; white-space: nowrap; }

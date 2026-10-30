@@ -128,3 +128,20 @@ test('/terminos «Contacto»: one intro text and one privacy link, no repeated s
   assert.equal(section.split('href="/privacidad"').length - 1, 1);
   assert.ok(section.includes('Consulta cómo tratamos tus datos'));
 });
+
+test('agents wording: wait sentence in bold before the tool list, one DNI sentence, reload truth, assistants note and llms link in the head', async () => {
+  const wait = 'Las herramientas se registran 1–2 segundos después de cargar la página: espera a que navigator.modelContext las liste antes de concluir que no existen.';
+  const dni = 'El DNI/NIE es opcional. No lo inventes. Usa el DNI de prueba 12345678Z solo si la persona te lo indica.';
+  const agentes = await (await fetch(`${base}/agentes`)).text();
+  assert.ok(agentes.includes(`<strong>${wait}</strong>`) && agentes.indexOf(wait) < agentes.indexOf('class="dev-tool-list"'));
+  assert.ok(agentes.includes(dni) && !agentes.includes('dato de prueba, no es de nadie'));
+  assert.ok(agentes.includes('Recargar la página no borra nada en el servidor: quote_id (válido 7 días)'));
+  const llms = await (await fetch(`${base}/llms.txt`)).text();
+  assert.ok(llms.includes(`**${wait}**`) && llms.indexOf(wait) < llms.indexOf('1. get_quote'));
+  assert.ok(llms.includes(dni) && llms.includes('Recargar la página no borra nada en el servidor'));
+  const home = await (await fetch(`${base}/`)).text();
+  assert.ok(home.includes('<link rel="alternate" type="text/plain" href="/llms.txt" title="Instrucciones para agentes de IA">'));
+  assert.ok(home.includes('Instrucciones para asistentes: <a href="/agentes">/agentes</a> · <a href="/llms.txt">/llms.txt</a>'));
+  const caso = await (await fetch(`${base}/caso`)).text();
+  for (const s of ['Un servidor MCP remoto o endpoint HTTP con el mismo motor, para asistentes sin navegador.', 'Estado del pedido recuperable con el order_id.', 'Resumen en texto plano en review_order, listo para mostrar a la persona.']) assert.ok(caso.includes(s), s);
+});

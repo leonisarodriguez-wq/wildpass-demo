@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{t.pageTitle}}</title>
   <meta name="description" content="{{t.metaDescription}}">
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="Instrucciones para agentes de IA">
   <meta name="theme-color" content="#0E7C86">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="{{brand.name}}">
@@ -164,6 +165,7 @@
         <h2 id="ai-title">{{t.ai.title}}</h2>
         <p class="ai-text">{{t.ai.text}}</p>
         {{{showcase}}}
+        <p class="ai-assistants">{{t.ai.assistantsNote}} <a href="/agentes">/agentes</a> · <a href="/llms.txt">/llms.txt</a></p>
         <p class="ai-agents"><a href="/agentes">{{t.ai.agentsLink}}<span class="arrow" aria-hidden="true">→</span></a></p>
       </div>
     </section>
