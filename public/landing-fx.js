@@ -302,7 +302,7 @@ if (!reduced.matches && 'IntersectionObserver' in window) {
   }
 }
 
-// ---------- phones: sticky "Ver mi precio" bar ----------
+// ---------- phones: sticky "Calcular mi seguro" bar ----------
 // Hidden only while the form's own button is on screen (and in the checkout: it lives inside #landing).
 // The page gets bottom padding while it shows (CSS), so it never hides content.
 const sticky = $('#sticky-cta');

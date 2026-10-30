@@ -95,12 +95,12 @@ export function bannerHtml(brand) {
 // "Saltar al contenido": the first thing a keyboard user reaches on every page (visible only when focused).
 export const skipLinkHtml = brand => `<a class="skip-link" href="#contenido">${escapeHtml(brand.texts.nav.skip)}</a>`;
 
-// Site header on every page: logo, "Preguntas frecuentes", "Agentes", "Condiciones" and "Ver mi precio".
+// Site header on every page: logo, "Preguntas frecuentes", "Agentes", "Condiciones" and "Calcular mi seguro".
 // Phones and tablets: the links fold into a simple "Menú" panel (public/site-nav.js). On the landing the links stay on the page.
 export function headerHtml(brand, { home = false } = {}) {
   const n = brand.texts.nav;
   const root = home ? '' : '/';
-  // Sticky under the demo banner. "Ver mi precio" sits in the bar itself (never folded into the menu), so it is always
+  // Sticky under the demo banner. "Calcular mi seguro" sits in the bar itself (never folded into the menu), so it is always
   // visible, except on landing phones (<700 px), where the bottom sticky bar shows it instead: never two at once.
   return `<header class="site-header${home ? ' is-home' : ''}"><div class="wrap header-bar">${logoHtml()}
   <nav class="site-nav" id="site-nav" aria-label="${escapeHtml(n.label)}">
@@ -251,7 +251,7 @@ export function agentsPageBody({ brand, pricing, payments, now = new Date() }) {
     <p><a href="/">← ${escapeHtml(t.back)}</a></p>`;
 }
 
-// /condiciones: Wild vs Wild+ table first, an index with anchors, each plan's own exclusions, the common ones, "Ver mi precio".
+// /condiciones: Wild vs Wild+ table first, an index with anchors, each plan's own exclusions, the common ones, "Calcular mi seguro".
 export function termsPageBody({ brand, pricing }) {
   const t = brand.texts;
   const c = t.terms;

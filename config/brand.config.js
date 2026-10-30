@@ -47,7 +47,7 @@ export default {
 
   // Website texts. {placeholders} are filled in by the server (src/landing.js) or by public/app.js.
   texts: {
-    // Site header (every page): skip link, menu links and the "Ver mi precio" button. Phones: a simple "Menú" panel.
+    // Site header (every page): skip link, menu links and the "Calcular mi seguro" button. Phones: a simple "Menú" panel.
     nav: {
       skip: 'Saltar al contenido',
       label: 'Menú principal',
@@ -56,7 +56,7 @@ export default {
       faq: 'Preguntas frecuentes',
       agents: 'Agentes',
       terms: 'Condiciones',
-      cta: 'Ver mi precio',
+      cta: 'Calcular mi seguro',
     },
     pageTitle: 'Seguros Wildpass · Seguro de viaje con deportes de aventura (demo)',
     metaDescription: 'Demo de seguro de viaje con deportes de aventura. Para ver tu precio no te pedimos datos personales.',
@@ -102,7 +102,7 @@ export default {
       defaultAge: 30,
       addTraveler: '+ Añadir viajero',
       removeTravelerLabel: 'Quitar el viajero {n}',
-      submit: 'Ver mi precio',
+      submit: 'Calcular mi seguro',
       note: 'Gratis y sin compromiso: para ver tu precio no te pedimos datos personales.',
       // «Probar con un ejemplo» (secondary button): fills the example trip and calculates. The example itself: `example` below.
       exampleButton: 'Probar con un ejemplo',
@@ -114,7 +114,7 @@ export default {
       residence: 'Desde España · Para residentes en España',
       loading: 'Calculando…',
       passLabel: 'Calcula tu precio',
-      // Live price above "Ver mi precio", from get_quote (cheapest plan, all travellers). Shown ONLY once there is a price.
+      // Live price above "Calcular mi seguro", from get_quote (cheapest plan, all travellers). Shown ONLY once there is a price.
       pricePreview: 'Tu precio: desde {price}',
       pricePreviewSub: 'plan {plan} · {n} {travelersWord}',
       routeFrom: 'España',
@@ -308,7 +308,7 @@ export default {
     },
 
     // Landing: sticky bar on phones once the hero is off screen
-    stickyCta: 'Ver mi precio',
+    stickyCta: 'Calcular mi seguro',
 
     // Landing: plans band
     plans: {
@@ -319,7 +319,7 @@ export default {
       wildPlusBadge: 'Recomendado si haces deporte',
       from: 'Desde {price}',
       fromNote: '7 días en Europa, 1 adulto.',
-      seePrice: 'Ver mi precio',
+      seePrice: 'Calcular mi seguro',
       choose: 'Elegir {plan}', // secondary: goes to the form with this plan preselected for step 1
       whatCovers: 'Ver qué cubre',
     },
@@ -366,7 +366,7 @@ export default {
       { q: '¿Cómo contacto con vosotros?', a: '{contactForm}', needsContact: true },
     ],
     finalCtaTitle: '¿Preparado para empezar tu viaje?',
-    finalCtaButton: 'Ver mi precio',
+    finalCtaButton: 'Calcular mi seguro',
 
     // Footer
     footerLegal: 'Seguros Wildpass es un producto ficticio creado para una demostración. No es un seguro real, no ofrece cobertura y ningún pago es real. Hecho con WebMCP.',
@@ -1016,7 +1016,7 @@ export default {
     // Terms page, PDF and email
     termsTitle: 'Condiciones del seguro (demo)',
     termsIntro: 'Esto es una demostración. No es un seguro real y no ofrece ninguna cobertura. Ningún pago es real: en la web se paga con la tarjeta de prueba 4242 4242 4242 4242 de Stripe, y los asistentes de IA usan la herramienta confirm_payment, sin tarjeta.',
-    // /condiciones: comparison table first, an index with anchors, "Ver mi precio" at the end.
+    // /condiciones: comparison table first, an index with anchors, "Calcular mi seguro" at the end.
     terms: {
       indexLabel: 'En esta página',
       compareTitle: 'Wild, Wild+ y Wild Max de un vistazo',

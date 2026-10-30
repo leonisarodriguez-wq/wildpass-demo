@@ -47,12 +47,22 @@ html { scroll-padding-top: calc(var(--sticky-h, 90px) + 8px); }
   .site-nav li + li { border-top: 1px solid var(--border); }
   .site-nav a:not(.primary) { min-height: 48px; }
 }
-/* Landing on phones: the bottom sticky bar says "Ver mi precio", so the header doesn't (never two at once). */
+/* Landing on phones: the bottom sticky bar says "Calcular mi seguro", so the header doesn't (never two at once). */
 @media (max-width: 699px) {
   .site-header.is-home .nav-cta { display: none; }
   .header-bar { gap: 8px; }
   .header-bar .nav-cta { min-height: 40px; padding: 6px 12px; font-size: 0.9rem; }
   .site-header:not(.is-home) .menu-toggle { padding: 6px 12px; }
+}
+/* "Calcular mi seguro" is longer than the old button text: on narrow phones the header's other pages squeeze a little so "Menú" never leaves the screen. */
+@media (max-width: 419px) {
+  .site-header:not(.is-home) .header-bar { gap: 6px; }
+  .site-header:not(.is-home) .nav-cta { padding: 6px 9px; font-size: 0.85rem; }
+  .site-header:not(.is-home) .menu-toggle { padding: 6px 10px; }
+  .site-header:not(.is-home) .logo { gap: 6px; }
+  .site-header:not(.is-home) .logo svg { width: 32px; height: 32px; }
+  .site-header:not(.is-home) .logo .wordmark { font-size: 1.3rem; }
+  .site-header:not(.is-home) .logo .tagline { font-size: 0.64rem; }
 }
 @media (max-width: 374px) { .site-header:not(.is-home) .logo-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
 @media (min-width: 960px) {
@@ -165,7 +175,7 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .pass-title { font-size: 1.6rem; line-height: 32px; letter-spacing: -0.02em; color: var(--night); }
 .pass-brand { font-size: 0.7rem; line-height: 16px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--turquoise-text); }
 
-/* Live price, right above "Ver mi precio": "Tu precio: desde X €" big in night blue, "plan Wild · 1 viajero" small under it.
+/* Live price, right above "Calcular mi seguro": "Tu precio: desde X €" big in night blue, "plan Wild · 1 viajero" small under it.
    Both lines are always there (placeholder first), so the button never moves; digits roll like an odometer. */
 .price-preview { display: grid; justify-items: center; margin: 4px 0 10px; text-align: center; }
 .price-preview[hidden] { display: none; }
@@ -435,7 +445,7 @@ html:has(.agent-pill:not([hidden])) .site-footer { padding-bottom: 90px; }
 .plan-option dt { font-size: 0.7rem; font-weight: 700; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.04em; line-height: 1.3; margin-bottom: 2px; }
 .plan-option dd { margin: 0; font-weight: 600; font-size: 0.95rem; line-height: 1.35; overflow-wrap: anywhere; }
 .plan-option .primary, .plan-option .secondary { width: 100%; min-height: 52px; padding: 10px 6px; font-size: 1rem; margin-top: 12px; align-self: end; }
-/* Phones: a compact first screen, so "Ver mi precio" shows without scrolling on a 375×812 phone. The landscape stays
+/* Phones: a compact first screen, so "Calcular mi seguro" shows without scrolling on a 375×812 phone. The landscape stays
    whole: only flat ground is cropped off its bottom, and the (smaller) route strip covers nothing but sky. */
 @media (max-width: 599px) {
   .site-header .wrap { padding-top: 4px; padding-bottom: 4px; }

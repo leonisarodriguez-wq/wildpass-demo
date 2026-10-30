@@ -362,11 +362,11 @@ test('landing: complete server-rendered page with prices from the pricing engine
   // Live price line sits ABOVE the button and stays hidden until there is a price (no placeholder).
   assert.ok(html.indexOf('id="price-preview"') < html.indexOf('id="quote-submit"') && html.includes('<p class="price-preview" id="price-preview" hidden><span class="pp-main"></span>'));
   assert.ok(!html.includes('Elige destino y fechas para verlo'));
-  // Header: skip link first, then menu links and "Ver mi precio"; phones fold them into "Menú".
+  // Header: skip link first, then menu links and "Calcular mi seguro"; phones fold them into "Menú".
   assert.ok(html.indexOf('class="skip-link" href="#contenido"') < html.indexOf('id="demo-banner"') && html.includes('id="contenido" tabindex="-1"'));
   for (const link of ['<a href="#preguntas" data-open-faq>Preguntas frecuentes</a>', '<a href="/agentes">Agentes</a>', '<a href="/condiciones">Condiciones</a>',
-    '<a class="primary nav-cta" href="#quote-form" data-focus-form>Ver mi precio</a>', 'id="menu-toggle" aria-expanded="false" aria-controls="site-nav"']) assert.ok(html.includes(link), link);
-  // Sticky header: "Ver mi precio" sits in the bar, outside the folding menu; the landing's header is marked is-home
+    '<a class="primary nav-cta" href="#quote-form" data-focus-form>Calcular mi seguro</a>', 'id="menu-toggle" aria-expanded="false" aria-controls="site-nav"']) assert.ok(html.includes(link), link);
+  // Sticky header: "Calcular mi seguro" sits in the bar, outside the folding menu; the landing's header is marked is-home
   // (CSS hides its button on phones, where the bottom sticky bar says it: never two at once).
   const header = html.slice(html.indexOf('<header class="site-header is-home">'), html.indexOf('</header>'));
   assert.ok(header.length > 0 && header.indexOf('nav-cta') > header.indexOf('</nav>'));
@@ -377,7 +377,7 @@ test('landing: complete server-rendered page with prices from the pricing engine
   assert.ok(html.includes('id="faq-toggle" aria-expanded="false" aria-controls="faq-list"') && html.includes('<div class="faq-list" id="faq-list" hidden>'));
   assert.ok((html.match(/<details class="faq-item">/g) ?? []).length >= 9);
   assert.ok(html.includes('<a href="#quote-form" data-focus-form>Calcula tu precio</a>'));
-  for (const text of ['Ver mi precio', 'Gratis y sin compromiso: para ver tu precio no te pedimos datos personales.',
+  for (const text of ['Calcular mi seguro', 'Gratis y sin compromiso: para ver tu precio no te pedimos datos personales.',
     'Viajeros y edad el día de la ida', 'La edad influye en el precio.', '+ Añadir viajero',
     'Tu asistente también puede contratarlo', 'Elige cómo quieres viajar',
     'Recomendado si haces deporte', '¿Preparado para empezar tu viaje?', 'Hecho con WebMCP']) {
@@ -578,7 +578,7 @@ test('/agentes: two parts, for anyone first, then for developers (flow, browsers
   assert.ok(dep > new Date().toISOString().slice(0, 10), dep);
 });
 
-test('/condiciones: Wild vs Wild+ table first, an index with working anchors, "Ver mi precio" at the end', async () => {
+test('/condiciones: Wild vs Wild+ table first, an index with working anchors, "Calcular mi seguro" at the end', async () => {
   const html = nbsp(await (await fetch(`${base}/condiciones`)).text());
   const index = html.indexOf('class="terms-index"');
   const table = html.indexOf('<table class="terms-table">');
@@ -594,7 +594,7 @@ test('/condiciones: Wild vs Wild+ table first, an index with working anchors, "V
   assert.ok(html.includes('<td data-plan="Wild">No incluida</td><td data-plan="Wild+">15.000 €</td>'));
   const cta = html.indexOf('<div class="page-cta">');
   assert.ok(cta > html.indexOf('id="exclusiones"'), 'CTA at the end');
-  assert.ok(html.slice(cta).includes('<a class="primary" href="/#quote-form">Ver mi precio</a>'));
+  assert.ok(html.slice(cta).includes('<a class="primary" href="/#quote-form">Calcular mi seguro</a>'));
 });
 
 test('404: unknown addresses get the branded page with the way back to the quote form', async () => {
@@ -605,7 +605,7 @@ test('404: unknown addresses get the branded page with the way back to the quote
     const html = await res.text();
     assert.ok(html.includes('Demo — no es un seguro real. Ningún pago es real.'), 'demo banner');
     assert.ok(html.includes('<title>Página no encontrada · Seguros Wildpass</title>'));
-    assert.ok(html.includes('<a class="primary" href="/#quote-form">Ver mi precio</a>') && html.includes('<a class="secondary" href="/">'));
+    assert.ok(html.includes('<a class="primary" href="/#quote-form">Calcular mi seguro</a>') && html.includes('<a class="secondary" href="/">'));
   }
   // The API keeps answering JSON.
   const api = await fetch(`${base}/api/nope`, { method: 'POST' });

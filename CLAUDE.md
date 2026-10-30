@@ -39,12 +39,12 @@ The owner is not a programmer: explain things simply, report test results honest
   for `texts.ai.example`, final state server-rendered; each message = one sr-only copy + one aria-hidden typed copy, so screen readers read it once).
   Landing order (30 Oct 2026, owner's request): hero + form → benefits strip (the old «trust» strip merged with the removed «Tú pon la aventura…» section: 6 white cards on sky, icon in a mint circle, `texts.trust`; each fact = bold `text` + smaller #3C5368 `sub` line; phones 2×3, ≥700 px 3 in a row) → plans «Elige cómo quieres viajar» (Wild, Wild+, Wild Max) → ¿Y si…? → destinations → AI block (chat + ONE short link "Ver cómo funciona →" to /agentes, one line, 44 px tall) → FAQ → final CTA → footer.
   Header on every page (`headerHtml` + `skipLinkHtml` in landing.js, public/site-nav.js): "Saltar al contenido" (→ #contenido), logo,
-  "Preguntas frecuentes" (#preguntas, opens the FAQ), "Agentes", "Condiciones" (<960 px they fold into a "Menú" panel), yellow "Ver mi precio"
+  "Preguntas frecuentes" (#preguntas, opens the FAQ), "Agentes", "Condiciones" (<960 px they fold into a "Menú" panel), yellow "Calcular mi seguro"
   in the bar itself. The header is STICKY under the sticky banner (always compact: never shrinks on scroll, that would be layout shift);
   site-nav.js sets --banner-h / --sticky-h, and `html { scroll-padding-top }` makes every anchor stop below them. Landing on phones (<700 px,
-  `.site-header.is-home`): the header has no "Ver mi precio", the bottom sticky bar says it (never two visible at once); other pages keep it.
+  `.site-header.is-home`): the header has no "Calcular mi seguro", the bottom sticky bar says it (never two visible at once); other pages keep it.
   Other pages (`pageShell` in landing.js): `/condiciones` (`termsPageBody`: index with anchors, Wild vs Wild+ table from the pricing
-  config — stacked per row on phones <600 px —, each plan's exclusions, common exclusions, "Ver mi precio" at the end) and a branded 404
+  config — stacked per row on phones <600 px —, each plan's exclusions, common exclusions, "Calcular mi seguro" at the end) and a branded 404
   (`notFoundBody`, last route in app.js; /api keeps its JSON 404). Link previews: Open Graph + twitter:card in index.html with absolute URLs
   from the request host (`landingHtml({ baseUrl })`), image `public/og-image.png` (1200×630, demo strip included, rendered from the hero
   scene in headless Chrome: re-render it if the brand changes). /agentes has TWO parts (index buttons on top): "Para cualquier persona" (what an assistant can do, a realistic example
@@ -64,7 +64,7 @@ The owner is not a programmer: explain things simply, report test results honest
   --notch-y, so keep .pass-title/.pass-brand line heights in sync. Sunrise 3.5 s + warm glow, once per visit (public/sun-once.js, a
   classic <head> script setting html.sun-seen from sessionStorage). Parallax far 0.14 / mid 0.07. Phones/tablets (<960 px): copy →
   the WHOLE 3:1 landscape band (sky strip on top holds the route; phones <600 px: 20 px strip, ground cropped 8 %, sun lifted via .sun-pos) → card on a turquoise "ground" (.hero-grid::after); nothing overlaps.
-  Phones: compact first screen — on 375×812 "Ver mi precio" is visible without scrolling (re-check after any hero/form change).
+  Phones: compact first screen — on 375×812 "Calcular mi seguro" is visible without scrolling (re-check after any hero/form change).
   Headline = two .claim-part blocks ("Travel wild." / "We've got you.") on an h1 with lang="en"; under it `.hero-tagline` = `brand.claimEs` (Space Grotesk bold, turquoise #0E7C86: large text, AA-large) and `.hero-sub` (`texts.heroSubtitle`, Inter, #3C5368) explains the offer; form and headline have NO entrance animation.
   Live price ABOVE the button (#price-preview: .pp-main "Tu precio: desde X €" + .pp-sub "plan Wild · n viajeros"), hidden until
   there IS a price (owner's choice: no placeholder; the button moves down once). Sticky phone bar: hidden only while the form's
@@ -91,7 +91,7 @@ The owner is not a programmer: explain things simply, report test results honest
   Sections fade in once (opacity only: moving them counted as layout shift); FAQ (10 questions, `faqHtml`: "[text](#quote-form)" in an answer = link to
   the form; the contact question shows only if CONTACT_EMAIL is in .env; its answer is a contact form (`contactFormHtml` in landing.js → POST /api/contact, `src/contact.js`: name, email, message, required consent, honeypot `website`, 3 messages per browser session and 10 per IP a day, in memory; sent with Brevo to CONTACT_EMAIL with reply-to = the visitor; the owner's address is never in the HTML, the answers or Git; `test/contact.test.js`) is closed behind
   "Ver preguntas frecuentes"; each answer opens smoothly via `::details-content` (Chrome/Safari; others
-  open at once); phones get a sticky "Ver mi precio" bar once the hero is off screen (inside #landing, so never in the checkout).
+  open at once); phones get a sticky "Calcular mi seguro" bar once the hero is off screen (inside #landing, so never in the checkout).
 - Success step, under "Descargar mi póliza": "Reenviar póliza" and "Enviar la póliza a quien viaja contigo" (highlighted when >1 traveller).
   `/api/send_policy_copy` + `/api/policy_sends` (website only, not WebMCP): allowed with the private `manage_token` from the payment answer
   (hash in `policies.manage_token_hash`) or policy number + holder email; max 5 sends per policy; each logged in `policy_sends` with the MASKED
@@ -100,7 +100,7 @@ The owner is not a programmer: explain things simply, report test results honest
   with reduced motion) with a QR code of the PDF link made in the browser by `public/qr.js` (hand-written encoder, byte mode, level M,
   versions 1–10; checked with an independent reader, jsQR, outside the repo). No external QR service.
 - Promises = the terms: no "asistencia 24 h" and no "demoras" (only baggage delay is covered); a test checks the landing's visible text.
-  CTAs: every primary (yellow) button says "Ver mi precio"; others are secondary with intent ("Comparar planes", "Ver qué cubre",
+  CTAs: every primary (yellow) button says "Calcular mi seguro"; others are secondary with intent ("Comparar planes", "Ver qué cubre",
   "Elegir Wild"/"Elegir Wild+" = go to the form with that plan preselected, `state.preferredPlan` → marked in step 1).
   Destination cards show "7 días desde X €" (Wild) and "Wild+ desde Y €".
 - Illustrations: original inline SVGs in `src/illustrations.js` (night outline + turquoise fill + small yellow accent). No emoji, no stock art,
@@ -298,7 +298,7 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
   («Acepto las condiciones del seguro y los términos de contratación» → /condiciones + /terminos; `accept_terms` covers both), step 2 and the contact form
   («Consulta cómo tratamos tus datos»). `review_order` also returns `contracting_terms_url`. `/si-me-pasa-algo` (`incidentPageBody`, texts `texts.incident`): 4 steps,
   no phone numbers, «teléfono de asistencia 24 h» only as «en un seguro real…»; linked in the footer and on the success step.
-- «Probar con un ejemplo» (secondary, under «Ver mi precio»; `texts.form.example` = TH, departure in 42 days (6 weeks) from today in Madrid, 14 trip days counting both ends, ages 35 + 38; the dates move so it never expires; asks inline before replacing typed data;
+- «Probar con un ejemplo» (secondary, under «Calcular mi seguro»; `texts.form.example` = TH, departure in 42 days (6 weeks) from today in Madrid, 14 trip days counting both ends, ages 35 + 38; the dates move so it never expires; asks inline before replacing typed data;
   event `example_used`, 11th name in `EVENT_NAMES`).
 
 ## Policyholder DNI/NIE and residence (29 Oct 2026)
@@ -319,3 +319,7 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 - Step 1 on computers: `.checkout-wrap` 1120 px content, 24 px between cards. Wild Max shows its own daily line (Wild Max − Wild+)/days only when the upsell experiment shows the Wild+ line.
 - Hero variant B keeps the claim in `.hero-claim-b` above the h1 (Space Grotesk 600 face added). Section reveal starts at opacity .55, 150 ms. `pageShell({ pageClass: 'readable' })` limits prose to 75ch on /terminos, /privacidad, /agentes.
 - Footer: «Hecho con WebMCP» now ends the legal sentence. Destination cards: «Wild desde X €» + «Precios para 7 días y 1 adulto.»
+
+## Primary button text (30 Oct 2026, owner's request)
+- Every yellow primary button now says «Calcular mi seguro» (was «Ver mi precio»): form, header, phone sticky bar, final CTAs, /condiciones. Older sections above were updated to the new text.
+  Unchanged on purpose: form title «Calcula tu precio», «Tu precio: desde X €», the "para ver tu precio" note. The longer text (18 characters) was checked on 375×812 and desktop.

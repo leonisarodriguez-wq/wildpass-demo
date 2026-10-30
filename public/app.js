@@ -375,7 +375,7 @@ $('#example-yes').addEventListener('click', () => { closeExampleAsk(false); fill
 $('#example-no').addEventListener('click', () => closeExampleAsk(true));
 $('#example-confirm').addEventListener('keydown', e => { if (e.key === 'Escape') closeExampleAsk(true); });
 
-// "Ver mi precio" links (also the header's, and the links inside FAQ answers): go to the form and put the cursor in
+// "Calcular mi seguro" links (also the header's, and the links inside FAQ answers): go to the form and put the cursor in
 // the first field. From the checkout, the landing comes back first.
 const smooth = () => (matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth');
 document.addEventListener('click', e => {
