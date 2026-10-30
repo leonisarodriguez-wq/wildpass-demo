@@ -133,8 +133,8 @@ test('experiment "cta": variant stored with the events, bad value refused, shown
   assert.ok(html.includes('?exp_cta=b'));
   // The landing: both texts in the markup (CSS shows one), header/form/sticky bar only; the exp script knows "cta".
   const { html: landing } = await page('/');
-  assert.equal((landing.match(/<span class="cta-b">Ver precio de mi aventura<\/span>/g) ?? []).length, 3, 'form, header, phone sticky bar');
-  assert.ok(!landing.includes('finalCta') && landing.includes('<a class="primary button-link" href="#quote-form" data-focus-form>Calcular mi seguro</a>'), 'final button is not part of the experiment');
+  assert.equal((landing.match(/<span class="cta-b">Ver precio de mi aventura<\/span>/g) ?? []).length, 4, 'form, header, phone sticky bar, final button');
+  assert.ok(landing.includes('id="final-cta-button" href="#quote-form" data-focus-form><span class="cta-a">Calcular mi seguro</span><span class="cta-b">Ver precio de mi aventura</span></a>'), 'the final button is part of the experiment');
   const css = await (await fetch(`${base}/style.css`)).text();
   assert.ok(css.includes('html[data-exp-cta="b"] .cta-a { display: none; }'));
   assert.ok((await (await fetch(`${base}/exp.js`)).text()).includes("['hero', 'upsell', 'cta']"));

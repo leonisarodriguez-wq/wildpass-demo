@@ -327,8 +327,8 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 ## Experiment "cta" (30 Oct 2026, owner's request)
 - Third A/B test, same pattern as hero/upsell: `public/exp.js` (50/50 per browser, `?exp_cta=a|b`, html[data-exp-cta] before first paint), events column `exp_cta`
   (small ALTER in `src/events.js`, next to the table's CREATE, keeps old data), `/metricas` card with its own sample size (`config/experiments.config.js`: baseline 25 %, +5 points, ASSUMPTIONS until A has 100 sessions).
-- A = «Calcular mi seguro», B = «Ver precio de mi aventura» (`texts.ctaB`). ONLY the landing's yellow buttons: form, header (is-home) and phone sticky bar; each holds `<span class="cta-a">` + `<span class="cta-b">` and CSS shows one
-  (no layout shift). The final CTA, other pages' headers, /condiciones and the 404 keep A. `busy()` in app.js restores innerHTML (not textContent) so both spans survive.
+- A = «Calcular mi seguro», B = «Ver precio de mi aventura» (`texts.ctaB`). ONLY the landing's yellow buttons: form, header (is-home), phone sticky bar and the final CTA (`#final-cta-button`, 30 Oct 2026); each holds `<span class="cta-a">` + `<span class="cta-b">` and CSS shows one
+  (no layout shift). Other pages' headers, /condiciones and the 404 keep A. `busy()` in app.js restores innerHTML (not textContent) so both spans survive.
 - Metric: sessions that sent the quote form (`quote_viewed`, web) / sessions that saw the landing, by variant. Hypothesis (also on /caso): a button that names the trip's reason raises quote submissions over a generic one.
   WebMCP and the agent flow are untouched. Tests: `test/events.test.js` (cta + migration), `test/flow.test.js` accepts both texts.
 
@@ -354,3 +354,4 @@ quote → select_plan (order) → set_traveler_details → review_order (issues 
 
 ## Contact access (30 Oct 2026, owner's request)
 - «Contacto» → /terminos#contacto in three places: the menu after «Condiciones» (`li.nav-contact`, hidden during the purchase steps by CSS so the header gets no extra exit), every footer (`footerContact`, after «Privacidad»; `footerHtml` + `index.html`), and under the landing FAQ: centred «¿No encuentras tu respuesta?» + secondary (white, bordered) button «Escríbenos» (`texts.faqMoreTitle` / `faqMore`; replaces the old «¿Tienes otra pregunta? Escríbenos» link; only when CONTACT_EMAIL is set). The form stays on /terminos only. Tested in `test/contact.test.js`.
+- Retouches (30 Oct 2026): the phone sticky bar is also hidden while `#final-cta-button` is on screen (two IntersectionObservers in landing-fx.js). /terminos «Contacto»: ONE intro (inside the card, `texts.contact.intro`) and ONE privacy link («Consulta cómo tratamos tus datos»); the section has no paragraphs of its own. Step 1: Wild's empty trekking row (`.feature-empty`) exists only ≥960 px (cards side by side, to align the subgrid); in one column it is `display:none`.

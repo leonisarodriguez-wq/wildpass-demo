@@ -291,8 +291,11 @@ for (const card of document.querySelectorAll('.dest-card')) {
 // Hidden only while the form's own button is on screen (and in the checkout: it lives inside #landing).
 // The page gets bottom padding while it shows (CSS), so it never hides content.
 const sticky = $('#sticky-cta');
+// Also hidden while the final yellow button is on screen, so two identical buttons are never visible at once.
 let submitOnScreen = true;
-const syncSticky = () => { sticky.hidden = submitOnScreen || $('#landing').hidden; };
+let finalOnScreen = false;
+const syncSticky = () => { sticky.hidden = submitOnScreen || finalOnScreen || $('#landing').hidden; };
 new IntersectionObserver(([entry]) => { submitOnScreen = entry.isIntersecting; syncSticky(); }).observe($('#quote-submit'));
+new IntersectionObserver(([entry]) => { finalOnScreen = entry.isIntersecting; syncSticky(); }).observe($('#final-cta-button'));
 
 loadConfig().then(config => { T = config.brand.texts; routeLabel(); if (formReady()) updatePrice(); }).catch(() => {});

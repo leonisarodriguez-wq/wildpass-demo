@@ -311,7 +311,7 @@ export default {
 
     // Landing: sticky bar on phones once the hero is off screen
     stickyCta: 'Calcular mi seguro',
-    // Experiment "cta" (B): text of the yellow primary buttons on the landing (form, header, phone sticky bar). A = form.submit / stickyCta / nav.cta.
+    // Experiment "cta" (B): text of the yellow primary buttons on the landing (form, header, phone sticky bar, final button). A = form.submit / stickyCta / nav.cta.
     ctaB: 'Ver precio de mi aventura',
 
     // Landing: plans band
@@ -424,7 +424,7 @@ export default {
           { id: 'marca', title: 'La marca', paragraphs: [
             'Wildpass y Seguros Wildpass son nombres de demostración. No corresponden a ninguna empresa real y no se ha comprobado su disponibilidad como marca.' ] },
           { id: 'contacto', title: 'Contacto', form: true, paragraphs: [
-            'Escríbenos con este formulario. Para saber cómo tratamos tus datos, consulta la [política de privacidad](/privacidad).' ] },
+            ] },
         ],
       },
       privacidad: {

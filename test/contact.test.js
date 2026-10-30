@@ -119,3 +119,12 @@ test('«Contacto» in the menu (after «Condiciones») and in the footer of ever
     assert.ok(html.includes('<a href="/privacidad">Privacidad</a><a href="/terminos#contacto">Contacto</a>'), `footer on ${path}`);
   }
 });
+
+test('/terminos «Contacto»: one intro text and one privacy link, no repeated sentence', async () => {
+  const html = await (await fetch(`${base}/terminos`)).text();
+  const section = html.slice(html.indexOf('<h2 id="contacto">'), html.indexOf('<p><a href="/">←'));
+  assert.equal(section.split('Escríbenos con este formulario').length - 1, 1);
+  assert.ok(!section.includes('Para saber cómo tratamos tus datos'));
+  assert.equal(section.split('href="/privacidad"').length - 1, 1);
+  assert.ok(section.includes('Consulta cómo tratamos tus datos'));
+});

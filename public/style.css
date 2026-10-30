@@ -451,7 +451,8 @@ html:has(#step-1:not([hidden])) { scroll-padding-bottom: 24px; }
 .plan-price { font-family: var(--font-headings); font-weight: 700; font-size: 1.6rem; margin: 2px 0 6px; }
 .plan-option dl { display: grid; grid-template-rows: subgrid; grid-row: span 6; margin: 0; }
 .plan-option .feature { padding: 10px 0; border-top: 1px solid var(--border); }
-.plan-option .feature-empty { visibility: hidden; } /* Wild has no trekking row: the empty row keeps the three cards aligned */
+.plan-option .feature-empty { display: none; } /* Wild has no trekking row: one column = no gap; side by side (≥960 px) the invisible row keeps the three cards aligned */
+@media (min-width: 960px) { .plan-option .feature-empty { display: block; visibility: hidden; } }
 .plan-option dt { font-size: 0.7rem; font-weight: 700; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.04em; line-height: 1.3; margin-bottom: 2px; }
 .plan-option dd { margin: 0; font-weight: 600; font-size: 0.95rem; line-height: 1.35; overflow-wrap: anywhere; }
 .plan-option .primary, .plan-option .secondary { width: 100%; min-height: 52px; padding: 10px 6px; font-size: 1rem; margin-top: 12px; align-self: end; }
